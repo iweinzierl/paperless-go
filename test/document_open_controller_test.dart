@@ -30,26 +30,6 @@ void main() {
     expect(container.read(documentOpenControllerProvider), isEmpty);
   });
 
-  test('open controller can open the preview variant', () async {
-    final repository = _FakeDocumentsRepository();
-    final opener = _FakeDocumentFileOpener();
-    final container = ProviderContainer(
-      overrides: [
-        documentsRepositoryProvider.overrideWithValue(repository),
-        documentFileOpenerProvider.overrideWithValue(opener),
-      ],
-    );
-    addTearDown(container.dispose);
-
-    await container
-        .read(documentOpenControllerProvider.notifier)
-        .openDocument(document, variant: DocumentOpenVariant.preview);
-
-    expect(repository.previewRequested, isTrue);
-    expect(opener.openedPaths, ['/tmp/preview-7.pdf']);
-    expect(container.read(documentOpenControllerProvider), isEmpty);
-  });
-
   test('open controller clears loading state when opening fails', () async {
     final repository = _FakeDocumentsRepository();
     final opener = _FakeDocumentFileOpener(shouldThrow: true);

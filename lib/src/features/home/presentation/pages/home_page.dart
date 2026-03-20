@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:paperless_ngx_app/src/features/auth/presentation/controllers/auth_session_controller.dart';
-import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_document.dart';
+import 'package:paperless_ngx_app/src/features/documents/presentation/pages/document_detail_page.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/providers/documents_providers.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/widgets/paperless_document_card.dart';
 
@@ -10,8 +10,6 @@ class HomePage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final session = ref.watch(authSessionProvider);
-
     return DefaultTabController(
       length: 2,
       child: Scaffold(
@@ -31,89 +29,11 @@ class HomePage extends ConsumerWidget {
             ],
           ),
         ),
-        body: Column(
-          children: [
-            _HomeHero(
-              title: 'Welcome back, ${session.displayName ?? session.username}',
-              subtitle: 'Connected to ${session.serverUrl}',
-            ),
-            const Expanded(
-              child: TabBarView(children: [_RecentUploadsTab(), _TodosTab()]),
-            ),
-          ],
-        ),
+        body: const TabBarView(children: [_RecentUploadsTab(), _TodosTab()]),
         floatingActionButton: FloatingActionButton.extended(
           onPressed: () {},
           icon: const Icon(Icons.upload_file_outlined),
           label: const Text('Scan later'),
-        ),
-      ),
-    );
-  }
-}
-
-class _HomeHero extends StatelessWidget {
-  const _HomeHero({required this.title, required this.subtitle});
-
-  final String title;
-  final String subtitle;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [theme.colorScheme.primary, const Color(0xFF4C9CB5)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(24),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Row(
-            children: [
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.18),
-                  borderRadius: BorderRadius.circular(18),
-                ),
-                child: const Icon(
-                  Icons.description_outlined,
-                  color: Colors.white,
-                  size: 28,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      subtitle,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.86),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
         ),
       ),
     );
@@ -134,12 +54,6 @@ class _RecentUploadsTab extends StatelessWidget {
             return ListView(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
               children: [
-                const _SectionHint(
-                  title: 'Recent uploads',
-                  description:
-                      'The latest 20 documents uploaded to your paperless-ngx server.',
-                ),
-                const SizedBox(height: 12),
                 if (documents.isEmpty)
                   const _EmptyStateCard(
                     title: 'No uploads yet',
@@ -149,7 +63,7 @@ class _RecentUploadsTab extends StatelessWidget {
                 for (final document in documents) ...[
                   PaperlessDocumentCard(
                     document: document,
-                    trailingLabel: _recentUploadTrailingLabel(document),
+                    onTap: () => _openDocumentDetails(context, document.id),
                   ),
                   const SizedBox(height: 12),
                 ],
@@ -160,12 +74,6 @@ class _RecentUploadsTab extends StatelessWidget {
             return ListView(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
               children: const [
-                _SectionHint(
-                  title: 'Recent uploads',
-                  description:
-                      'The latest 20 documents uploaded to your paperless-ngx server.',
-                ),
-                SizedBox(height: 12),
                 _EmptyStateCard(
                   title: 'Could not load recent uploads',
                   description:
@@ -177,15 +85,7 @@ class _RecentUploadsTab extends StatelessWidget {
           loading: () {
             return ListView(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
-              children: const [
-                _SectionHint(
-                  title: 'Recent uploads',
-                  description:
-                      'The latest 20 documents uploaded to your paperless-ngx server.',
-                ),
-                SizedBox(height: 12),
-                _LoadingCard(),
-              ],
+              children: const [_LoadingCard()],
             );
           },
         );
@@ -193,12 +93,12 @@ class _RecentUploadsTab extends StatelessWidget {
     );
   }
 
-  String _recentUploadTrailingLabel(PaperlessDocument document) {
-    if (document.added != null && document.added!.isNotEmpty) {
-      return 'Added';
-    }
-
-    return 'Recent';
+  void _openDocumentDetails(BuildContext context, int documentId) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (context) => DocumentDetailPage(documentId: documentId),
+      ),
+    );
   }
 }
 

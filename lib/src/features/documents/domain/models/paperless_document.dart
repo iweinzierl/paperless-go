@@ -70,8 +70,10 @@ class PaperlessDocument {
   String get subtitle {
     final parts = <String>[];
 
-    if (created != null && created!.isNotEmpty) {
-      parts.add(_shortDate(created!));
+    if (added != null && added!.isNotEmpty) {
+      parts.add(_shortTimestamp(added!));
+    } else if (created != null && created!.isNotEmpty) {
+      parts.add(_shortTimestamp(created!));
     }
     if (pageCount != null) {
       parts.add('$pageCount page${pageCount == 1 ? '' : 's'}');
@@ -83,7 +85,7 @@ class PaperlessDocument {
     return parts.isEmpty ? 'Document #$id' : parts.join(' · ');
   }
 
-  static String _shortDate(String value) {
+  static String _shortTimestamp(String value) {
     final parsed = DateTime.tryParse(value);
     if (parsed == null) {
       return value;
@@ -91,7 +93,9 @@ class PaperlessDocument {
 
     final month = parsed.month.toString().padLeft(2, '0');
     final day = parsed.day.toString().padLeft(2, '0');
+    final hour = parsed.hour.toString().padLeft(2, '0');
+    final minute = parsed.minute.toString().padLeft(2, '0');
 
-    return '${parsed.year}-$month-$day';
+    return '${parsed.year}-$month-$day $hour:$minute';
   }
 }

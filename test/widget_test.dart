@@ -15,6 +15,7 @@ import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_document_page.dart';
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_filter_option.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/models/documents_sort_option.dart';
+import 'package:paperless_ngx_app/src/features/documents/presentation/providers/document_detail_provider.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/providers/documents_providers.dart';
 
 void main() {
@@ -88,8 +89,53 @@ void main() {
     expect(find.text('Paperless-ngx'), findsOneWidget);
     expect(find.text('Recent uploads'), findsWidgets);
     expect(find.text('Todos'), findsWidgets);
-    expect(find.text('Welcome back, Jane Doe'), findsOneWidget);
+    expect(find.text('Welcome back, Jane Doe'), findsNothing);
+    expect(
+      find.text(
+        'The latest 20 documents uploaded to your paperless-ngx server.',
+      ),
+      findsNothing,
+    );
+    expect(find.text('Added'), findsNothing);
     expect(find.text('Quarterly tax summary.pdf'), findsOneWidget);
+    expect(find.text('2026-03-20 12:00 · 4 pages'), findsOneWidget);
+  });
+
+  testWidgets('opens document details from recent uploads on tap', (
+    WidgetTester tester,
+  ) async {
+    await pumpApp(
+      tester,
+      initialValues: const <String, Object>{
+        'auth.server_url': 'https://example.com/paperless/',
+        'auth.username': 'jane.doe',
+        'auth.password': 'secret',
+        'auth.token': 'token-123',
+        'auth.display_name': 'Jane Doe',
+      },
+      overrides: [
+        recentUploadsProvider.overrideWith((ref) async => [fakeRecentDocument]),
+        documentsPageProvider.overrideWith((ref) async => fakeDocumentsPage),
+        documentDetailProvider(
+          fakeRecentDocument.id,
+        ).overrideWith((ref) async => fakeRecentDocument),
+        tagOptionsProvider.overrideWith((ref) async => fakeFilterOptions),
+        correspondentOptionsProvider.overrideWith(
+          (ref) async => fakeFilterOptions,
+        ),
+        documentTypeOptionsProvider.overrideWith(
+          (ref) async => fakeFilterOptions,
+        ),
+      ],
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Quarterly tax summary.pdf').first);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Document details'), findsOneWidget);
+    expect(find.text('Open document'), findsOneWidget);
+    expect(find.text('Open original'), findsOneWidget);
   });
 
   testWidgets('navigates to documents page from bottom navigation', (

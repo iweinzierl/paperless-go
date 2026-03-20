@@ -108,18 +108,6 @@ class _DocumentDetailBody extends ConsumerWidget {
                   spacing: 12,
                   runSpacing: 12,
                   children: [
-                    FilledButton.tonalIcon(
-                      onPressed: isOpening
-                          ? null
-                          : () => _openDocument(
-                              context,
-                              ref,
-                              document,
-                              variant: DocumentOpenVariant.preview,
-                            ),
-                      icon: const Icon(Icons.visibility_outlined),
-                      label: const Text('Open preview'),
-                    ),
                     FilledButton.icon(
                       onPressed: isOpening
                           ? null
