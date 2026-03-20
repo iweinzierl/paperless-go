@@ -129,6 +129,8 @@ void main() {
     expect(find.text('Tag'), findsOneWidget);
     expect(find.text('Correspondent'), findsOneWidget);
     expect(find.text('Document type'), findsOneWidget);
+    expect(find.text('Details'), findsOneWidget);
+    expect(find.text('Open'), findsOneWidget);
   });
 
   testWidgets('shows validation errors for empty login form', (

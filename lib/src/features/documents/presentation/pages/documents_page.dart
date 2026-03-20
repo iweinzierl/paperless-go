@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:paperless_ngx_app/src/features/auth/presentation/controllers/auth_session_controller.dart';
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_document_page.dart';
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_filter_option.dart';
+import 'package:paperless_ngx_app/src/features/documents/presentation/pages/document_detail_page.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/models/documents_filter_state.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/models/documents_sort_option.dart';
+import 'package:paperless_ngx_app/src/features/documents/presentation/providers/document_open_controller.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/providers/documents_providers.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/widgets/paperless_document_card.dart';
 
@@ -347,6 +349,7 @@ class _DocumentsList extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final currentPage = ref.watch(documentsCurrentPageProvider);
+    final openingIds = ref.watch(documentOpenControllerProvider);
 
     if (page.results.isEmpty) {
       return const Center(
@@ -368,7 +371,35 @@ class _DocumentsList extends ConsumerWidget {
         ),
         const SizedBox(height: 12),
         for (final document in page.results) ...[
-          PaperlessDocumentCard(document: document, trailingLabel: 'Open'),
+          PaperlessDocumentCard(
+            document: document,
+            onTap: () => _openDetails(context, document.id),
+            footer: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              alignment: WrapAlignment.end,
+              children: [
+                OutlinedButton.icon(
+                  onPressed: () => _openDetails(context, document.id),
+                  icon: const Icon(Icons.info_outline),
+                  label: const Text('Details'),
+                ),
+                FilledButton.tonalIcon(
+                  onPressed: openingIds.contains(document.id)
+                      ? null
+                      : () => _openDocument(context, ref, document),
+                  icon: Icon(
+                    openingIds.contains(document.id)
+                        ? Icons.hourglass_top
+                        : Icons.open_in_new,
+                  ),
+                  label: Text(
+                    openingIds.contains(document.id) ? 'Opening...' : 'Open',
+                  ),
+                ),
+              ],
+            ),
+          ),
           const SizedBox(height: 12),
         ],
         const SizedBox(height: 8),
@@ -391,6 +422,34 @@ class _DocumentsList extends ConsumerWidget {
         ),
       ],
     );
+  }
+
+  void _openDetails(BuildContext context, int documentId) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (context) => DocumentDetailPage(documentId: documentId),
+      ),
+    );
+  }
+
+  Future<void> _openDocument(
+    BuildContext context,
+    WidgetRef ref,
+    dynamic document,
+  ) async {
+    try {
+      await ref
+          .read(documentOpenControllerProvider.notifier)
+          .openDocument(document);
+    } catch (error) {
+      if (!context.mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.toString())));
+    }
   }
 }
 
