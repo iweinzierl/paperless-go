@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:paperless_ngx_app/src/features/auth/presentation/controllers/auth_session_controller.dart';
+import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_document.dart';
+import 'package:paperless_ngx_app/src/features/documents/presentation/providers/documents_providers.dart';
+import 'package:paperless_ngx_app/src/features/documents/presentation/widgets/paperless_document_card.dart';
 
 class HomePage extends ConsumerWidget {
   const HomePage({super.key});
@@ -122,31 +125,80 @@ class _RecentUploadsTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
-      children: const [
-        _SectionHint(
-          title: 'Recent uploads',
-          description:
-              'This will show the latest 20 documents uploaded to your paperless-ngx server.',
-        ),
-        SizedBox(height: 12),
-        _DocumentPlaceholderCard(
-          title: 'Invoices / March 2026.pdf',
-          meta: 'Uploaded 2 hours ago',
-        ),
-        SizedBox(height: 12),
-        _DocumentPlaceholderCard(
-          title: 'Insurance renewal notice.pdf',
-          meta: 'Uploaded yesterday',
-        ),
-        SizedBox(height: 12),
-        _DocumentPlaceholderCard(
-          title: 'Travel reimbursement form.pdf',
-          meta: 'Uploaded 3 days ago',
-        ),
-      ],
+    return Consumer(
+      builder: (context, ref, child) {
+        final recentUploads = ref.watch(recentUploadsProvider);
+
+        return recentUploads.when(
+          data: (documents) {
+            return ListView(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+              children: [
+                const _SectionHint(
+                  title: 'Recent uploads',
+                  description:
+                      'The latest 20 documents uploaded to your paperless-ngx server.',
+                ),
+                const SizedBox(height: 12),
+                if (documents.isEmpty)
+                  const _EmptyStateCard(
+                    title: 'No uploads yet',
+                    description:
+                        'Recent documents will appear here once your server has processed uploads.',
+                  ),
+                for (final document in documents) ...[
+                  PaperlessDocumentCard(
+                    document: document,
+                    trailingLabel: _recentUploadTrailingLabel(document),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+              ],
+            );
+          },
+          error: (error, stackTrace) {
+            return ListView(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+              children: const [
+                _SectionHint(
+                  title: 'Recent uploads',
+                  description:
+                      'The latest 20 documents uploaded to your paperless-ngx server.',
+                ),
+                SizedBox(height: 12),
+                _EmptyStateCard(
+                  title: 'Could not load recent uploads',
+                  description:
+                      'The home page reached your server, but document loading failed. Pull to refresh later.',
+                ),
+              ],
+            );
+          },
+          loading: () {
+            return ListView(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+              children: const [
+                _SectionHint(
+                  title: 'Recent uploads',
+                  description:
+                      'The latest 20 documents uploaded to your paperless-ngx server.',
+                ),
+                SizedBox(height: 12),
+                _LoadingCard(),
+              ],
+            );
+          },
+        );
+      },
     );
+  }
+
+  String _recentUploadTrailingLabel(PaperlessDocument document) {
+    if (document.added != null && document.added!.isNotEmpty) {
+      return 'Added';
+    }
+
+    return 'Recent';
   }
 }
 
@@ -213,23 +265,6 @@ class _SectionHint extends StatelessWidget {
   }
 }
 
-class _DocumentPlaceholderCard extends StatelessWidget {
-  const _DocumentPlaceholderCard({required this.title, required this.meta});
-
-  final String title;
-  final String meta;
-
-  @override
-  Widget build(BuildContext context) {
-    return _PlaceholderCard(
-      leadingIcon: Icons.picture_as_pdf_outlined,
-      title: title,
-      meta: meta,
-      trailingLabel: 'Queued',
-    );
-  }
-}
-
 class _TodoPlaceholderCard extends StatelessWidget {
   const _TodoPlaceholderCard({required this.title, required this.meta});
 
@@ -243,6 +278,59 @@ class _TodoPlaceholderCard extends StatelessWidget {
       title: title,
       meta: meta,
       trailingLabel: 'Review',
+    );
+  }
+}
+
+class _LoadingCard extends StatelessWidget {
+  const _LoadingCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return const DecoratedBox(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.all(Radius.circular(20)),
+      ),
+      child: Padding(
+        padding: EdgeInsets.all(20),
+        child: Center(child: CircularProgressIndicator()),
+      ),
+    );
+  }
+}
+
+class _EmptyStateCard extends StatelessWidget {
+  const _EmptyStateCard({required this.title, required this.description});
+
+  final String title;
+  final String description;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(description, style: theme.textTheme.bodyMedium),
+          ],
+        ),
+      ),
     );
   }
 }

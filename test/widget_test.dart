@@ -11,11 +11,28 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:paperless_ngx_app/src/app/app.dart';
 import 'package:paperless_ngx_app/src/core/providers/shared_preferences_provider.dart';
+import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_document.dart';
+import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_document_page.dart';
+import 'package:paperless_ngx_app/src/features/documents/presentation/providers/documents_providers.dart';
 
 void main() {
+  const fakeRecentDocument = PaperlessDocument(
+    id: 1,
+    title: 'Quarterly tax summary.pdf',
+    created: '2026-03-20',
+    added: '2026-03-20T12:00:00Z',
+    pageCount: 4,
+  );
+
+  const fakeDocumentsPage = PaperlessDocumentPage(
+    count: 1,
+    results: [fakeRecentDocument],
+  );
+
   Future<void> pumpApp(
     WidgetTester tester, {
     Map<String, Object> initialValues = const <String, Object>{},
+    List<Override> overrides = const <Override>[],
   }) async {
     SharedPreferences.setMockInitialValues(initialValues);
     final sharedPreferences = await SharedPreferences.getInstance();
@@ -24,6 +41,7 @@ void main() {
       ProviderScope(
         overrides: [
           sharedPreferencesProvider.overrideWithValue(sharedPreferences),
+          ...overrides,
         ],
         child: const PaperlessNgxApp(),
       ),
@@ -49,12 +67,45 @@ void main() {
         'auth.token': 'token-123',
         'auth.display_name': 'Jane Doe',
       },
+      overrides: [
+        recentUploadsProvider.overrideWith((ref) async => [fakeRecentDocument]),
+        documentsPageProvider.overrideWith((ref) async => fakeDocumentsPage),
+      ],
     );
+    await tester.pumpAndSettle();
 
     expect(find.text('Paperless-ngx'), findsOneWidget);
     expect(find.text('Recent uploads'), findsWidgets);
     expect(find.text('Todos'), findsWidgets);
     expect(find.text('Welcome back, Jane Doe'), findsOneWidget);
+    expect(find.text('Quarterly tax summary.pdf'), findsOneWidget);
+  });
+
+  testWidgets('navigates to documents page from bottom navigation', (
+    WidgetTester tester,
+  ) async {
+    await pumpApp(
+      tester,
+      initialValues: const <String, Object>{
+        'auth.server_url': 'https://example.com/paperless/',
+        'auth.username': 'jane.doe',
+        'auth.password': 'secret',
+        'auth.token': 'token-123',
+        'auth.display_name': 'Jane Doe',
+      },
+      overrides: [
+        recentUploadsProvider.overrideWith((ref) async => [fakeRecentDocument]),
+        documentsPageProvider.overrideWith((ref) async => fakeDocumentsPage),
+      ],
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Documents'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Documents'), findsWidgets);
+    expect(find.text('1 documents'), findsOneWidget);
+    expect(find.text('Search by title'), findsOneWidget);
   });
 
   testWidgets('shows validation errors for empty login form', (
