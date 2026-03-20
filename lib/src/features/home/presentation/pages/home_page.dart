@@ -463,8 +463,11 @@ class _SectionHint extends StatelessWidget {
 
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.colorScheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: theme.colorScheme.outline.withValues(alpha: 0.18),
+        ),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -475,10 +478,16 @@ class _SectionHint extends StatelessWidget {
               title,
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w700,
+                color: theme.colorScheme.onSurface,
               ),
             ),
             const SizedBox(height: 6),
-            Text(description, style: theme.textTheme.bodyMedium),
+            Text(
+              description,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
           ],
         ),
       ),
@@ -491,12 +500,17 @@ class _LoadingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const DecoratedBox(
+    final theme = Theme.of(context);
+
+    return DecoratedBox(
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.all(Radius.circular(20)),
+        color: theme.colorScheme.surfaceContainerLow,
+        borderRadius: const BorderRadius.all(Radius.circular(20)),
+        border: Border.all(
+          color: theme.colorScheme.outline.withValues(alpha: 0.18),
+        ),
       ),
-      child: Padding(
+      child: const Padding(
         padding: EdgeInsets.all(20),
         child: Center(child: CircularProgressIndicator()),
       ),
@@ -523,8 +537,11 @@ class _EmptyStateCard extends StatelessWidget {
 
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.colorScheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: theme.colorScheme.outline.withValues(alpha: 0.18),
+        ),
       ),
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -535,10 +552,16 @@ class _EmptyStateCard extends StatelessWidget {
               title,
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w700,
+                color: theme.colorScheme.onSurface,
               ),
             ),
             const SizedBox(height: 8),
-            Text(description, style: theme.textTheme.bodyMedium),
+            Text(
+              description,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
             if (actionLabel != null && onActionPressed != null) ...[
               const SizedBox(height: 16),
               FilledButton.tonalIcon(

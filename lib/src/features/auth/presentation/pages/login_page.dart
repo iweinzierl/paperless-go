@@ -33,6 +33,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final formState = ref.watch(loginControllerProvider);
     final controller = ref.read(loginControllerProvider.notifier);
 
@@ -49,13 +50,20 @@ class _LoginPageState extends ConsumerState<LoginPage> {
               constraints: const BoxConstraints(maxWidth: 480),
               child: DecoratedBox(
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: theme.colorScheme.surfaceContainerLow,
                   borderRadius: BorderRadius.circular(28),
-                  boxShadow: const [
+                  border: Border.all(
+                    color: theme.colorScheme.outline.withValues(
+                      alpha: isDark ? 0.35 : 0.12,
+                    ),
+                  ),
+                  boxShadow: [
                     BoxShadow(
-                      color: Color(0x140F172A),
-                      blurRadius: 28,
-                      offset: Offset(0, 16),
+                      color: isDark
+                          ? Colors.black.withValues(alpha: 0.22)
+                          : const Color(0x140F172A),
+                      blurRadius: isDark ? 18 : 28,
+                      offset: const Offset(0, 16),
                     ),
                   ],
                 ),
@@ -97,7 +105,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       Text(
                         'Use your paperless-ngx URL and account credentials to access your documents.',
                         style: theme.textTheme.bodyMedium?.copyWith(
-                          color: const Color(0xFF52606D),
+                          color: theme.colorScheme.onSurfaceVariant,
                         ),
                       ),
                       const SizedBox(height: 24),
@@ -256,16 +264,17 @@ class _LoginStatusBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final backgroundColor = isError
-        ? const Color(0xFFFDECEC)
-        : const Color(0xFFE8F7EF);
+        ? theme.colorScheme.errorContainer
+        : theme.colorScheme.tertiaryContainer;
     final foregroundColor = isError
-        ? theme.colorScheme.error
-        : const Color(0xFF166534);
+        ? theme.colorScheme.onErrorContainer
+        : theme.colorScheme.onTertiaryContainer;
 
     return DecoratedBox(
       decoration: BoxDecoration(
         color: backgroundColor,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: foregroundColor.withValues(alpha: 0.16)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(14),

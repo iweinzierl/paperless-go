@@ -18,16 +18,24 @@ class PaperlessDocumentCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.colorScheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: const [
+        border: Border.all(
+          color: theme.colorScheme.outline.withValues(
+            alpha: isDark ? 0.35 : 0.12,
+          ),
+        ),
+        boxShadow: [
           BoxShadow(
-            color: Color(0x0D0F172A),
-            blurRadius: 14,
-            offset: Offset(0, 8),
+            color: isDark
+                ? Colors.black.withValues(alpha: 0.16)
+                : const Color(0x0D0F172A),
+            blurRadius: isDark ? 10 : 14,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
@@ -64,12 +72,15 @@ class PaperlessDocumentCard extends StatelessWidget {
                             document.title,
                             style: theme.textTheme.titleSmall?.copyWith(
                               fontWeight: FontWeight.w700,
+                              color: theme.colorScheme.onSurface,
                             ),
                           ),
                           const SizedBox(height: 4),
                           Text(
                             document.subtitle,
-                            style: theme.textTheme.bodySmall,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
                           ),
                         ],
                       ),

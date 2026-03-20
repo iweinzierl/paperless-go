@@ -153,8 +153,8 @@ class _DocumentDetailBody extends ConsumerWidget {
                       return child;
                     }
 
-                    return const ColoredBox(
-                      color: Color(0xFFF2F4F7),
+                    return ColoredBox(
+                      color: theme.colorScheme.surfaceContainerLow,
                       child: Center(child: CircularProgressIndicator()),
                     );
                   },
