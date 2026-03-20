@@ -4,6 +4,7 @@ import 'package:paperless_ngx_app/src/features/auth/presentation/controllers/aut
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_document_page.dart';
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_filter_option.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/pages/document_detail_page.dart';
+import 'package:paperless_ngx_app/src/features/documents/presentation/pages/documents_filters_page.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/models/documents_filter_state.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/models/documents_sort_option.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/providers/document_open_controller.dart';
@@ -60,50 +61,65 @@ class _DocumentsPageState extends ConsumerState<DocumentsPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                TextField(
-                  controller: _searchController,
-                  textInputAction: TextInputAction.search,
-                  onSubmitted: _submitSearch,
-                  decoration: InputDecoration(
-                    hintText: 'Search by title',
-                    prefixIcon: const Icon(Icons.search),
-                    suffixIcon: query.isNotEmpty
-                        ? IconButton(
-                            tooltip: 'Clear search',
-                            onPressed: _clearSearch,
-                            icon: const Icon(Icons.close),
-                          )
-                        : null,
-                  ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _searchController,
+                        textInputAction: TextInputAction.search,
+                        onSubmitted: _submitSearch,
+                        decoration: InputDecoration(
+                          hintText: 'Search by title',
+                          prefixIcon: const Icon(Icons.search),
+                          suffixIcon: query.isNotEmpty
+                              ? IconButton(
+                                  tooltip: 'Clear search',
+                                  onPressed: _clearSearch,
+                                  icon: const Icon(Icons.close),
+                                )
+                              : null,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    IconButton.filledTonal(
+                      tooltip: 'Filters',
+                      onPressed: () => _openFilters(context),
+                      icon: Badge.count(
+                        isLabelVisible:
+                            _activeFilterCount(filterState, ordering) > 0,
+                        count: _activeFilterCount(filterState, ordering),
+                        child: const Icon(Icons.tune),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 12),
-                _SortDropdown(
-                  selectedOrdering: ordering,
-                  onChanged: _updateOrdering,
-                ),
-                const SizedBox(height: 12),
-                _DocumentsFilters(
+                _ActiveDocumentsControls(
                   filterState: filterState,
-                  onTagChanged: (value) => _updateFilters(
-                    filterState.copyWith(tagId: value, clearTag: value == null),
-                  ),
-                  onCorrespondentChanged: (value) => _updateFilters(
-                    filterState.copyWith(
-                      correspondentId: value,
-                      clearCorrespondent: value == null,
-                    ),
-                  ),
-                  onDocumentTypeChanged: (value) => _updateFilters(
-                    filterState.copyWith(
-                      documentTypeId: value,
-                      clearDocumentType: value == null,
-                    ),
-                  ),
-                  onReset: filterState.hasActiveFilters
-                      ? () => _updateFilters(const DocumentsFilterState())
+                  ordering: ordering,
+                  onClearTag: filterState.tagId != null
+                      ? () =>
+                            _updateFilters(filterState.copyWith(clearTag: true))
+                      : null,
+                  onClearCorrespondent: filterState.correspondentId != null
+                      ? () => _updateFilters(
+                          filterState.copyWith(clearCorrespondent: true),
+                        )
+                      : null,
+                  onClearDocumentType: filterState.documentTypeId != null
+                      ? () => _updateFilters(
+                          filterState.copyWith(clearDocumentType: true),
+                        )
+                      : null,
+                  onResetOrdering:
+                      ordering != documentsSortOptions.first.ordering
+                      ? () =>
+                            _updateOrdering(documentsSortOptions.first.ordering)
                       : null,
                 ),
-                const SizedBox(height: 12),
+                if (_activeFilterCount(filterState, ordering) > 0)
+                  const SizedBox(height: 12),
                 Text(
                   'Connected to ${session.serverUrl}',
                   style: Theme.of(context).textTheme.bodySmall,
@@ -176,161 +192,137 @@ class _DocumentsPageState extends ConsumerState<DocumentsPage> {
       selection: TextSelection.collapsed(offset: query.length),
     );
   }
-}
 
-class _SortDropdown extends StatelessWidget {
-  const _SortDropdown({
-    required this.selectedOrdering,
-    required this.onChanged,
-  });
-
-  final String selectedOrdering;
-  final ValueChanged<String?> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return DropdownButtonFormField<String>(
-      initialValue: selectedOrdering,
-      isExpanded: true,
-      decoration: const InputDecoration(
-        labelText: 'Sort by',
-        prefixIcon: Icon(Icons.sort),
+  Future<void> _openFilters(BuildContext context) async {
+    final result = await Navigator.of(context).push<DocumentsFiltersResult>(
+      MaterialPageRoute<DocumentsFiltersResult>(
+        builder: (context) => DocumentsFiltersPage(
+          initialFilterState: ref.read(documentsFilterStateProvider),
+          initialOrdering: ref.read(documentsOrderingProvider),
+        ),
       ),
-      items: documentsSortOptions
-          .map(
-            (option) => DropdownMenuItem<String>(
-              value: option.ordering,
-              child: Text(option.label),
-            ),
-          )
-          .toList(),
-      onChanged: onChanged,
     );
+
+    if (result == null) {
+      return;
+    }
+
+    ref.read(documentsFilterStateProvider.notifier).state = result.filterState;
+    ref.read(documentsOrderingProvider.notifier).state = result.ordering;
+    ref.read(documentsCurrentPageProvider.notifier).state = 1;
+  }
+
+  int _activeFilterCount(DocumentsFilterState filterState, String ordering) {
+    var count = 0;
+    if (filterState.tagId != null) {
+      count += 1;
+    }
+    if (filterState.correspondentId != null) {
+      count += 1;
+    }
+    if (filterState.documentTypeId != null) {
+      count += 1;
+    }
+    if (ordering != documentsSortOptions.first.ordering) {
+      count += 1;
+    }
+
+    return count;
   }
 }
 
-class _DocumentsFilters extends ConsumerWidget {
-  const _DocumentsFilters({
+class _ActiveDocumentsControls extends ConsumerWidget {
+  const _ActiveDocumentsControls({
     required this.filterState,
-    required this.onTagChanged,
-    required this.onCorrespondentChanged,
-    required this.onDocumentTypeChanged,
-    required this.onReset,
+    required this.ordering,
+    required this.onClearTag,
+    required this.onClearCorrespondent,
+    required this.onClearDocumentType,
+    required this.onResetOrdering,
   });
 
   final DocumentsFilterState filterState;
-  final ValueChanged<int?> onTagChanged;
-  final ValueChanged<int?> onCorrespondentChanged;
-  final ValueChanged<int?> onDocumentTypeChanged;
-  final VoidCallback? onReset;
+  final String ordering;
+  final VoidCallback? onClearTag;
+  final VoidCallback? onClearCorrespondent;
+  final VoidCallback? onClearDocumentType;
+  final VoidCallback? onResetOrdering;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final tags = ref.watch(tagOptionsProvider);
-    final correspondents = ref.watch(correspondentOptionsProvider);
-    final documentTypes = ref.watch(documentTypeOptionsProvider);
+    final tagOptions = ref.watch(tagOptionsProvider);
+    final correspondentOptions = ref.watch(correspondentOptionsProvider);
+    final documentTypeOptions = ref.watch(documentTypeOptionsProvider);
+    final chips = <Widget>[];
 
-    return Wrap(
-      spacing: 12,
-      runSpacing: 12,
-      children: [
-        SizedBox(
-          width: 220,
-          child: _FilterDropdown(
-            label: 'Tag',
-            selectedId: filterState.tagId,
-            options: tags,
-            onChanged: onTagChanged,
+    if (ordering != documentsSortOptions.first.ordering) {
+      final sortLabel = documentsSortOptions
+          .where((option) => option.ordering == ordering)
+          .firstOrNull
+          ?.label;
+      if (sortLabel != null) {
+        chips.add(
+          InputChip(
+            label: Text(sortLabel),
+            onDeleted: onResetOrdering,
+            deleteIcon: const Icon(Icons.close),
           ),
-        ),
-        SizedBox(
-          width: 220,
-          child: _FilterDropdown(
-            label: 'Correspondent',
-            selectedId: filterState.correspondentId,
-            options: correspondents,
-            onChanged: onCorrespondentChanged,
-          ),
-        ),
-        SizedBox(
-          width: 220,
-          child: _FilterDropdown(
-            label: 'Document type',
-            selectedId: filterState.documentTypeId,
-            options: documentTypes,
-            onChanged: onDocumentTypeChanged,
-          ),
-        ),
-        if (onReset != null)
-          TextButton.icon(
-            onPressed: onReset,
-            icon: const Icon(Icons.filter_alt_off_outlined),
-            label: const Text('Reset filters'),
-          ),
-      ],
+        );
+      }
+    }
+
+    _addFilterChip(
+      chips: chips,
+      optionId: filterState.tagId,
+      options: tagOptions,
+      fallbackPrefix: 'Tag',
+      onDeleted: onClearTag,
     );
+    _addFilterChip(
+      chips: chips,
+      optionId: filterState.correspondentId,
+      options: correspondentOptions,
+      fallbackPrefix: 'Correspondent',
+      onDeleted: onClearCorrespondent,
+    );
+    _addFilterChip(
+      chips: chips,
+      optionId: filterState.documentTypeId,
+      options: documentTypeOptions,
+      fallbackPrefix: 'Document type',
+      onDeleted: onClearDocumentType,
+    );
+
+    if (chips.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Wrap(spacing: 8, runSpacing: 8, children: chips);
   }
-}
 
-class _FilterDropdown extends StatelessWidget {
-  const _FilterDropdown({
-    required this.label,
-    required this.selectedId,
-    required this.options,
-    required this.onChanged,
-  });
+  void _addFilterChip({
+    required List<Widget> chips,
+    required int? optionId,
+    required AsyncValue<List<PaperlessFilterOption>> options,
+    required String fallbackPrefix,
+    required VoidCallback? onDeleted,
+  }) {
+    if (optionId == null) {
+      return;
+    }
 
-  final String label;
-  final int? selectedId;
-  final AsyncValue<List<PaperlessFilterOption>> options;
-  final ValueChanged<int?> onChanged;
+    final label = options.maybeWhen(
+      data: (items) =>
+          items.where((item) => item.id == optionId).firstOrNull?.name,
+      orElse: () => null,
+    );
 
-  @override
-  Widget build(BuildContext context) {
-    return options.when(
-      data: (items) {
-        return DropdownButtonFormField<int?>(
-          initialValue: selectedId,
-          isExpanded: true,
-          decoration: InputDecoration(labelText: label),
-          items: [
-            const DropdownMenuItem<int?>(value: null, child: Text('Any')),
-            ...items.map(
-              (item) => DropdownMenuItem<int?>(
-                value: item.id,
-                child: Text(item.name),
-              ),
-            ),
-          ],
-          onChanged: onChanged,
-        );
-      },
-      error: (error, stackTrace) {
-        return TextFormField(
-          enabled: false,
-          decoration: InputDecoration(
-            labelText: label,
-            hintText: 'Could not load',
-          ),
-        );
-      },
-      loading: () {
-        return TextFormField(
-          enabled: false,
-          decoration: InputDecoration(
-            labelText: label,
-            hintText: 'Loading...',
-            suffixIcon: const Padding(
-              padding: EdgeInsets.all(12),
-              child: SizedBox(
-                width: 16,
-                height: 16,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
-            ),
-          ),
-        );
-      },
+    chips.add(
+      InputChip(
+        label: Text(label ?? '$fallbackPrefix #$optionId'),
+        onDeleted: onDeleted,
+        deleteIcon: const Icon(Icons.close),
+      ),
     );
   }
 }

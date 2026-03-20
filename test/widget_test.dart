@@ -170,13 +170,52 @@ void main() {
     expect(find.text('Documents'), findsWidgets);
     expect(find.text('1 documents'), findsOneWidget);
     expect(find.text('Search by title'), findsOneWidget);
+    expect(find.text('Details'), findsOneWidget);
+    expect(find.text('Open'), findsOneWidget);
+    expect(find.byTooltip('Filters'), findsOneWidget);
+    expect(find.text('Sort by'), findsNothing);
+    expect(find.text('Tag'), findsNothing);
+  });
+
+  testWidgets('opens dedicated filters page from documents page', (
+    WidgetTester tester,
+  ) async {
+    await pumpApp(
+      tester,
+      initialValues: const <String, Object>{
+        'auth.server_url': 'https://example.com/paperless/',
+        'auth.username': 'jane.doe',
+        'auth.password': 'secret',
+        'auth.token': 'token-123',
+        'auth.display_name': 'Jane Doe',
+      },
+      overrides: [
+        recentUploadsProvider.overrideWith((ref) async => [fakeRecentDocument]),
+        documentsPageProvider.overrideWith((ref) async => fakeDocumentsPage),
+        tagOptionsProvider.overrideWith((ref) async => fakeFilterOptions),
+        correspondentOptionsProvider.overrideWith(
+          (ref) async => fakeFilterOptions,
+        ),
+        documentTypeOptionsProvider.overrideWith(
+          (ref) async => fakeFilterOptions,
+        ),
+      ],
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Documents'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Filters'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Filters'), findsOneWidget);
     expect(find.text('Sort by'), findsOneWidget);
-    expect(find.text(documentsSortOptions.first.label), findsOneWidget);
     expect(find.text('Tag'), findsOneWidget);
     expect(find.text('Correspondent'), findsOneWidget);
     expect(find.text('Document type'), findsOneWidget);
-    expect(find.text('Details'), findsOneWidget);
-    expect(find.text('Open'), findsOneWidget);
+    expect(find.text('Apply filters'), findsOneWidget);
+    expect(find.text(documentsSortOptions.first.label), findsOneWidget);
   });
 
   testWidgets('shows validation errors for empty login form', (
