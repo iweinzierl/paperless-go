@@ -5,8 +5,10 @@
 // gestures. You can also use WidgetTester to find child widgets in the widget
 // tree, read text, and verify that the values of widget properties are correct.
 
+import 'dart:async';
 import 'dart:convert';
 
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -15,11 +17,13 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:paperless_ngx_app/src/app/app.dart';
+import 'package:paperless_ngx_app/src/features/auth/domain/models/paperless_auth_session.dart';
 import 'package:paperless_ngx_app/src/features/app_shell/domain/models/recently_opened_document.dart';
 import 'package:paperless_ngx_app/src/features/app_shell/domain/models/app_drawer_statistics.dart';
 import 'package:paperless_ngx_app/src/features/app_shell/presentation/providers/help_feedback_providers.dart';
 import 'package:paperless_ngx_app/src/features/app_shell/presentation/providers/app_shell_providers.dart';
 import 'package:paperless_ngx_app/src/core/providers/shared_preferences_provider.dart';
+import 'package:paperless_ngx_app/src/features/documents/data/repositories/documents_repository.dart';
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_document.dart';
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_document_page.dart';
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_filter_option.dart';
@@ -439,6 +443,134 @@ void main() {
     expect(find.text('Title'), findsOneWidget);
     expect(find.text('Created date'), findsOneWidget);
     expect(find.text('Edit tags'), findsOneWidget);
+  });
+
+  testWidgets('creates correspondents and document types inline', (
+    WidgetTester tester,
+  ) async {
+    final repository = _FakeDocumentsRepository();
+
+    await pumpApp(
+      tester,
+      initialValues: const <String, Object>{
+        'auth.server_url': 'https://example.com/paperless/',
+        'auth.username': 'jane.doe',
+        'auth.password': 'secret',
+        'auth.token': 'token-123',
+        'auth.display_name': 'Jane Doe',
+      },
+      overrides: [
+        documentsRepositoryProvider.overrideWithValue(repository),
+        recentUploadsProvider.overrideWith((ref) async => [fakeRecentDocument]),
+        todoDocumentsProvider.overrideWith((ref) async => [fakeTodoDocument]),
+        documentsPageProvider.overrideWith((ref) async => fakeDocumentsPage),
+        documentDetailProvider(
+          fakeRecentDocument.id,
+        ).overrideWith((ref) async => fakeRecentDocument),
+      ],
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Quarterly tax summary.pdf').first);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Edit metadata'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('New correspondent'), findsOneWidget);
+    expect(find.text('New document type'), findsOneWidget);
+    expect(find.text('New tag'), findsOneWidget);
+
+    await tester.tap(find.text('New correspondent'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.byType(TextField),
+      ),
+      'Acme Corp',
+    );
+    await tester.tap(find.widgetWithText(FilledButton, 'Create'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('New document type'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.byType(TextField),
+      ),
+      'Invoice',
+    );
+    await tester.tap(find.widgetWithText(FilledButton, 'Create'));
+    await tester.pumpAndSettle();
+
+    expect(repository.createdCorrespondentNames, ['Acme Corp']);
+    expect(repository.createdDocumentTypeNames, ['Invoice']);
+    expect(repository.createdTagNames, isEmpty);
+    expect(find.text('Acme Corp'), findsOneWidget);
+    expect(find.text('Invoice'), findsOneWidget);
+    expect(find.text('New tag'), findsOneWidget);
+  });
+
+  testWidgets('disables save while a new correspondent is being created', (
+    WidgetTester tester,
+  ) async {
+    final repository = _DelayedFakeDocumentsRepository();
+
+    await pumpApp(
+      tester,
+      initialValues: const <String, Object>{
+        'auth.server_url': 'https://example.com/paperless/',
+        'auth.username': 'jane.doe',
+        'auth.password': 'secret',
+        'auth.token': 'token-123',
+        'auth.display_name': 'Jane Doe',
+      },
+      overrides: [
+        documentsRepositoryProvider.overrideWithValue(repository),
+        recentUploadsProvider.overrideWith((ref) async => [fakeRecentDocument]),
+        todoDocumentsProvider.overrideWith((ref) async => [fakeTodoDocument]),
+        documentsPageProvider.overrideWith((ref) async => fakeDocumentsPage),
+        documentDetailProvider(
+          fakeRecentDocument.id,
+        ).overrideWith((ref) async => fakeRecentDocument),
+      ],
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Quarterly tax summary.pdf').first);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Edit metadata'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('New correspondent'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.byType(TextField),
+      ),
+      'Acme Corp',
+    );
+    await tester.tap(find.widgetWithText(FilledButton, 'Create'));
+    await tester.pump();
+
+    final saveButton = tester.widget<TextButton>(
+      find.widgetWithText(TextButton, 'Save'),
+    );
+    expect(saveButton.onPressed, isNull);
+    expect(find.text('Adding...'), findsOneWidget);
+
+    repository.completeCorrespondentCreation();
+    await tester.pumpAndSettle();
+
+    final enabledSaveButton = tester.widget<TextButton>(
+      find.widgetWithText(TextButton, 'Save'),
+    );
+    expect(enabledSaveButton.onPressed, isNotNull);
+    expect(repository.createdCorrespondentNames, ['Acme Corp']);
   });
 
   testWidgets('navigates to documents page from bottom navigation', (
@@ -898,4 +1030,92 @@ void main() {
 class _FakeHelpLinkLauncher implements HelpLinkLauncher {
   @override
   Future<void> open(Uri uri) async {}
+}
+
+class _FakeDocumentsRepository extends DocumentsRepository {
+  _FakeDocumentsRepository()
+    : super(
+        dio: Dio(),
+        session: const PaperlessAuthSession(
+          serverUrl: 'https://example.com/paperless/',
+          username: 'jane.doe',
+          password: 'secret',
+          authToken: 'token-123',
+        ),
+      );
+
+  final List<PaperlessFilterOption> _tags = <PaperlessFilterOption>[
+    const PaperlessFilterOption(id: 1, name: 'Inbox'),
+  ];
+  final List<PaperlessFilterOption> _correspondents = <PaperlessFilterOption>[
+    const PaperlessFilterOption(id: 1, name: 'Existing sender'),
+  ];
+  final List<PaperlessFilterOption> _documentTypes = <PaperlessFilterOption>[
+    const PaperlessFilterOption(id: 1, name: 'Existing type'),
+  ];
+  final List<String> createdTagNames = <String>[];
+  final List<String> createdCorrespondentNames = <String>[];
+  final List<String> createdDocumentTypeNames = <String>[];
+  int _nextId = 2;
+
+  @override
+  Future<List<PaperlessFilterOption>> fetchTagOptions() async {
+    return List<PaperlessFilterOption>.unmodifiable(_tags);
+  }
+
+  @override
+  Future<List<PaperlessFilterOption>> fetchCorrespondentOptions() async {
+    return List<PaperlessFilterOption>.unmodifiable(_correspondents);
+  }
+
+  @override
+  Future<List<PaperlessFilterOption>> fetchDocumentTypeOptions() async {
+    return List<PaperlessFilterOption>.unmodifiable(_documentTypes);
+  }
+
+  @override
+  Future<PaperlessFilterOption> createTag({required String name}) async {
+    createdTagNames.add(name);
+    final option = PaperlessFilterOption(id: _nextId++, name: name);
+    _tags.add(option);
+    return option;
+  }
+
+  @override
+  Future<PaperlessFilterOption> createCorrespondent({
+    required String name,
+  }) async {
+    createdCorrespondentNames.add(name);
+    final option = PaperlessFilterOption(id: _nextId++, name: name);
+    _correspondents.add(option);
+    return option;
+  }
+
+  @override
+  Future<PaperlessFilterOption> createDocumentType({
+    required String name,
+  }) async {
+    createdDocumentTypeNames.add(name);
+    final option = PaperlessFilterOption(id: _nextId++, name: name);
+    _documentTypes.add(option);
+    return option;
+  }
+}
+
+class _DelayedFakeDocumentsRepository extends _FakeDocumentsRepository {
+  final Completer<void> _createCorrespondentCompleter = Completer<void>();
+
+  @override
+  Future<PaperlessFilterOption> createCorrespondent({
+    required String name,
+  }) async {
+    await _createCorrespondentCompleter.future;
+    return super.createCorrespondent(name: name);
+  }
+
+  void completeCorrespondentCreation() {
+    if (!_createCorrespondentCompleter.isCompleted) {
+      _createCorrespondentCompleter.complete();
+    }
+  }
 }

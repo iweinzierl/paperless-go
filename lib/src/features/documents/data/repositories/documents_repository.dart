@@ -129,6 +129,18 @@ class DocumentsRepository {
     return _fetchFilterOptions(endpoint: 'document_types/');
   }
 
+  Future<PaperlessFilterOption> createTag({required String name}) {
+    return _createFilterOption(endpoint: 'tags/', name: name);
+  }
+
+  Future<PaperlessFilterOption> createCorrespondent({required String name}) {
+    return _createFilterOption(endpoint: 'correspondents/', name: name);
+  }
+
+  Future<PaperlessFilterOption> createDocumentType({required String name}) {
+    return _createFilterOption(endpoint: 'document_types/', name: name);
+  }
+
   Future<String> downloadDocumentToTemporaryFile({
     required PaperlessDocument document,
     bool original = false,
@@ -224,6 +236,23 @@ class DocumentsRepository {
           ),
         )
         .toList();
+  }
+
+  Future<PaperlessFilterOption> _createFilterOption({
+    required String endpoint,
+    required String name,
+  }) async {
+    final token = _requireAuthToken();
+    final apiUri = Uri.parse(_session.serverUrl).resolve('api/$endpoint');
+    final response = await _dio.postUri(
+      apiUri,
+      data: <String, Object?>{'name': name.trim()},
+      options: Options(
+        headers: <String, Object>{'Authorization': 'Token $token'},
+      ),
+    );
+
+    return PaperlessFilterOption.fromJson(_asJsonMap(response.data));
   }
 
   Map<String, dynamic> _asJsonMap(Object? data) {

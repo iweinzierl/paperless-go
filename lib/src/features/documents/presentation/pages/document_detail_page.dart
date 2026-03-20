@@ -299,6 +299,14 @@ class _EditDocumentMetadataPageState
   late Set<int> _selectedTagIds;
   bool _hasSubmitted = false;
   bool _isSaving = false;
+  bool _isCreatingCorrespondent = false;
+  bool _isCreatingDocumentType = false;
+  bool _isCreatingTag = false;
+
+  bool get _isMutatingOptions =>
+      _isCreatingCorrespondent || _isCreatingDocumentType || _isCreatingTag;
+
+  bool get _isBusy => _isSaving || _isMutatingOptions;
 
   @override
   void initState() {
@@ -369,7 +377,7 @@ class _EditDocumentMetadataPageState
         title: const Text('Edit metadata'),
         actions: [
           TextButton(
-            onPressed: _isSaving ? null : _save,
+            onPressed: _isBusy ? null : _save,
             child: Text(_isSaving ? 'Saving...' : 'Save'),
           ),
         ],
@@ -396,17 +404,36 @@ class _EditDocumentMetadataPageState
                   hintText: 'YYYY-MM-DD',
                   errorText: _createdError,
                   suffixIcon: IconButton(
-                    onPressed: _isSaving ? null : _pickCreatedDate,
+                    onPressed: _isBusy ? null : _pickCreatedDate,
                     icon: const Icon(Icons.calendar_today_outlined),
                   ),
                 ),
               ),
               const SizedBox(height: 16),
+              _FieldActionHeader(
+                title: 'Correspondent',
+                actionLabel: _isCreatingCorrespondent
+                    ? 'Adding...'
+                    : 'New correspondent',
+                actionIcon: _isCreatingCorrespondent
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.add_circle_outline),
+                onActionPressed: _isBusy || _isCreatingCorrespondent
+                    ? null
+                    : _createCorrespondent,
+              ),
+              const SizedBox(height: 8),
               correspondents.when(
                 data: (items) => DropdownButtonFormField<int?>(
                   isExpanded: true,
                   value: _selectedCorrespondentId,
-                  decoration: const InputDecoration(labelText: 'Correspondent'),
+                  decoration: const InputDecoration(
+                    hintText: 'Choose a correspondent',
+                  ),
                   items: [
                     const DropdownMenuItem<int?>(
                       value: null,
@@ -422,7 +449,7 @@ class _EditDocumentMetadataPageState
                       ),
                     ),
                   ],
-                  onChanged: _isSaving
+                  onChanged: _isBusy
                       ? null
                       : (value) {
                           setState(() {
@@ -439,11 +466,30 @@ class _EditDocumentMetadataPageState
                 loading: () => const LinearProgressIndicator(),
               ),
               const SizedBox(height: 16),
+              _FieldActionHeader(
+                title: 'Document type',
+                actionLabel: _isCreatingDocumentType
+                    ? 'Adding...'
+                    : 'New document type',
+                actionIcon: _isCreatingDocumentType
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.add_circle_outline),
+                onActionPressed: _isBusy || _isCreatingDocumentType
+                    ? null
+                    : _createDocumentType,
+              ),
+              const SizedBox(height: 8),
               documentTypes.when(
                 data: (items) => DropdownButtonFormField<int?>(
                   isExpanded: true,
                   value: _selectedDocumentTypeId,
-                  decoration: const InputDecoration(labelText: 'Document type'),
+                  decoration: const InputDecoration(
+                    hintText: 'Choose a document type',
+                  ),
                   items: [
                     const DropdownMenuItem<int?>(
                       value: null,
@@ -459,7 +505,7 @@ class _EditDocumentMetadataPageState
                       ),
                     ),
                   ],
-                  onChanged: _isSaving
+                  onChanged: _isBusy
                       ? null
                       : (value) {
                           setState(() {
@@ -476,11 +522,17 @@ class _EditDocumentMetadataPageState
                 loading: () => const LinearProgressIndicator(),
               ),
               const SizedBox(height: 20),
-              Text(
-                'Tags',
-                style: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+              _FieldActionHeader(
+                title: 'Tags',
+                actionLabel: _isCreatingTag ? 'Adding...' : 'New tag',
+                actionIcon: _isCreatingTag
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.add_circle_outline),
+                onActionPressed: _isBusy || _isCreatingTag ? null : _createTag,
               ),
               const SizedBox(height: 8),
               if (selectedTagNames.isEmpty)
@@ -502,12 +554,12 @@ class _EditDocumentMetadataPageState
               const SizedBox(height: 12),
               tags.when(
                 data: (items) => FilledButton.tonalIcon(
-                  onPressed: _isSaving ? null : () => _openTagSelection(items),
+                  onPressed: _isBusy ? null : () => _openTagSelection(items),
                   icon: const Icon(Icons.sell_outlined),
                   label: const Text('Edit tags'),
                 ),
                 error: (error, stackTrace) => OutlinedButton.icon(
-                  onPressed: _isSaving
+                  onPressed: _isBusy
                       ? null
                       : () => ref.invalidate(tagOptionsProvider),
                   icon: const Icon(Icons.refresh),
@@ -604,6 +656,141 @@ class _EditDocumentMetadataPageState
     setState(() {
       _selectedTagIds = result;
     });
+  }
+
+  Future<void> _createCorrespondent() async {
+    final name = await _promptForNewOption(
+      title: 'New correspondent',
+      fieldLabel: 'Correspondent name',
+    );
+    if (name == null) {
+      return;
+    }
+
+    setState(() {
+      _isCreatingCorrespondent = true;
+    });
+
+    try {
+      final created = await ref
+          .read(documentsRepositoryProvider)
+          .createCorrespondent(name: name);
+      final _ = await ref.refresh(correspondentOptionsProvider.future);
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _selectedCorrespondentId = created.id;
+      });
+      _showStatusMessage('Correspondent created.');
+    } catch (error) {
+      _showStatusMessage(error.toString());
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isCreatingCorrespondent = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _createDocumentType() async {
+    final name = await _promptForNewOption(
+      title: 'New document type',
+      fieldLabel: 'Document type name',
+    );
+    if (name == null) {
+      return;
+    }
+
+    setState(() {
+      _isCreatingDocumentType = true;
+    });
+
+    try {
+      final created = await ref
+          .read(documentsRepositoryProvider)
+          .createDocumentType(name: name);
+      final _ = await ref.refresh(documentTypeOptionsProvider.future);
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _selectedDocumentTypeId = created.id;
+      });
+      _showStatusMessage('Document type created.');
+    } catch (error) {
+      _showStatusMessage(error.toString());
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isCreatingDocumentType = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _createTag() async {
+    final name = await _promptForNewOption(
+      title: 'New tag',
+      fieldLabel: 'Tag name',
+    );
+    if (name == null) {
+      return;
+    }
+
+    setState(() {
+      _isCreatingTag = true;
+    });
+
+    try {
+      final created = await ref
+          .read(documentsRepositoryProvider)
+          .createTag(name: name);
+      final _ = await ref.refresh(tagOptionsProvider.future);
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _selectedTagIds = <int>{..._selectedTagIds, created.id};
+      });
+      _showStatusMessage('Tag created.');
+    } catch (error) {
+      _showStatusMessage(error.toString());
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isCreatingTag = false;
+        });
+      }
+    }
+  }
+
+  Future<String?> _promptForNewOption({
+    required String title,
+    required String fieldLabel,
+  }) async {
+    return showDialog<String>(
+      context: context,
+      builder: (dialogContext) =>
+          _CreateOptionDialog(title: title, fieldLabel: fieldLabel),
+    );
+  }
+
+  void _showStatusMessage(String message) {
+    if (!mounted) {
+      return;
+    }
+
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _save() async {
@@ -707,6 +894,106 @@ class _ResolvedOptionRow extends StatelessWidget {
       error: (error, stackTrace) =>
           _DetailRow(label: label, value: fallbackValue ?? optionId.toString()),
       loading: () => _DetailRow(label: label, value: 'Loading...'),
+    );
+  }
+}
+
+class _FieldActionHeader extends StatelessWidget {
+  const _FieldActionHeader({
+    required this.title,
+    required this.actionLabel,
+    required this.actionIcon,
+    required this.onActionPressed,
+  });
+
+  final String title;
+  final String actionLabel;
+  final Widget actionIcon;
+  final VoidCallback? onActionPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            title,
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+        TextButton.icon(
+          onPressed: onActionPressed,
+          icon: actionIcon,
+          label: Text(actionLabel),
+        ),
+      ],
+    );
+  }
+}
+
+class _CreateOptionDialog extends StatefulWidget {
+  const _CreateOptionDialog({required this.title, required this.fieldLabel});
+
+  final String title;
+  final String fieldLabel;
+
+  @override
+  State<_CreateOptionDialog> createState() => _CreateOptionDialogState();
+}
+
+class _CreateOptionDialogState extends State<_CreateOptionDialog> {
+  late final TextEditingController _controller;
+  String? _errorText;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    final value = _controller.text.trim();
+    if (value.isEmpty) {
+      setState(() {
+        _errorText = 'Enter a name.';
+      });
+      return;
+    }
+
+    Navigator.of(context).pop(value);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(widget.title),
+      content: TextField(
+        controller: _controller,
+        autofocus: true,
+        textInputAction: TextInputAction.done,
+        onSubmitted: (_) => _submit(),
+        decoration: InputDecoration(
+          labelText: widget.fieldLabel,
+          errorText: _errorText,
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(onPressed: _submit, child: const Text('Create')),
+      ],
     );
   }
 }
