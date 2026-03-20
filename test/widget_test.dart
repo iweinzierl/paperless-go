@@ -559,6 +559,61 @@ void main() {
     expect(find.text('2026-03-19 08:30 · 2 pages'), findsOneWidget);
   });
 
+  testWidgets('links to settings when no TODO tags are configured', (
+    WidgetTester tester,
+  ) async {
+    await pumpApp(
+      tester,
+      initialValues: const <String, Object>{
+        'auth.server_url': 'https://example.com/paperless/',
+        'auth.username': 'jane.doe',
+        'auth.password': 'secret',
+        'auth.token': 'token-123',
+        'auth.display_name': 'Jane Doe',
+        'app_behavior.todo_tag_names': <String>[],
+        'app_behavior.todo_tag_ids': <String>[],
+      },
+      overrides: [
+        recentUploadsProvider.overrideWith((ref) async => [fakeRecentDocument]),
+        todoDocumentsProvider.overrideWith((ref) async => const []),
+        documentsPageProvider.overrideWith((ref) async => fakeDocumentsPage),
+        tagOptionsProvider.overrideWith((ref) async => fakeFilterOptions),
+        correspondentOptionsProvider.overrideWith(
+          (ref) async => fakeFilterOptions,
+        ),
+        documentTypeOptionsProvider.overrideWith(
+          (ref) async => fakeFilterOptions,
+        ),
+      ],
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Todos'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('No TODO tags configured'), findsOneWidget);
+    expect(find.text('Open TODO tag settings'), findsOneWidget);
+
+    await tester.tap(find.text('Open TODO tag settings'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Settings'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('TODO tags'),
+      200,
+      scrollable: settingsScrollable(),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('TODO tags'), findsOneWidget);
+    expect(find.text('No TODO tags selected yet.'), findsOneWidget);
+    expect(
+      find.text(
+        'Use Select TODO tags below to choose which documents appear in the Todos tab.',
+      ),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('shows validation errors for empty login form', (
     WidgetTester tester,
   ) async {

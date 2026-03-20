@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:paperless_ngx_app/src/core/data/local/sync_status_preferences.dart';
 import 'package:paperless_ngx_app/src/core/providers/sync_status_preferences_provider.dart';
 import 'package:paperless_ngx_app/src/core/presentation/widgets/refresh_status_text.dart';
+import 'package:paperless_ngx_app/src/features/app_shell/presentation/pages/settings_page.dart';
+import 'package:paperless_ngx_app/src/features/app_shell/presentation/providers/app_behavior_providers.dart';
 import 'package:paperless_ngx_app/src/features/app_shell/presentation/providers/app_shell_providers.dart';
 import 'package:paperless_ngx_app/src/features/app_shell/presentation/widgets/app_drawer.dart';
 import 'package:paperless_ngx_app/src/features/auth/presentation/controllers/auth_session_controller.dart';
@@ -277,6 +279,7 @@ class _TodosTabState extends ConsumerState<_TodosTab> {
 
   @override
   Widget build(BuildContext context) {
+    final behaviorSettings = ref.watch(appBehaviorSettingsProvider);
     ref.listen<AsyncValue<List<PaperlessDocument>>>(todoDocumentsProvider, (
       previous,
       next,
@@ -308,6 +311,9 @@ class _TodosTabState extends ConsumerState<_TodosTab> {
 
     final todoDocuments = ref.watch(todoDocumentsProvider);
     final documents = todoDocuments.valueOrNull;
+    final hasConfiguredTodoTags =
+        behaviorSettings.normalizedTodoTagIds.isNotEmpty ||
+        behaviorSettings.normalizedTodoTagNames.isNotEmpty;
 
     if (documents != null && _lastUpdatedAt == null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -346,10 +352,19 @@ class _TodosTabState extends ConsumerState<_TodosTab> {
                     ),
                     const SizedBox(height: 12),
                     if (documents.isEmpty)
-                      const _EmptyStateCard(
-                        title: 'Nothing to review',
-                        description:
-                            'Documents with your configured TODO tags will appear here once they need manual attention.',
+                      _EmptyStateCard(
+                        title: hasConfiguredTodoTags
+                            ? 'Nothing to review'
+                            : 'No TODO tags configured',
+                        description: hasConfiguredTodoTags
+                            ? 'Documents with your configured TODO tags will appear here once they need manual attention.'
+                            : 'Choose one or more TODO tags in Settings so documents can appear in the review queue.',
+                        actionLabel: hasConfiguredTodoTags
+                            ? null
+                            : 'Open TODO tag settings',
+                        onActionPressed: hasConfiguredTodoTags
+                            ? null
+                            : () => _openTodoSettings(context),
                       ),
                     for (final document in documents) ...[
                       PaperlessDocumentCard(
@@ -428,6 +443,12 @@ class _TodosTabState extends ConsumerState<_TodosTab> {
       ),
     );
   }
+
+  void _openTodoSettings(BuildContext context) {
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute<void>(builder: (context) => const SettingsPage()));
+  }
 }
 
 class _SectionHint extends StatelessWidget {
@@ -484,10 +505,17 @@ class _LoadingCard extends StatelessWidget {
 }
 
 class _EmptyStateCard extends StatelessWidget {
-  const _EmptyStateCard({required this.title, required this.description});
+  const _EmptyStateCard({
+    required this.title,
+    required this.description,
+    this.actionLabel,
+    this.onActionPressed,
+  });
 
   final String title;
   final String description;
+  final String? actionLabel;
+  final VoidCallback? onActionPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -511,6 +539,14 @@ class _EmptyStateCard extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(description, style: theme.textTheme.bodyMedium),
+            if (actionLabel != null && onActionPressed != null) ...[
+              const SizedBox(height: 16),
+              FilledButton.tonalIcon(
+                onPressed: onActionPressed,
+                icon: const Icon(Icons.settings_outlined),
+                label: Text(actionLabel!),
+              ),
+            ],
           ],
         ),
       ),
