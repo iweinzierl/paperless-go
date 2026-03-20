@@ -14,6 +14,7 @@ import 'package:paperless_ngx_app/src/core/providers/shared_preferences_provider
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_document.dart';
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_document_page.dart';
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_filter_option.dart';
+import 'package:paperless_ngx_app/src/features/documents/presentation/models/documents_sort_option.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/providers/documents_providers.dart';
 
 void main() {
@@ -123,6 +124,8 @@ void main() {
     expect(find.text('Documents'), findsWidgets);
     expect(find.text('1 documents'), findsOneWidget);
     expect(find.text('Search by title'), findsOneWidget);
+    expect(find.text('Sort by'), findsOneWidget);
+    expect(find.text(documentsSortOptions.first.label), findsOneWidget);
     expect(find.text('Tag'), findsOneWidget);
     expect(find.text('Correspondent'), findsOneWidget);
     expect(find.text('Document type'), findsOneWidget);

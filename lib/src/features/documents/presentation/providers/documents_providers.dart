@@ -4,6 +4,7 @@ import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_document_page.dart';
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_filter_option.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/models/documents_filter_state.dart';
+import 'package:paperless_ngx_app/src/features/documents/presentation/models/documents_sort_option.dart';
 
 final recentUploadsProvider = FutureProvider<List<PaperlessDocument>>((
   ref,
@@ -14,6 +15,9 @@ final recentUploadsProvider = FutureProvider<List<PaperlessDocument>>((
 
 final documentsSearchQueryProvider = StateProvider<String>((ref) => '');
 final documentsCurrentPageProvider = StateProvider<int>((ref) => 1);
+final documentsOrderingProvider = StateProvider<String>(
+  (ref) => documentsSortOptions.first.ordering,
+);
 final documentsFilterStateProvider = StateProvider<DocumentsFilterState>(
   (ref) => const DocumentsFilterState(),
 );
@@ -44,10 +48,12 @@ final documentsPageProvider = FutureProvider<PaperlessDocumentPage>((
   final repository = ref.watch(documentsRepositoryProvider);
   final query = ref.watch(documentsSearchQueryProvider);
   final page = ref.watch(documentsCurrentPageProvider);
+  final ordering = ref.watch(documentsOrderingProvider);
   final filters = ref.watch(documentsFilterStateProvider);
 
   return repository.fetchDocuments(
     page: page,
+    ordering: ordering,
     titleFilter: query,
     tagId: filters.tagId,
     correspondentId: filters.correspondentId,

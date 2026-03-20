@@ -4,6 +4,7 @@ import 'package:paperless_ngx_app/src/features/auth/presentation/controllers/aut
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_document_page.dart';
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_filter_option.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/models/documents_filter_state.dart';
+import 'package:paperless_ngx_app/src/features/documents/presentation/models/documents_sort_option.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/providers/documents_providers.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/widgets/paperless_document_card.dart';
 
@@ -34,6 +35,7 @@ class _DocumentsPageState extends ConsumerState<DocumentsPage> {
     final documentsPage = ref.watch(documentsPageProvider);
     final session = ref.watch(authSessionProvider);
     final query = ref.watch(documentsSearchQueryProvider);
+    final ordering = ref.watch(documentsOrderingProvider);
     final filterState = ref.watch(documentsFilterStateProvider);
 
     _syncController(query);
@@ -71,6 +73,11 @@ class _DocumentsPageState extends ConsumerState<DocumentsPage> {
                           )
                         : null,
                   ),
+                ),
+                const SizedBox(height: 12),
+                _SortDropdown(
+                  selectedOrdering: ordering,
+                  onChanged: _updateOrdering,
                 ),
                 const SizedBox(height: 12),
                 _DocumentsFilters(
@@ -148,6 +155,15 @@ class _DocumentsPageState extends ConsumerState<DocumentsPage> {
     ref.read(documentsCurrentPageProvider.notifier).state = 1;
   }
 
+  void _updateOrdering(String? ordering) {
+    if (ordering == null) {
+      return;
+    }
+
+    ref.read(documentsOrderingProvider.notifier).state = ordering;
+    ref.read(documentsCurrentPageProvider.notifier).state = 1;
+  }
+
   void _syncController(String query) {
     if (_searchController.text == query) {
       return;
@@ -156,6 +172,37 @@ class _DocumentsPageState extends ConsumerState<DocumentsPage> {
     _searchController.value = TextEditingValue(
       text: query,
       selection: TextSelection.collapsed(offset: query.length),
+    );
+  }
+}
+
+class _SortDropdown extends StatelessWidget {
+  const _SortDropdown({
+    required this.selectedOrdering,
+    required this.onChanged,
+  });
+
+  final String selectedOrdering;
+  final ValueChanged<String?> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return DropdownButtonFormField<String>(
+      initialValue: selectedOrdering,
+      isExpanded: true,
+      decoration: const InputDecoration(
+        labelText: 'Sort by',
+        prefixIcon: Icon(Icons.sort),
+      ),
+      items: documentsSortOptions
+          .map(
+            (option) => DropdownMenuItem<String>(
+              value: option.ordering,
+              child: Text(option.label),
+            ),
+          )
+          .toList(),
+      onChanged: onChanged,
     );
   }
 }
@@ -362,7 +409,11 @@ class _DocumentsError extends StatelessWidget {
           children: [
             const Text('Could not load documents.'),
             const SizedBox(height: 12),
-            FilledButton(onPressed: onRetry, child: const Text('Retry')),
+            FilledButton.icon(
+              onPressed: onRetry,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Retry'),
+            ),
           ],
         ),
       ),
