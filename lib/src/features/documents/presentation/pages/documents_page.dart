@@ -1,5 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:paperless_ngx_app/src/core/data/local/sync_status_preferences.dart';
+import 'package:paperless_ngx_app/src/core/providers/sync_status_preferences_provider.dart';
+import 'package:paperless_ngx_app/src/core/presentation/widgets/refresh_status_text.dart';
 import 'package:paperless_ngx_app/src/features/auth/presentation/controllers/auth_session_controller.dart';
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_document_page.dart';
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_filter_option.dart';
@@ -20,11 +25,16 @@ class DocumentsPage extends ConsumerStatefulWidget {
 
 class _DocumentsPageState extends ConsumerState<DocumentsPage> {
   late final TextEditingController _searchController;
+  DateTime? _lastUpdatedAt;
+  DateTime? _lastRefreshFailedAt;
 
   @override
   void initState() {
     super.initState();
     _searchController = TextEditingController();
+    _lastUpdatedAt = ref
+        .read(syncStatusPreferencesProvider)
+        .readLastSuccessfulSync(SyncStatusScope.documents);
   }
 
   @override
@@ -35,7 +45,37 @@ class _DocumentsPageState extends ConsumerState<DocumentsPage> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<AsyncValue<PaperlessDocumentPage>>(documentsPageProvider, (
+      previous,
+      next,
+    ) {
+      if (!mounted) {
+        return;
+      }
+
+      if (next.hasValue) {
+        final timestamp = DateTime.now();
+        setState(() {
+          _lastUpdatedAt = timestamp;
+          _lastRefreshFailedAt = null;
+        });
+        unawaited(
+          ref
+              .read(syncStatusPreferencesProvider)
+              .saveLastSuccessfulSync(SyncStatusScope.documents, timestamp),
+        );
+        return;
+      }
+
+      if (next.hasError) {
+        setState(() {
+          _lastRefreshFailedAt = DateTime.now();
+        });
+      }
+    });
+
     final documentsPage = ref.watch(documentsPageProvider);
+    final page = documentsPage.valueOrNull;
     final session = ref.watch(authSessionProvider);
     final query = ref.watch(documentsSearchQueryProvider);
     final ordering = ref.watch(documentsOrderingProvider);
@@ -47,6 +87,13 @@ class _DocumentsPageState extends ConsumerState<DocumentsPage> {
       appBar: AppBar(
         title: const Text('Documents'),
         actions: [
+          IconButton(
+            tooltip: 'Refresh documents',
+            onPressed: documentsPage.isRefreshing
+                ? null
+                : () => _handleManualRefresh(context),
+            icon: const Icon(Icons.refresh),
+          ),
           IconButton(
             tooltip: 'Log out',
             onPressed: () => ref.read(authSessionProvider.notifier).signOut(),
@@ -124,28 +171,55 @@ class _DocumentsPageState extends ConsumerState<DocumentsPage> {
                   'Connected to ${session.serverUrl}',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
+                const SizedBox(height: 4),
+                RefreshStatusText(
+                  lastUpdatedAt: _lastUpdatedAt,
+                  isRefreshing: documentsPage.isRefreshing,
+                  lastRefreshFailedAt: _lastRefreshFailedAt,
+                ),
               ],
             ),
           ),
           Expanded(
-            child: documentsPage.when(
-              data: (page) => _DocumentsList(
-                page: page,
-                onPreviousPage:
-                    page.count > 0 && ref.read(documentsCurrentPageProvider) > 1
-                    ? () =>
-                          _goToPage(ref.read(documentsCurrentPageProvider) - 1)
-                    : null,
-                onNextPage:
-                    (ref.read(documentsCurrentPageProvider) * 20) < page.count
-                    ? () =>
-                          _goToPage(ref.read(documentsCurrentPageProvider) + 1)
-                    : null,
-              ),
-              error: (error, stackTrace) => _DocumentsError(
-                onRetry: () => ref.invalidate(documentsPageProvider),
-              ),
-              loading: () => const Center(child: CircularProgressIndicator()),
+            child: Stack(
+              children: [
+                RefreshIndicator(
+                  onRefresh: _refreshDocumentsPage,
+                  child: page != null
+                      ? _DocumentsList(
+                          page: page,
+                          onPreviousPage:
+                              page.count > 0 &&
+                                  ref.read(documentsCurrentPageProvider) > 1
+                              ? () => _goToPage(
+                                  ref.read(documentsCurrentPageProvider) - 1,
+                                )
+                              : null,
+                          onNextPage:
+                              (ref.read(documentsCurrentPageProvider) * 20) <
+                                  page.count
+                              ? () => _goToPage(
+                                  ref.read(documentsCurrentPageProvider) + 1,
+                                )
+                              : null,
+                        )
+                      : documentsPage.when(
+                          data: (_) => const SizedBox.shrink(),
+                          error: (error, stackTrace) => _DocumentsError(
+                            onRetry: () =>
+                                ref.invalidate(documentsPageProvider),
+                          ),
+                          loading: () => const _DocumentsLoading(),
+                        ),
+                ),
+                if (documentsPage.isRefreshing && page != null)
+                  const Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    child: LinearProgressIndicator(minHeight: 2),
+                  ),
+              ],
             ),
           ),
         ],
@@ -191,6 +265,35 @@ class _DocumentsPageState extends ConsumerState<DocumentsPage> {
       text: query,
       selection: TextSelection.collapsed(offset: query.length),
     );
+  }
+
+  Future<void> _refreshDocumentsPage() async {
+    final _ = await ref.refresh(documentsPageProvider.future);
+  }
+
+  Future<void> _handleManualRefresh(BuildContext context) async {
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    scaffoldMessenger.hideCurrentSnackBar();
+
+    try {
+      await _refreshDocumentsPage();
+
+      if (!context.mounted) {
+        return;
+      }
+
+      scaffoldMessenger.showSnackBar(
+        const SnackBar(content: Text('Documents updated.')),
+      );
+    } catch (_) {
+      if (!context.mounted) {
+        return;
+      }
+
+      scaffoldMessenger.showSnackBar(
+        const SnackBar(content: Text('Document refresh failed.')),
+      );
+    }
   }
 
   Future<void> _openFilters(BuildContext context) async {
@@ -344,15 +447,22 @@ class _DocumentsList extends ConsumerWidget {
     final openingIds = ref.watch(documentOpenControllerProvider);
 
     if (page.results.isEmpty) {
-      return const Center(
-        child: Padding(
-          padding: EdgeInsets.all(24),
-          child: Text('No documents match the current search.'),
-        ),
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
+        children: const [
+          Padding(
+            padding: EdgeInsets.all(24),
+            child: Center(
+              child: Text('No documents match the current search.'),
+            ),
+          ),
+        ],
       );
     }
 
     return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
       children: [
         Text(
@@ -452,11 +562,11 @@ class _DocumentsError extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(16, 24, 16, 100),
+      children: [
+        Column(
           children: [
             const Text('Could not load documents.'),
             const SizedBox(height: 12),
@@ -467,7 +577,20 @@ class _DocumentsError extends StatelessWidget {
             ),
           ],
         ),
-      ),
+      ],
+    );
+  }
+}
+
+class _DocumentsLoading extends StatelessWidget {
+  const _DocumentsLoading();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(16, 24, 16, 100),
+      children: const [Center(child: CircularProgressIndicator())],
     );
   }
 }

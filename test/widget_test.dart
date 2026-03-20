@@ -5,6 +5,7 @@
 // gestures. You can also use WidgetTester to find child widgets in the widget
 // tree, read text, and verify that the values of widget properties are correct.
 
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -30,6 +31,14 @@ void main() {
   const fakeDocumentsPage = PaperlessDocumentPage(
     count: 1,
     results: [fakeRecentDocument],
+  );
+
+  const fakeTodoDocument = PaperlessDocument(
+    id: 2,
+    title: 'Insurance claim.pdf',
+    created: '2026-03-19',
+    added: '2026-03-19T08:30:00Z',
+    pageCount: 2,
   );
 
   const fakeFilterOptions = [PaperlessFilterOption(id: 1, name: 'Inbox')];
@@ -74,6 +83,7 @@ void main() {
       },
       overrides: [
         recentUploadsProvider.overrideWith((ref) async => [fakeRecentDocument]),
+        todoDocumentsProvider.overrideWith((ref) async => [fakeTodoDocument]),
         documentsPageProvider.overrideWith((ref) async => fakeDocumentsPage),
         tagOptionsProvider.overrideWith((ref) async => fakeFilterOptions),
         correspondentOptionsProvider.overrideWith(
@@ -89,6 +99,9 @@ void main() {
     expect(find.text('Paperless-ngx'), findsOneWidget);
     expect(find.text('Recent uploads'), findsWidgets);
     expect(find.text('Todos'), findsWidgets);
+    expect(find.byTooltip('Refresh home'), findsOneWidget);
+    expect(find.byType(RefreshIndicator), findsOneWidget);
+    expect(find.text('Updated just now'), findsOneWidget);
     expect(find.text('Welcome back, Jane Doe'), findsNothing);
     expect(
       find.text(
@@ -99,6 +112,40 @@ void main() {
     expect(find.text('Added'), findsNothing);
     expect(find.text('Quarterly tax summary.pdf'), findsOneWidget);
     expect(find.text('2026-03-20 12:00 · 4 pages'), findsOneWidget);
+  });
+
+  testWidgets('shows snackbar after manual home refresh', (
+    WidgetTester tester,
+  ) async {
+    await pumpApp(
+      tester,
+      initialValues: const <String, Object>{
+        'auth.server_url': 'https://example.com/paperless/',
+        'auth.username': 'jane.doe',
+        'auth.password': 'secret',
+        'auth.token': 'token-123',
+        'auth.display_name': 'Jane Doe',
+      },
+      overrides: [
+        recentUploadsProvider.overrideWith((ref) async => [fakeRecentDocument]),
+        todoDocumentsProvider.overrideWith((ref) async => [fakeTodoDocument]),
+        documentsPageProvider.overrideWith((ref) async => fakeDocumentsPage),
+        tagOptionsProvider.overrideWith((ref) async => fakeFilterOptions),
+        correspondentOptionsProvider.overrideWith(
+          (ref) async => fakeFilterOptions,
+        ),
+        documentTypeOptionsProvider.overrideWith(
+          (ref) async => fakeFilterOptions,
+        ),
+      ],
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Refresh home'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.text('Home updated.'), findsOneWidget);
   });
 
   testWidgets('opens document details from recent uploads on tap', (
@@ -115,6 +162,7 @@ void main() {
       },
       overrides: [
         recentUploadsProvider.overrideWith((ref) async => [fakeRecentDocument]),
+        todoDocumentsProvider.overrideWith((ref) async => [fakeTodoDocument]),
         documentsPageProvider.overrideWith((ref) async => fakeDocumentsPage),
         documentDetailProvider(
           fakeRecentDocument.id,
@@ -152,6 +200,7 @@ void main() {
       },
       overrides: [
         recentUploadsProvider.overrideWith((ref) async => [fakeRecentDocument]),
+        todoDocumentsProvider.overrideWith((ref) async => [fakeTodoDocument]),
         documentsPageProvider.overrideWith((ref) async => fakeDocumentsPage),
         tagOptionsProvider.overrideWith((ref) async => fakeFilterOptions),
         correspondentOptionsProvider.overrideWith(
@@ -167,6 +216,9 @@ void main() {
     await tester.tap(find.text('Documents'));
     await tester.pumpAndSettle();
 
+    expect(find.byTooltip('Refresh documents'), findsOneWidget);
+    expect(find.byType(RefreshIndicator), findsOneWidget);
+    expect(find.text('Updated just now'), findsOneWidget);
     expect(find.text('Documents'), findsWidgets);
     expect(find.text('1 documents'), findsOneWidget);
     expect(find.text('Search by title'), findsOneWidget);
@@ -175,6 +227,43 @@ void main() {
     expect(find.byTooltip('Filters'), findsOneWidget);
     expect(find.text('Sort by'), findsNothing);
     expect(find.text('Tag'), findsNothing);
+  });
+
+  testWidgets('shows snackbar after manual documents refresh', (
+    WidgetTester tester,
+  ) async {
+    await pumpApp(
+      tester,
+      initialValues: const <String, Object>{
+        'auth.server_url': 'https://example.com/paperless/',
+        'auth.username': 'jane.doe',
+        'auth.password': 'secret',
+        'auth.token': 'token-123',
+        'auth.display_name': 'Jane Doe',
+      },
+      overrides: [
+        recentUploadsProvider.overrideWith((ref) async => [fakeRecentDocument]),
+        todoDocumentsProvider.overrideWith((ref) async => [fakeTodoDocument]),
+        documentsPageProvider.overrideWith((ref) async => fakeDocumentsPage),
+        tagOptionsProvider.overrideWith((ref) async => fakeFilterOptions),
+        correspondentOptionsProvider.overrideWith(
+          (ref) async => fakeFilterOptions,
+        ),
+        documentTypeOptionsProvider.overrideWith(
+          (ref) async => fakeFilterOptions,
+        ),
+      ],
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Documents'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Refresh documents'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.text('Documents updated.'), findsOneWidget);
   });
 
   testWidgets('opens dedicated filters page from documents page', (
@@ -191,6 +280,7 @@ void main() {
       },
       overrides: [
         recentUploadsProvider.overrideWith((ref) async => [fakeRecentDocument]),
+        todoDocumentsProvider.overrideWith((ref) async => [fakeTodoDocument]),
         documentsPageProvider.overrideWith((ref) async => fakeDocumentsPage),
         tagOptionsProvider.overrideWith((ref) async => fakeFilterOptions),
         correspondentOptionsProvider.overrideWith(
@@ -216,6 +306,46 @@ void main() {
     expect(find.text('Document type'), findsOneWidget);
     expect(find.text('Apply filters'), findsOneWidget);
     expect(find.text(documentsSortOptions.first.label), findsOneWidget);
+  });
+
+  testWidgets('shows tagged review documents on the Todos tab', (
+    WidgetTester tester,
+  ) async {
+    await pumpApp(
+      tester,
+      initialValues: const <String, Object>{
+        'auth.server_url': 'https://example.com/paperless/',
+        'auth.username': 'jane.doe',
+        'auth.password': 'secret',
+        'auth.token': 'token-123',
+        'auth.display_name': 'Jane Doe',
+      },
+      overrides: [
+        recentUploadsProvider.overrideWith((ref) async => [fakeRecentDocument]),
+        todoDocumentsProvider.overrideWith((ref) async => [fakeTodoDocument]),
+        documentsPageProvider.overrideWith((ref) async => fakeDocumentsPage),
+        documentDetailProvider(
+          fakeTodoDocument.id,
+        ).overrideWith((ref) async => fakeTodoDocument),
+        tagOptionsProvider.overrideWith((ref) async => fakeFilterOptions),
+        correspondentOptionsProvider.overrideWith(
+          (ref) async => fakeFilterOptions,
+        ),
+        documentTypeOptionsProvider.overrideWith(
+          (ref) async => fakeFilterOptions,
+        ),
+      ],
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Todos'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(RefreshIndicator), findsOneWidget);
+    expect(find.text('Updated just now'), findsOneWidget);
+    expect(find.text('Verification queue'), findsOneWidget);
+    expect(find.text('Insurance claim.pdf'), findsOneWidget);
+    expect(find.text('2026-03-19 08:30 · 2 pages'), findsOneWidget);
   });
 
   testWidgets('shows validation errors for empty login form', (

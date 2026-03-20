@@ -13,6 +13,26 @@ final recentUploadsProvider = FutureProvider<List<PaperlessDocument>>((
   return repository.fetchRecentUploads();
 });
 
+final todoDocumentsProvider = FutureProvider<List<PaperlessDocument>>((
+  ref,
+) async {
+  const reviewTagName = 'Prüfen';
+  final repository = ref.watch(documentsRepositoryProvider);
+  final tags = await ref.watch(tagOptionsProvider.future);
+  final reviewTag = tags.where((tag) => tag.name == reviewTagName).firstOrNull;
+
+  if (reviewTag == null) {
+    return const <PaperlessDocument>[];
+  }
+
+  final page = await repository.fetchDocuments(
+    ordering: '-added',
+    tagId: reviewTag.id,
+  );
+
+  return page.results;
+});
+
 final documentsSearchQueryProvider = StateProvider<String>((ref) => '');
 final documentsCurrentPageProvider = StateProvider<int>((ref) => 1);
 final documentsOrderingProvider = StateProvider<String>(
