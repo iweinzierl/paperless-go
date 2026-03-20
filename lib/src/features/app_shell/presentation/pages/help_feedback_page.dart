@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:paperless_ngx_app/src/features/auth/presentation/controllers/auth_session_controller.dart';
 import 'package:paperless_ngx_app/src/features/app_shell/presentation/providers/help_feedback_providers.dart';
 
 class HelpFeedbackPage extends ConsumerWidget {
@@ -7,6 +9,13 @@ class HelpFeedbackPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final session = ref.watch(authSessionProvider);
+    final packageInfo = ref.watch(packageInfoProvider);
+    final appVersion = packageInfo.maybeWhen(
+      data: (value) => '${value.version}+${value.buildNumber}',
+      orElse: () => 'unknown',
+    );
+
     return Scaffold(
       appBar: AppBar(title: const Text('Help & Feedback')),
       body: ListView(
@@ -32,22 +41,24 @@ class HelpFeedbackPage extends ConsumerWidget {
             onTap: () => _openLink(
               context,
               ref,
-              Uri.parse(
-                'https://github.com/paperless-ngx/paperless-ngx/issues',
+              _buildIssueUri(
+                serverUrl: session.serverUrl,
+                appVersion: appVersion,
               ),
             ),
           ),
           const SizedBox(height: 12),
           _SupportTile(
-            icon: Icons.forum_outlined,
-            title: 'Project discussions',
+            icon: Icons.content_copy_outlined,
+            title: 'Copy support summary',
             description:
-                'Open the community discussions board for questions and product feedback.',
+                'Copy app version and server details to the clipboard before filing feedback.',
             onTap: () => _openLink(
               context,
               ref,
-              Uri.parse(
-                'https://github.com/paperless-ngx/paperless-ngx/discussions',
+              _buildCopyUri(
+                serverUrl: session.serverUrl,
+                appVersion: appVersion,
               ),
             ),
           ),
@@ -57,6 +68,22 @@ class HelpFeedbackPage extends ConsumerWidget {
   }
 
   Future<void> _openLink(BuildContext context, WidgetRef ref, Uri uri) async {
+    if (uri.scheme == 'copy') {
+      await Clipboard.setData(
+        ClipboardData(text: Uri.decodeComponent(uri.query)),
+      );
+      if (!context.mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(content: Text('Support summary copied.')),
+        );
+      return;
+    }
+
     try {
       await ref.read(helpLinkLauncherProvider).open(uri);
     } catch (error) {
@@ -68,6 +95,37 @@ class HelpFeedbackPage extends ConsumerWidget {
         ..hideCurrentSnackBar()
         ..showSnackBar(SnackBar(content: Text(error.toString())));
     }
+  }
+
+  Uri _buildIssueUri({required String serverUrl, required String appVersion}) {
+    final body = StringBuffer()
+      ..writeln('### Context')
+      ..writeln('- Flutter app version: $appVersion')
+      ..writeln('- paperless-ngx server: $serverUrl')
+      ..writeln()
+      ..writeln('### What happened?')
+      ..writeln('- Describe the issue here')
+      ..writeln()
+      ..writeln('### Steps to reproduce')
+      ..writeln('1. ')
+      ..writeln('2. ');
+
+    return Uri.https(
+      'github.com',
+      '/paperless-ngx/paperless-ngx/issues/new',
+      <String, String>{
+        'title': 'Flutter app feedback',
+        'body': body.toString(),
+      },
+    );
+  }
+
+  Uri _buildCopyUri({required String serverUrl, required String appVersion}) {
+    return Uri(
+      scheme: 'copy',
+      query:
+          'Flutter app version: $appVersion\npaperless-ngx server: $serverUrl',
+    );
   }
 }
 

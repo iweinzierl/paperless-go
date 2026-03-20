@@ -333,7 +333,7 @@ class _TodosTabState extends ConsumerState<_TodosTab> {
                     const _SectionHint(
                       title: 'Verification queue',
                       description:
-                          'Documents tagged with Prüfen are listed here for manual review.',
+                          'Documents matching your configured TODO tags are listed here for manual review.',
                     ),
                     const SizedBox(height: 12),
                     Align(
@@ -349,7 +349,7 @@ class _TodosTabState extends ConsumerState<_TodosTab> {
                       const _EmptyStateCard(
                         title: 'Nothing to review',
                         description:
-                            'Documents tagged with Prüfen will appear here once they need manual attention.',
+                            'Documents with your configured TODO tags will appear here once they need manual attention.',
                       ),
                     for (final document in documents) ...[
                       PaperlessDocumentCard(
@@ -380,7 +380,7 @@ class _TodosTabState extends ConsumerState<_TodosTab> {
                         const _EmptyStateCard(
                           title: 'Could not load review queue',
                           description:
-                              'The app could not load documents tagged with Prüfen right now.',
+                              'The app could not load documents matching your configured TODO tags right now.',
                         ),
                       ],
                     );

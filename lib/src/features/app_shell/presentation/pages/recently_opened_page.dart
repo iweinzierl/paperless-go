@@ -12,7 +12,18 @@ class RecentlyOpenedPage extends ConsumerWidget {
     final documents = ref.watch(recentlyOpenedDocumentsProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Recently opened')),
+      appBar: AppBar(
+        title: const Text('Recently opened'),
+        actions: [
+          IconButton(
+            tooltip: 'Clear history',
+            onPressed: documents.isEmpty
+                ? null
+                : () => _confirmClearHistory(context, ref),
+            icon: const Icon(Icons.delete_outline),
+          ),
+        ],
+      ),
       body: documents.isEmpty
           ? const Center(
               child: Padding(
@@ -33,6 +44,39 @@ class RecentlyOpenedPage extends ConsumerWidget {
               },
             ),
     );
+  }
+
+  Future<void> _confirmClearHistory(BuildContext context, WidgetRef ref) async {
+    final shouldClear = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Clear recently opened?'),
+          content: const Text(
+            'This removes the local history of documents you opened from the drawer.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Clear'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (shouldClear != true || !context.mounted) {
+      return;
+    }
+
+    ref.read(recentlyOpenedDocumentsProvider.notifier).clear();
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(const SnackBar(content: Text('Recently opened cleared.')));
   }
 }
 

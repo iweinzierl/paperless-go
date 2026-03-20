@@ -8,8 +8,10 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:paperless_ngx_app/src/app/app.dart';
@@ -67,6 +69,13 @@ void main() {
     Map<String, Object> initialValues = const <String, Object>{},
     List<Override> overrides = const <Override>[],
   }) async {
+    PackageInfo.setMockInitialValues(
+      appName: 'Paperless Ngx App',
+      packageName: 'paperless_ngx_app',
+      version: '1.0.0',
+      buildNumber: '1',
+      buildSignature: '',
+    );
     SharedPreferences.setMockInitialValues(initialValues);
     final sharedPreferences = await SharedPreferences.getInstance();
 
@@ -83,6 +92,8 @@ void main() {
       ),
     );
   }
+
+  Finder settingsScrollable() => find.byType(Scrollable).first;
 
   testWidgets('opens settings page with existing connection values', (
     WidgetTester tester,
@@ -116,10 +127,150 @@ void main() {
     await tester.tap(find.text('Settings'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Connection profile'), findsOneWidget);
-    expect(find.text('https://example.com/paperless/'), findsOneWidget);
+    expect(find.text('Connected as Jane Doe'), findsOneWidget);
+    expect(find.text('Connection'), findsOneWidget);
+    expect(find.text('https://example.com/paperless/'), findsWidgets);
     expect(find.text('jane.doe'), findsOneWidget);
     expect(find.text('Save settings'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('Appearance & Behavior'),
+      200,
+      scrollable: settingsScrollable(),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Appearance & Behavior'), findsOneWidget);
+    expect(find.text('Cache thumbnails and previews'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('Theme mode'),
+      200,
+      scrollable: settingsScrollable(),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Theme mode'), findsOneWidget);
+    expect(find.text('Light'), findsWidgets);
+    await tester.scrollUntilVisible(
+      find.text('Todos'),
+      200,
+      scrollable: settingsScrollable(),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Todos'), findsOneWidget);
+    expect(find.text('TODO tags'), findsOneWidget);
+    expect(find.text('Select TODO tags'), findsOneWidget);
+  });
+
+  testWidgets('uses saved dark theme mode on startup', (
+    WidgetTester tester,
+  ) async {
+    await pumpApp(
+      tester,
+      initialValues: const <String, Object>{'app_behavior.theme_mode': 'dark'},
+    );
+    await tester.pumpAndSettle();
+
+    final materialApp = tester.widget<MaterialApp>(find.byType(MaterialApp));
+
+    expect(materialApp.themeMode, equals(ThemeMode.dark));
+  });
+
+  testWidgets('updates theme mode from settings', (WidgetTester tester) async {
+    await pumpApp(
+      tester,
+      initialValues: const <String, Object>{
+        'auth.server_url': 'https://example.com/paperless/',
+        'auth.username': 'jane.doe',
+        'auth.password': 'secret',
+        'auth.token': 'token-123',
+        'auth.display_name': 'Jane Doe',
+      },
+      overrides: [
+        recentUploadsProvider.overrideWith((ref) async => [fakeRecentDocument]),
+        todoDocumentsProvider.overrideWith((ref) async => [fakeTodoDocument]),
+        documentsPageProvider.overrideWith((ref) async => fakeDocumentsPage),
+        tagOptionsProvider.overrideWith((ref) async => fakeFilterOptions),
+        correspondentOptionsProvider.overrideWith(
+          (ref) async => fakeFilterOptions,
+        ),
+        documentTypeOptionsProvider.overrideWith(
+          (ref) async => fakeFilterOptions,
+        ),
+      ],
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Open navigation menu'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Settings'));
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.text('Theme mode'),
+      200,
+      scrollable: settingsScrollable(),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Light').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Dark').last);
+    await tester.pumpAndSettle();
+
+    final materialApp = tester.widget<MaterialApp>(find.byType(MaterialApp));
+
+    expect(materialApp.themeMode, equals(ThemeMode.dark));
+  });
+
+  testWidgets('shows TODO tag selector in settings', (
+    WidgetTester tester,
+  ) async {
+    await pumpApp(
+      tester,
+      initialValues: const <String, Object>{
+        'auth.server_url': 'https://example.com/paperless/',
+        'auth.username': 'jane.doe',
+        'auth.password': 'secret',
+        'auth.token': 'token-123',
+        'auth.display_name': 'Jane Doe',
+        'app_behavior.todo_tag_ids': <String>['2'],
+      },
+      overrides: [
+        recentUploadsProvider.overrideWith((ref) async => [fakeRecentDocument]),
+        todoDocumentsProvider.overrideWith((ref) async => [fakeTodoDocument]),
+        documentsPageProvider.overrideWith((ref) async => fakeDocumentsPage),
+        tagOptionsProvider.overrideWith(
+          (ref) async => const [
+            PaperlessFilterOption(id: 1, name: 'Inbox'),
+            PaperlessFilterOption(id: 2, name: 'Prüfen'),
+          ],
+        ),
+        correspondentOptionsProvider.overrideWith(
+          (ref) async => fakeFilterOptions,
+        ),
+        documentTypeOptionsProvider.overrideWith(
+          (ref) async => fakeFilterOptions,
+        ),
+      ],
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Open navigation menu'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Settings'));
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.text('Select TODO tags'),
+      200,
+      scrollable: settingsScrollable(),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Select TODO tags'), findsOneWidget);
+    expect(find.text('Prüfen'), findsOneWidget);
+    expect(
+      find.text('Select which server tags should feed the Todos tab.'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('shows login page on app start', (WidgetTester tester) async {
@@ -505,6 +656,53 @@ void main() {
     expect(find.textContaining('Opened 09:45'), findsOneWidget);
   });
 
+  testWidgets('clears recently opened history from the page action', (
+    WidgetTester tester,
+  ) async {
+    await pumpApp(
+      tester,
+      initialValues: <String, Object>{
+        'auth.server_url': 'https://example.com/paperless/',
+        'auth.username': 'jane.doe',
+        'auth.password': 'secret',
+        'auth.token': 'token-123',
+        'auth.display_name': 'Jane Doe',
+        'app_shell.recently_opened_documents': jsonEncode([
+          fakeRecentlyOpenedDocument.toJson(),
+        ]),
+      },
+      overrides: [
+        recentUploadsProvider.overrideWith((ref) async => [fakeRecentDocument]),
+        todoDocumentsProvider.overrideWith((ref) async => [fakeTodoDocument]),
+        documentsPageProvider.overrideWith((ref) async => fakeDocumentsPage),
+        tagOptionsProvider.overrideWith((ref) async => fakeFilterOptions),
+        correspondentOptionsProvider.overrideWith(
+          (ref) async => fakeFilterOptions,
+        ),
+        documentTypeOptionsProvider.overrideWith(
+          (ref) async => fakeFilterOptions,
+        ),
+      ],
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Open navigation menu'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Recently opened'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Clear history'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Clear'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Recently opened cleared.'), findsOneWidget);
+    expect(
+      find.text('Documents you open or inspect will appear here.'),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('opens help and feedback page from the drawer', (
     WidgetTester tester,
   ) async {
@@ -540,7 +738,61 @@ void main() {
 
     expect(find.text('Documentation'), findsOneWidget);
     expect(find.text('Report an issue'), findsOneWidget);
-    expect(find.text('Project discussions'), findsOneWidget);
+    expect(find.text('Copy support summary'), findsOneWidget);
+  });
+
+  testWidgets('copies support summary from the help page', (
+    WidgetTester tester,
+  ) async {
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (call) async {
+        if (call.method == 'Clipboard.setData') {
+          return null;
+        }
+
+        return null;
+      },
+    );
+
+    await pumpApp(
+      tester,
+      initialValues: const <String, Object>{
+        'auth.server_url': 'https://example.com/paperless/',
+        'auth.username': 'jane.doe',
+        'auth.password': 'secret',
+        'auth.token': 'token-123',
+        'auth.display_name': 'Jane Doe',
+      },
+      overrides: [
+        recentUploadsProvider.overrideWith((ref) async => [fakeRecentDocument]),
+        todoDocumentsProvider.overrideWith((ref) async => [fakeTodoDocument]),
+        documentsPageProvider.overrideWith((ref) async => fakeDocumentsPage),
+        tagOptionsProvider.overrideWith((ref) async => fakeFilterOptions),
+        correspondentOptionsProvider.overrideWith(
+          (ref) async => fakeFilterOptions,
+        ),
+        documentTypeOptionsProvider.overrideWith(
+          (ref) async => fakeFilterOptions,
+        ),
+      ],
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Open navigation menu'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Help & Feedback'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.widgetWithText(ListTile, 'Copy support summary'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Support summary copied.'), findsOneWidget);
+
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      null,
+    );
   });
 }
 

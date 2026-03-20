@@ -1,20 +1,24 @@
 import 'package:flutter/material.dart';
 
-ThemeData buildAppTheme() {
-  const seedColor = Color(0xFF1F6F8B);
+const _seedColor = Color(0xFF1F6F8B);
+
+ThemeData buildAppTheme({Brightness brightness = Brightness.light}) {
+  final isDark = brightness == Brightness.dark;
 
   final colorScheme = ColorScheme.fromSeed(
-    seedColor: seedColor,
-    brightness: Brightness.light,
+    seedColor: _seedColor,
+    brightness: brightness,
   );
 
   return ThemeData(
     colorScheme: colorScheme,
-    scaffoldBackgroundColor: const Color(0xFFF4F7F8),
+    scaffoldBackgroundColor: isDark
+        ? const Color(0xFF0F171A)
+        : const Color(0xFFF4F7F8),
     useMaterial3: true,
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: Colors.white,
+      fillColor: isDark ? colorScheme.surfaceContainerHighest : Colors.white,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
         borderSide: BorderSide.none,

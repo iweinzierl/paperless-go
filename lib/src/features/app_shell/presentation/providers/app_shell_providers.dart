@@ -64,4 +64,9 @@ class RecentlyOpenedDocumentsController
     ].take(_maxEntries).toList(growable: false);
     unawaited(_preferences.saveDocuments(state));
   }
+
+  void clear() {
+    state = const <RecentlyOpenedDocument>[];
+    unawaited(_preferences.saveDocuments(state));
+  }
 }
