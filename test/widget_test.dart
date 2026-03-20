@@ -11,6 +11,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:paperless_ngx_app/src/app/app.dart';
+import 'package:paperless_ngx_app/src/features/app_shell/domain/models/app_drawer_statistics.dart';
+import 'package:paperless_ngx_app/src/features/app_shell/presentation/providers/app_shell_providers.dart';
 import 'package:paperless_ngx_app/src/core/providers/shared_preferences_provider.dart';
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_document.dart';
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_document_page.dart';
@@ -42,6 +44,12 @@ void main() {
   );
 
   const fakeFilterOptions = [PaperlessFilterOption(id: 1, name: 'Inbox')];
+  const fakeDrawerStatistics = AppDrawerStatistics(
+    documents: 128,
+    correspondents: 12,
+    tags: 34,
+    documentTypes: 7,
+  );
 
   Future<void> pumpApp(
     WidgetTester tester, {
@@ -55,6 +63,9 @@ void main() {
       ProviderScope(
         overrides: [
           sharedPreferencesProvider.overrideWithValue(sharedPreferences),
+          appDrawerStatisticsProvider.overrideWith(
+            (ref) async => fakeDrawerStatistics,
+          ),
           ...overrides,
         ],
         child: const PaperlessNgxApp(),
@@ -360,5 +371,46 @@ void main() {
     expect(find.text('Enter your paperless-ngx server URL.'), findsOneWidget);
     expect(find.text('Enter your username.'), findsOneWidget);
     expect(find.text('Enter your password.'), findsOneWidget);
+  });
+
+  testWidgets('opens drawer with menu items and statistics', (
+    WidgetTester tester,
+  ) async {
+    await pumpApp(
+      tester,
+      initialValues: const <String, Object>{
+        'auth.server_url': 'https://example.com/paperless/',
+        'auth.username': 'jane.doe',
+        'auth.password': 'secret',
+        'auth.token': 'token-123',
+        'auth.display_name': 'Jane Doe',
+      },
+      overrides: [
+        recentUploadsProvider.overrideWith((ref) async => [fakeRecentDocument]),
+        todoDocumentsProvider.overrideWith((ref) async => [fakeTodoDocument]),
+        documentsPageProvider.overrideWith((ref) async => fakeDocumentsPage),
+        tagOptionsProvider.overrideWith((ref) async => fakeFilterOptions),
+        correspondentOptionsProvider.overrideWith(
+          (ref) async => fakeFilterOptions,
+        ),
+        documentTypeOptionsProvider.overrideWith(
+          (ref) async => fakeFilterOptions,
+        ),
+      ],
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Open navigation menu'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Recently opened'), findsOneWidget);
+    expect(find.text('Settings'), findsOneWidget);
+    expect(find.text('Help & Feedback'), findsOneWidget);
+    expect(find.text('Statistics'), findsOneWidget);
+    expect(find.text('Documents'), findsWidgets);
+    expect(find.text('128'), findsOneWidget);
+    expect(find.text('12'), findsOneWidget);
+    expect(find.text('34'), findsOneWidget);
+    expect(find.text('7'), findsOneWidget);
   });
 }

@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:paperless_ngx_app/src/core/data/local/sync_status_preferences.dart';
 import 'package:paperless_ngx_app/src/core/providers/sync_status_preferences_provider.dart';
 import 'package:paperless_ngx_app/src/core/presentation/widgets/refresh_status_text.dart';
+import 'package:paperless_ngx_app/src/features/app_shell/presentation/providers/app_shell_providers.dart';
+import 'package:paperless_ngx_app/src/features/app_shell/presentation/widgets/app_drawer.dart';
 import 'package:paperless_ngx_app/src/features/auth/presentation/controllers/auth_session_controller.dart';
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_document.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/pages/document_detail_page.dart';
@@ -24,6 +26,7 @@ class HomePage extends ConsumerWidget {
     return DefaultTabController(
       length: 2,
       child: Scaffold(
+        drawer: const AppDrawer(),
         appBar: AppBar(
           title: const Text('Paperless-ngx'),
           actions: [
@@ -177,7 +180,8 @@ class _RecentUploadsTabState extends ConsumerState<_RecentUploadsTab> {
                     for (final document in documents) ...[
                       PaperlessDocumentCard(
                         document: document,
-                        onTap: () => _openDocumentDetails(context, document.id),
+                        onTap: () =>
+                            _openDocumentDetails(context, ref, document),
                       ),
                       const SizedBox(height: 12),
                     ],
@@ -238,10 +242,15 @@ class _RecentUploadsTabState extends ConsumerState<_RecentUploadsTab> {
     );
   }
 
-  void _openDocumentDetails(BuildContext context, int documentId) {
+  void _openDocumentDetails(
+    BuildContext context,
+    WidgetRef ref,
+    PaperlessDocument document,
+  ) {
+    ref.read(recentlyOpenedDocumentsProvider.notifier).record(document);
     Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (context) => DocumentDetailPage(documentId: documentId),
+        builder: (context) => DocumentDetailPage(documentId: document.id),
       ),
     );
   }
@@ -345,7 +354,8 @@ class _TodosTabState extends ConsumerState<_TodosTab> {
                     for (final document in documents) ...[
                       PaperlessDocumentCard(
                         document: document,
-                        onTap: () => _openDocumentDetails(context, document.id),
+                        onTap: () =>
+                            _openDocumentDetails(context, ref, document),
                       ),
                       const SizedBox(height: 12),
                     ],
@@ -406,10 +416,15 @@ class _TodosTabState extends ConsumerState<_TodosTab> {
     );
   }
 
-  void _openDocumentDetails(BuildContext context, int documentId) {
+  void _openDocumentDetails(
+    BuildContext context,
+    WidgetRef ref,
+    PaperlessDocument document,
+  ) {
+    ref.read(recentlyOpenedDocumentsProvider.notifier).record(document);
     Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (context) => DocumentDetailPage(documentId: documentId),
+        builder: (context) => DocumentDetailPage(documentId: document.id),
       ),
     );
   }

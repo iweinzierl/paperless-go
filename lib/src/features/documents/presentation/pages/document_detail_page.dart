@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:paperless_ngx_app/src/features/app_shell/presentation/providers/app_shell_providers.dart';
 import 'package:paperless_ngx_app/src/features/auth/presentation/controllers/auth_session_controller.dart';
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_document.dart';
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_filter_option.dart';
@@ -238,6 +239,7 @@ class _DocumentDetailBody extends ConsumerWidget {
     DocumentOpenVariant variant = DocumentOpenVariant.download,
   }) async {
     try {
+      ref.read(recentlyOpenedDocumentsProvider.notifier).record(document);
       await ref
           .read(documentOpenControllerProvider.notifier)
           .openDocument(document, original: original, variant: variant);

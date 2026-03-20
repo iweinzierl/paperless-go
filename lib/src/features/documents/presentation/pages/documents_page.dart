@@ -5,7 +5,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:paperless_ngx_app/src/core/data/local/sync_status_preferences.dart';
 import 'package:paperless_ngx_app/src/core/providers/sync_status_preferences_provider.dart';
 import 'package:paperless_ngx_app/src/core/presentation/widgets/refresh_status_text.dart';
+import 'package:paperless_ngx_app/src/features/app_shell/presentation/providers/app_shell_providers.dart';
+import 'package:paperless_ngx_app/src/features/app_shell/presentation/widgets/app_drawer.dart';
 import 'package:paperless_ngx_app/src/features/auth/presentation/controllers/auth_session_controller.dart';
+import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_document.dart';
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_document_page.dart';
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_filter_option.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/pages/document_detail_page.dart';
@@ -84,6 +87,7 @@ class _DocumentsPageState extends ConsumerState<DocumentsPage> {
     _syncController(query);
 
     return Scaffold(
+      drawer: const AppDrawer(),
       appBar: AppBar(
         title: const Text('Documents'),
         actions: [
@@ -475,14 +479,14 @@ class _DocumentsList extends ConsumerWidget {
         for (final document in page.results) ...[
           PaperlessDocumentCard(
             document: document,
-            onTap: () => _openDetails(context, document.id),
+            onTap: () => _openDetails(context, ref, document),
             footer: Wrap(
               spacing: 8,
               runSpacing: 8,
               alignment: WrapAlignment.end,
               children: [
                 OutlinedButton.icon(
-                  onPressed: () => _openDetails(context, document.id),
+                  onPressed: () => _openDetails(context, ref, document),
                   icon: const Icon(Icons.info_outline),
                   label: const Text('Details'),
                 ),
@@ -526,10 +530,15 @@ class _DocumentsList extends ConsumerWidget {
     );
   }
 
-  void _openDetails(BuildContext context, int documentId) {
+  void _openDetails(
+    BuildContext context,
+    WidgetRef ref,
+    PaperlessDocument document,
+  ) {
+    ref.read(recentlyOpenedDocumentsProvider.notifier).record(document);
     Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (context) => DocumentDetailPage(documentId: documentId),
+        builder: (context) => DocumentDetailPage(documentId: document.id),
       ),
     );
   }
@@ -537,9 +546,10 @@ class _DocumentsList extends ConsumerWidget {
   Future<void> _openDocument(
     BuildContext context,
     WidgetRef ref,
-    dynamic document,
+    PaperlessDocument document,
   ) async {
     try {
+      ref.read(recentlyOpenedDocumentsProvider.notifier).record(document);
       await ref
           .read(documentOpenControllerProvider.notifier)
           .openDocument(document);
