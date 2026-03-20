@@ -13,6 +13,7 @@ import 'package:paperless_ngx_app/src/app/app.dart';
 import 'package:paperless_ngx_app/src/core/providers/shared_preferences_provider.dart';
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_document.dart';
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_document_page.dart';
+import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_filter_option.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/providers/documents_providers.dart';
 
 void main() {
@@ -28,6 +29,8 @@ void main() {
     count: 1,
     results: [fakeRecentDocument],
   );
+
+  const fakeFilterOptions = [PaperlessFilterOption(id: 1, name: 'Inbox')];
 
   Future<void> pumpApp(
     WidgetTester tester, {
@@ -70,6 +73,13 @@ void main() {
       overrides: [
         recentUploadsProvider.overrideWith((ref) async => [fakeRecentDocument]),
         documentsPageProvider.overrideWith((ref) async => fakeDocumentsPage),
+        tagOptionsProvider.overrideWith((ref) async => fakeFilterOptions),
+        correspondentOptionsProvider.overrideWith(
+          (ref) async => fakeFilterOptions,
+        ),
+        documentTypeOptionsProvider.overrideWith(
+          (ref) async => fakeFilterOptions,
+        ),
       ],
     );
     await tester.pumpAndSettle();
@@ -96,6 +106,13 @@ void main() {
       overrides: [
         recentUploadsProvider.overrideWith((ref) async => [fakeRecentDocument]),
         documentsPageProvider.overrideWith((ref) async => fakeDocumentsPage),
+        tagOptionsProvider.overrideWith((ref) async => fakeFilterOptions),
+        correspondentOptionsProvider.overrideWith(
+          (ref) async => fakeFilterOptions,
+        ),
+        documentTypeOptionsProvider.overrideWith(
+          (ref) async => fakeFilterOptions,
+        ),
       ],
     );
     await tester.pumpAndSettle();
@@ -106,6 +123,9 @@ void main() {
     expect(find.text('Documents'), findsWidgets);
     expect(find.text('1 documents'), findsOneWidget);
     expect(find.text('Search by title'), findsOneWidget);
+    expect(find.text('Tag'), findsOneWidget);
+    expect(find.text('Correspondent'), findsOneWidget);
+    expect(find.text('Document type'), findsOneWidget);
   });
 
   testWidgets('shows validation errors for empty login form', (

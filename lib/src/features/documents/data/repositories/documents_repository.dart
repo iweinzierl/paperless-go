@@ -5,6 +5,7 @@ import 'package:paperless_ngx_app/src/features/auth/domain/models/paperless_auth
 import 'package:paperless_ngx_app/src/features/auth/presentation/controllers/auth_session_controller.dart';
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_document.dart';
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_document_page.dart';
+import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_filter_option.dart';
 
 final documentsRepositoryProvider = Provider<DocumentsRepository>((ref) {
   final session = ref.watch(authSessionProvider);
@@ -32,6 +33,9 @@ class DocumentsRepository {
     int pageSize = 20,
     String ordering = '-created',
     String titleFilter = '',
+    int? tagId,
+    int? correspondentId,
+    int? documentTypeId,
   }) async {
     final token = _session.authToken;
     if (token == null || token.isEmpty) {
@@ -48,6 +52,11 @@ class DocumentsRepository {
           'truncate_content': 'true',
           if (titleFilter.trim().isNotEmpty)
             'title__icontains': titleFilter.trim(),
+          if (tagId != null) 'tags__id__all': tagId.toString(),
+          if (correspondentId != null)
+            'correspondent__id': correspondentId.toString(),
+          if (documentTypeId != null)
+            'document_type__id': documentTypeId.toString(),
         },
       ),
       options: Options(
@@ -57,6 +66,52 @@ class DocumentsRepository {
 
     final payload = _asJsonMap(response.data);
     return PaperlessDocumentPage.fromJson(payload);
+  }
+
+  Future<List<PaperlessFilterOption>> fetchTagOptions() {
+    return _fetchFilterOptions(endpoint: 'tags/');
+  }
+
+  Future<List<PaperlessFilterOption>> fetchCorrespondentOptions() {
+    return _fetchFilterOptions(endpoint: 'correspondents/');
+  }
+
+  Future<List<PaperlessFilterOption>> fetchDocumentTypeOptions() {
+    return _fetchFilterOptions(endpoint: 'document_types/');
+  }
+
+  Future<List<PaperlessFilterOption>> _fetchFilterOptions({
+    required String endpoint,
+  }) async {
+    final token = _session.authToken;
+    if (token == null || token.isEmpty) {
+      throw const DocumentsFailure('No authenticated session found.');
+    }
+
+    final apiUri = Uri.parse(_session.serverUrl).resolve('api/$endpoint');
+    final response = await _dio.getUri(
+      apiUri.replace(
+        queryParameters: const <String, String>{
+          'page': '1',
+          'page_size': '1000',
+        },
+      ),
+      options: Options(
+        headers: <String, Object>{'Authorization': 'Token $token'},
+      ),
+    );
+
+    final payload = _asJsonMap(response.data);
+    final results = payload['results'] as List<dynamic>? ?? const <dynamic>[];
+
+    return results
+        .whereType<Map>()
+        .map(
+          (item) => PaperlessFilterOption.fromJson(
+            item.map((key, value) => MapEntry(key.toString(), value)),
+          ),
+        )
+        .toList();
   }
 
   Map<String, dynamic> _asJsonMap(Object? data) {

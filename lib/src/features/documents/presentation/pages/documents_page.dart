@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:paperless_ngx_app/src/features/auth/presentation/controllers/auth_session_controller.dart';
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_document_page.dart';
+import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_filter_option.dart';
+import 'package:paperless_ngx_app/src/features/documents/presentation/models/documents_filter_state.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/providers/documents_providers.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/widgets/paperless_document_card.dart';
 
@@ -32,6 +34,7 @@ class _DocumentsPageState extends ConsumerState<DocumentsPage> {
     final documentsPage = ref.watch(documentsPageProvider);
     final session = ref.watch(authSessionProvider);
     final query = ref.watch(documentsSearchQueryProvider);
+    final filterState = ref.watch(documentsFilterStateProvider);
 
     _syncController(query);
 
@@ -51,6 +54,7 @@ class _DocumentsPageState extends ConsumerState<DocumentsPage> {
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 TextField(
                   controller: _searchController,
@@ -69,12 +73,31 @@ class _DocumentsPageState extends ConsumerState<DocumentsPage> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    'Connected to ${session.serverUrl}',
-                    style: Theme.of(context).textTheme.bodySmall,
+                _DocumentsFilters(
+                  filterState: filterState,
+                  onTagChanged: (value) => _updateFilters(
+                    filterState.copyWith(tagId: value, clearTag: value == null),
                   ),
+                  onCorrespondentChanged: (value) => _updateFilters(
+                    filterState.copyWith(
+                      correspondentId: value,
+                      clearCorrespondent: value == null,
+                    ),
+                  ),
+                  onDocumentTypeChanged: (value) => _updateFilters(
+                    filterState.copyWith(
+                      documentTypeId: value,
+                      clearDocumentType: value == null,
+                    ),
+                  ),
+                  onReset: filterState.hasActiveFilters
+                      ? () => _updateFilters(const DocumentsFilterState())
+                      : null,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Connected to ${session.serverUrl}',
+                  style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],
             ),
@@ -120,6 +143,11 @@ class _DocumentsPageState extends ConsumerState<DocumentsPage> {
     ref.read(documentsCurrentPageProvider.notifier).state = page;
   }
 
+  void _updateFilters(DocumentsFilterState nextState) {
+    ref.read(documentsFilterStateProvider.notifier).state = nextState;
+    ref.read(documentsCurrentPageProvider.notifier).state = 1;
+  }
+
   void _syncController(String query) {
     if (_searchController.text == query) {
       return;
@@ -128,6 +156,132 @@ class _DocumentsPageState extends ConsumerState<DocumentsPage> {
     _searchController.value = TextEditingValue(
       text: query,
       selection: TextSelection.collapsed(offset: query.length),
+    );
+  }
+}
+
+class _DocumentsFilters extends ConsumerWidget {
+  const _DocumentsFilters({
+    required this.filterState,
+    required this.onTagChanged,
+    required this.onCorrespondentChanged,
+    required this.onDocumentTypeChanged,
+    required this.onReset,
+  });
+
+  final DocumentsFilterState filterState;
+  final ValueChanged<int?> onTagChanged;
+  final ValueChanged<int?> onCorrespondentChanged;
+  final ValueChanged<int?> onDocumentTypeChanged;
+  final VoidCallback? onReset;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final tags = ref.watch(tagOptionsProvider);
+    final correspondents = ref.watch(correspondentOptionsProvider);
+    final documentTypes = ref.watch(documentTypeOptionsProvider);
+
+    return Wrap(
+      spacing: 12,
+      runSpacing: 12,
+      children: [
+        SizedBox(
+          width: 220,
+          child: _FilterDropdown(
+            label: 'Tag',
+            selectedId: filterState.tagId,
+            options: tags,
+            onChanged: onTagChanged,
+          ),
+        ),
+        SizedBox(
+          width: 220,
+          child: _FilterDropdown(
+            label: 'Correspondent',
+            selectedId: filterState.correspondentId,
+            options: correspondents,
+            onChanged: onCorrespondentChanged,
+          ),
+        ),
+        SizedBox(
+          width: 220,
+          child: _FilterDropdown(
+            label: 'Document type',
+            selectedId: filterState.documentTypeId,
+            options: documentTypes,
+            onChanged: onDocumentTypeChanged,
+          ),
+        ),
+        if (onReset != null)
+          TextButton.icon(
+            onPressed: onReset,
+            icon: const Icon(Icons.filter_alt_off_outlined),
+            label: const Text('Reset filters'),
+          ),
+      ],
+    );
+  }
+}
+
+class _FilterDropdown extends StatelessWidget {
+  const _FilterDropdown({
+    required this.label,
+    required this.selectedId,
+    required this.options,
+    required this.onChanged,
+  });
+
+  final String label;
+  final int? selectedId;
+  final AsyncValue<List<PaperlessFilterOption>> options;
+  final ValueChanged<int?> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return options.when(
+      data: (items) {
+        return DropdownButtonFormField<int?>(
+          initialValue: selectedId,
+          isExpanded: true,
+          decoration: InputDecoration(labelText: label),
+          items: [
+            const DropdownMenuItem<int?>(value: null, child: Text('Any')),
+            ...items.map(
+              (item) => DropdownMenuItem<int?>(
+                value: item.id,
+                child: Text(item.name),
+              ),
+            ),
+          ],
+          onChanged: onChanged,
+        );
+      },
+      error: (error, stackTrace) {
+        return TextFormField(
+          enabled: false,
+          decoration: InputDecoration(
+            labelText: label,
+            hintText: 'Could not load',
+          ),
+        );
+      },
+      loading: () {
+        return TextFormField(
+          enabled: false,
+          decoration: InputDecoration(
+            labelText: label,
+            hintText: 'Loading...',
+            suffixIcon: const Padding(
+              padding: EdgeInsets.all(12),
+              child: SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }
