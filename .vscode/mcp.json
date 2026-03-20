@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "flutter-sdk": {
+      "command": "dart",
+      "args": ["run", "mcp_dart_server"],
+      "env": { "FLUTTER_ROOT": "/opt/homebrew/bin/flutter" }
+    },
+    "pub-explorer": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-pub-dev"]
+    }
+  }
+}
