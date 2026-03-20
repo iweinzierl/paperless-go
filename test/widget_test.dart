@@ -5,13 +5,17 @@
 // gestures. You can also use WidgetTester to find child widgets in the widget
 // tree, read text, and verify that the values of widget properties are correct.
 
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:paperless_ngx_app/src/app/app.dart';
+import 'package:paperless_ngx_app/src/features/app_shell/domain/models/recently_opened_document.dart';
 import 'package:paperless_ngx_app/src/features/app_shell/domain/models/app_drawer_statistics.dart';
+import 'package:paperless_ngx_app/src/features/app_shell/presentation/providers/help_feedback_providers.dart';
 import 'package:paperless_ngx_app/src/features/app_shell/presentation/providers/app_shell_providers.dart';
 import 'package:paperless_ngx_app/src/core/providers/shared_preferences_provider.dart';
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_document.dart';
@@ -51,6 +55,13 @@ void main() {
     documentTypes: 7,
   );
 
+  final fakeRecentlyOpenedDocument = RecentlyOpenedDocument(
+    id: 99,
+    title: 'Rent contract.pdf',
+    subtitle: '2026-03-18 10:15 · 6 pages',
+    openedAt: DateTime(2026, 3, 20, 9, 45),
+  );
+
   Future<void> pumpApp(
     WidgetTester tester, {
     Map<String, Object> initialValues = const <String, Object>{},
@@ -72,6 +83,44 @@ void main() {
       ),
     );
   }
+
+  testWidgets('opens settings page with existing connection values', (
+    WidgetTester tester,
+  ) async {
+    await pumpApp(
+      tester,
+      initialValues: const <String, Object>{
+        'auth.server_url': 'https://example.com/paperless/',
+        'auth.username': 'jane.doe',
+        'auth.password': 'secret',
+        'auth.token': 'token-123',
+        'auth.display_name': 'Jane Doe',
+      },
+      overrides: [
+        recentUploadsProvider.overrideWith((ref) async => [fakeRecentDocument]),
+        todoDocumentsProvider.overrideWith((ref) async => [fakeTodoDocument]),
+        documentsPageProvider.overrideWith((ref) async => fakeDocumentsPage),
+        tagOptionsProvider.overrideWith((ref) async => fakeFilterOptions),
+        correspondentOptionsProvider.overrideWith(
+          (ref) async => fakeFilterOptions,
+        ),
+        documentTypeOptionsProvider.overrideWith(
+          (ref) async => fakeFilterOptions,
+        ),
+      ],
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Open navigation menu'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Settings'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Connection profile'), findsOneWidget);
+    expect(find.text('https://example.com/paperless/'), findsOneWidget);
+    expect(find.text('jane.doe'), findsOneWidget);
+    expect(find.text('Save settings'), findsOneWidget);
+  });
 
   testWidgets('shows login page on app start', (WidgetTester tester) async {
     await pumpApp(tester);
@@ -413,4 +462,89 @@ void main() {
     expect(find.text('34'), findsOneWidget);
     expect(find.text('7'), findsOneWidget);
   });
+
+  testWidgets('shows persisted recently opened documents from the drawer', (
+    WidgetTester tester,
+  ) async {
+    await pumpApp(
+      tester,
+      initialValues: <String, Object>{
+        'auth.server_url': 'https://example.com/paperless/',
+        'auth.username': 'jane.doe',
+        'auth.password': 'secret',
+        'auth.token': 'token-123',
+        'auth.display_name': 'Jane Doe',
+        'app_shell.recently_opened_documents': jsonEncode([
+          fakeRecentlyOpenedDocument.toJson(),
+        ]),
+      },
+      overrides: [
+        recentUploadsProvider.overrideWith((ref) async => [fakeRecentDocument]),
+        todoDocumentsProvider.overrideWith((ref) async => [fakeTodoDocument]),
+        documentsPageProvider.overrideWith((ref) async => fakeDocumentsPage),
+        tagOptionsProvider.overrideWith((ref) async => fakeFilterOptions),
+        correspondentOptionsProvider.overrideWith(
+          (ref) async => fakeFilterOptions,
+        ),
+        documentTypeOptionsProvider.overrideWith(
+          (ref) async => fakeFilterOptions,
+        ),
+        documentDetailProvider(
+          fakeRecentlyOpenedDocument.id,
+        ).overrideWith((ref) async => fakeRecentDocument),
+      ],
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Open navigation menu'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Recently opened'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Rent contract.pdf'), findsOneWidget);
+    expect(find.textContaining('Opened 09:45'), findsOneWidget);
+  });
+
+  testWidgets('opens help and feedback page from the drawer', (
+    WidgetTester tester,
+  ) async {
+    await pumpApp(
+      tester,
+      initialValues: const <String, Object>{
+        'auth.server_url': 'https://example.com/paperless/',
+        'auth.username': 'jane.doe',
+        'auth.password': 'secret',
+        'auth.token': 'token-123',
+        'auth.display_name': 'Jane Doe',
+      },
+      overrides: [
+        recentUploadsProvider.overrideWith((ref) async => [fakeRecentDocument]),
+        todoDocumentsProvider.overrideWith((ref) async => [fakeTodoDocument]),
+        documentsPageProvider.overrideWith((ref) async => fakeDocumentsPage),
+        tagOptionsProvider.overrideWith((ref) async => fakeFilterOptions),
+        correspondentOptionsProvider.overrideWith(
+          (ref) async => fakeFilterOptions,
+        ),
+        documentTypeOptionsProvider.overrideWith(
+          (ref) async => fakeFilterOptions,
+        ),
+        helpLinkLauncherProvider.overrideWith((ref) => _FakeHelpLinkLauncher()),
+      ],
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Open navigation menu'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Help & Feedback'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Documentation'), findsOneWidget);
+    expect(find.text('Report an issue'), findsOneWidget);
+    expect(find.text('Project discussions'), findsOneWidget);
+  });
+}
+
+class _FakeHelpLinkLauncher implements HelpLinkLauncher {
+  @override
+  Future<void> open(Uri uri) async {}
 }

@@ -1,4 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:paperless_ngx_app/src/core/providers/shared_preferences_provider.dart';
+import 'package:paperless_ngx_app/src/features/app_shell/data/local/recently_opened_preferences.dart';
 import 'package:paperless_ngx_app/src/features/app_shell/domain/models/app_drawer_statistics.dart';
 import 'package:paperless_ngx_app/src/features/app_shell/domain/models/recently_opened_document.dart';
 import 'package:paperless_ngx_app/src/features/documents/data/repositories/documents_repository.dart';
@@ -6,6 +10,12 @@ import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless
 import 'package:paperless_ngx_app/src/features/documents/presentation/providers/documents_providers.dart';
 
 final appShellTabProvider = StateProvider<int>((ref) => 0);
+
+final recentlyOpenedPreferencesProvider = Provider<RecentlyOpenedPreferences>((
+  ref,
+) {
+  return RecentlyOpenedPreferences(ref.watch(sharedPreferencesProvider));
+});
 
 final documentsCountProvider = FutureProvider<int>((ref) async {
   final repository = ref.watch(documentsRepositoryProvider);
@@ -39,8 +49,11 @@ class RecentlyOpenedDocumentsController
     extends Notifier<List<RecentlyOpenedDocument>> {
   static const _maxEntries = 10;
 
+  RecentlyOpenedPreferences get _preferences =>
+      ref.read(recentlyOpenedPreferencesProvider);
+
   @override
-  List<RecentlyOpenedDocument> build() => const <RecentlyOpenedDocument>[];
+  List<RecentlyOpenedDocument> build() => _preferences.readDocuments();
 
   void record(PaperlessDocument document) {
     final entry = RecentlyOpenedDocument.fromDocument(document);
@@ -49,5 +62,6 @@ class RecentlyOpenedDocumentsController
       entry,
       ...remaining,
     ].take(_maxEntries).toList(growable: false);
+    unawaited(_preferences.saveDocuments(state));
   }
 }

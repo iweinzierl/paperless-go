@@ -8,6 +8,17 @@ class RecentlyOpenedDocument {
     required this.openedAt,
   });
 
+  factory RecentlyOpenedDocument.fromJson(Map<String, dynamic> json) {
+    return RecentlyOpenedDocument(
+      id: json['id'] as int? ?? 0,
+      title: json['title'] as String? ?? 'Untitled document',
+      subtitle: json['subtitle'] as String? ?? '',
+      openedAt:
+          DateTime.tryParse(json['opened_at'] as String? ?? '') ??
+          DateTime.fromMillisecondsSinceEpoch(0),
+    );
+  }
+
   factory RecentlyOpenedDocument.fromDocument(
     PaperlessDocument document, {
     DateTime? openedAt,
@@ -24,4 +35,13 @@ class RecentlyOpenedDocument {
   final String title;
   final String subtitle;
   final DateTime openedAt;
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'id': id,
+      'title': title,
+      'subtitle': subtitle,
+      'opened_at': openedAt.toIso8601String(),
+    };
+  }
 }

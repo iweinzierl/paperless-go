@@ -1,31 +1,73 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:paperless_ngx_app/src/features/app_shell/presentation/providers/help_feedback_providers.dart';
 
-class HelpFeedbackPage extends StatelessWidget {
+class HelpFeedbackPage extends ConsumerWidget {
   const HelpFeedbackPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       appBar: AppBar(title: const Text('Help & Feedback')),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-        children: const [
+        children: [
           _SupportTile(
             icon: Icons.help_outline,
-            title: 'Usage help',
+            title: 'Documentation',
             description:
-                'Guides for search, review, filters, and document opening can be linked from here.',
+                'Open the paperless-ngx documentation for setup, usage, and API guidance.',
+            onTap: () => _openLink(
+              context,
+              ref,
+              Uri.parse('https://docs.paperless-ngx.com/'),
+            ),
           ),
-          SizedBox(height: 12),
+          const SizedBox(height: 12),
           _SupportTile(
             icon: Icons.feedback_outlined,
-            title: 'Feedback',
+            title: 'Report an issue',
             description:
-                'This section can later send diagnostics or route users to the project issue tracker.',
+                'Open the upstream issue tracker to report bugs or request improvements.',
+            onTap: () => _openLink(
+              context,
+              ref,
+              Uri.parse(
+                'https://github.com/paperless-ngx/paperless-ngx/issues',
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          _SupportTile(
+            icon: Icons.forum_outlined,
+            title: 'Project discussions',
+            description:
+                'Open the community discussions board for questions and product feedback.',
+            onTap: () => _openLink(
+              context,
+              ref,
+              Uri.parse(
+                'https://github.com/paperless-ngx/paperless-ngx/discussions',
+              ),
+            ),
           ),
         ],
       ),
     );
+  }
+
+  Future<void> _openLink(BuildContext context, WidgetRef ref, Uri uri) async {
+    try {
+      await ref.read(helpLinkLauncherProvider).open(uri);
+    } catch (error) {
+      if (!context.mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(error.toString())));
+    }
   }
 }
 
@@ -34,19 +76,23 @@ class _SupportTile extends StatelessWidget {
     required this.icon,
     required this.title,
     required this.description,
+    required this.onTap,
   });
 
   final IconData icon;
   final String title;
   final String description;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     return Card(
       child: ListTile(
+        onTap: onTap,
         leading: Icon(icon),
         title: Text(title),
         subtitle: Text(description),
+        trailing: const Icon(Icons.open_in_new),
       ),
     );
   }
