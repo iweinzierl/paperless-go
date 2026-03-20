@@ -48,6 +48,35 @@ class DocumentsRepository {
     return PaperlessDocument.fromJson(_asJsonMap(response.data));
   }
 
+  Future<PaperlessDocument> updateDocumentMetadata({
+    required int documentId,
+    required String title,
+    String? created,
+    int? correspondentId,
+    int? documentTypeId,
+    required List<int> tagIds,
+  }) async {
+    final token = _requireAuthToken();
+    final apiUri = Uri.parse(
+      _session.serverUrl,
+    ).resolve('api/documents/$documentId/');
+    final response = await _dio.patchUri(
+      apiUri,
+      data: <String, Object?>{
+        'title': title.trim(),
+        'created': created?.trim().isEmpty == true ? null : created?.trim(),
+        'correspondent': correspondentId,
+        'document_type': documentTypeId,
+        'tags': tagIds,
+      },
+      options: Options(
+        headers: <String, Object>{'Authorization': 'Token $token'},
+      ),
+    );
+
+    return PaperlessDocument.fromJson(_asJsonMap(response.data));
+  }
+
   Future<PaperlessDocumentPage> fetchDocuments({
     int page = 1,
     int pageSize = 20,

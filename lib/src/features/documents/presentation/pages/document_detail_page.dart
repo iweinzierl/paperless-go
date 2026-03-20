@@ -109,6 +109,11 @@ class _DocumentDetailBody extends ConsumerWidget {
                   spacing: 12,
                   runSpacing: 12,
                   children: [
+                    OutlinedButton.icon(
+                      onPressed: () => _editMetadata(context, ref, document),
+                      icon: const Icon(Icons.edit_outlined),
+                      label: const Text('Edit metadata'),
+                    ),
                     FilledButton.icon(
                       onPressed: isOpening
                           ? null
@@ -253,6 +258,423 @@ class _DocumentDetailBody extends ConsumerWidget {
       ).showSnackBar(SnackBar(content: Text(error.toString())));
     }
   }
+
+  Future<void> _editMetadata(
+    BuildContext context,
+    WidgetRef ref,
+    PaperlessDocument document,
+  ) async {
+    final updatedDocument = await Navigator.of(context).push<PaperlessDocument>(
+      MaterialPageRoute<PaperlessDocument>(
+        builder: (context) => _EditDocumentMetadataPage(document: document),
+      ),
+    );
+
+    if (updatedDocument == null || !context.mounted) {
+      return;
+    }
+
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(const SnackBar(content: Text('Metadata updated.')));
+  }
+}
+
+class _EditDocumentMetadataPage extends ConsumerStatefulWidget {
+  const _EditDocumentMetadataPage({required this.document});
+
+  final PaperlessDocument document;
+
+  @override
+  ConsumerState<_EditDocumentMetadataPage> createState() =>
+      _EditDocumentMetadataPageState();
+}
+
+class _EditDocumentMetadataPageState
+    extends ConsumerState<_EditDocumentMetadataPage> {
+  late final TextEditingController _titleController;
+  late final TextEditingController _createdController;
+  late int? _selectedCorrespondentId;
+  late int? _selectedDocumentTypeId;
+  late Set<int> _selectedTagIds;
+  bool _hasSubmitted = false;
+  bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _titleController = TextEditingController(text: widget.document.title);
+    _createdController = TextEditingController(
+      text: _initialCreatedValue(widget.document.created),
+    );
+    _selectedCorrespondentId = widget.document.correspondentId;
+    _selectedDocumentTypeId = widget.document.documentTypeId;
+    _selectedTagIds = widget.document.tags.toSet();
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _createdController.dispose();
+    super.dispose();
+  }
+
+  String? get _titleError {
+    if (!_hasSubmitted) {
+      return null;
+    }
+
+    if (_titleController.text.trim().isEmpty) {
+      return 'Enter a document title.';
+    }
+
+    return null;
+  }
+
+  String? get _createdError {
+    if (!_hasSubmitted) {
+      return null;
+    }
+
+    final trimmed = _createdController.text.trim();
+    if (trimmed.isEmpty) {
+      return null;
+    }
+
+    if (DateTime.tryParse(trimmed) == null) {
+      return 'Use a valid date like 2026-03-20.';
+    }
+
+    return null;
+  }
+
+  bool get _isValid => _titleError == null && _createdError == null;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final correspondents = ref.watch(correspondentOptionsProvider);
+    final documentTypes = ref.watch(documentTypeOptionsProvider);
+    final tags = ref.watch(tagOptionsProvider);
+    final selectedTagNames = tags.maybeWhen(
+      data: (items) => items
+          .where((item) => _selectedTagIds.contains(item.id))
+          .map((item) => item.name)
+          .toList(growable: false),
+      orElse: () => widget.document.tags.map((tagId) => '#$tagId').toList(),
+    );
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Edit metadata'),
+        actions: [
+          TextButton(
+            onPressed: _isSaving ? null : _save,
+            child: Text(_isSaving ? 'Saving...' : 'Save'),
+          ),
+        ],
+      ),
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+        children: [
+          _DetailSection(
+            title: 'Editable fields',
+            children: [
+              TextField(
+                controller: _titleController,
+                textInputAction: TextInputAction.next,
+                decoration: InputDecoration(
+                  labelText: 'Title',
+                  errorText: _titleError,
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _createdController,
+                decoration: InputDecoration(
+                  labelText: 'Created date',
+                  hintText: 'YYYY-MM-DD',
+                  errorText: _createdError,
+                  suffixIcon: IconButton(
+                    onPressed: _isSaving ? null : _pickCreatedDate,
+                    icon: const Icon(Icons.calendar_today_outlined),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              correspondents.when(
+                data: (items) => DropdownButtonFormField<int?>(
+                  isExpanded: true,
+                  value: _selectedCorrespondentId,
+                  decoration: const InputDecoration(labelText: 'Correspondent'),
+                  items: [
+                    const DropdownMenuItem<int?>(
+                      value: null,
+                      child: Text(
+                        'No correspondent',
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    ...items.map(
+                      (item) => DropdownMenuItem<int?>(
+                        value: item.id,
+                        child: Text(item.name, overflow: TextOverflow.ellipsis),
+                      ),
+                    ),
+                  ],
+                  onChanged: _isSaving
+                      ? null
+                      : (value) {
+                          setState(() {
+                            _selectedCorrespondentId = value;
+                          });
+                        },
+                ),
+                error: (error, stackTrace) => Text(
+                  'Could not load correspondents.',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.error,
+                  ),
+                ),
+                loading: () => const LinearProgressIndicator(),
+              ),
+              const SizedBox(height: 16),
+              documentTypes.when(
+                data: (items) => DropdownButtonFormField<int?>(
+                  isExpanded: true,
+                  value: _selectedDocumentTypeId,
+                  decoration: const InputDecoration(labelText: 'Document type'),
+                  items: [
+                    const DropdownMenuItem<int?>(
+                      value: null,
+                      child: Text(
+                        'No document type',
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    ...items.map(
+                      (item) => DropdownMenuItem<int?>(
+                        value: item.id,
+                        child: Text(item.name, overflow: TextOverflow.ellipsis),
+                      ),
+                    ),
+                  ],
+                  onChanged: _isSaving
+                      ? null
+                      : (value) {
+                          setState(() {
+                            _selectedDocumentTypeId = value;
+                          });
+                        },
+                ),
+                error: (error, stackTrace) => Text(
+                  'Could not load document types.',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.error,
+                  ),
+                ),
+                loading: () => const LinearProgressIndicator(),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'Tags',
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 8),
+              if (selectedTagNames.isEmpty)
+                Text(
+                  'No tags selected.',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                )
+              else
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    for (final tagName in selectedTagNames)
+                      Chip(label: Text(tagName)),
+                  ],
+                ),
+              const SizedBox(height: 12),
+              tags.when(
+                data: (items) => FilledButton.tonalIcon(
+                  onPressed: _isSaving ? null : () => _openTagSelection(items),
+                  icon: const Icon(Icons.sell_outlined),
+                  label: const Text('Edit tags'),
+                ),
+                error: (error, stackTrace) => OutlinedButton.icon(
+                  onPressed: _isSaving
+                      ? null
+                      : () => ref.invalidate(tagOptionsProvider),
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Retry tag loading'),
+                ),
+                loading: () => const LinearProgressIndicator(),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _pickCreatedDate() async {
+    final initialDate =
+        DateTime.tryParse(_createdController.text.trim()) ??
+        DateTime.tryParse(widget.document.created ?? '') ??
+        DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initialDate,
+      firstDate: DateTime(1900),
+      lastDate: DateTime(2100),
+    );
+
+    if (picked == null) {
+      return;
+    }
+
+    setState(() {
+      _createdController.text = _formatDate(picked);
+    });
+  }
+
+  Future<void> _openTagSelection(List<PaperlessFilterOption> tags) async {
+    final result = await showDialog<Set<int>>(
+      context: context,
+      builder: (dialogContext) {
+        final localSelection = <int>{..._selectedTagIds};
+
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Select tags'),
+              content: SizedBox(
+                width: double.maxFinite,
+                child: ListView(
+                  shrinkWrap: true,
+                  children: [
+                    for (final tag in tags)
+                      CheckboxListTile(
+                        value: localSelection.contains(tag.id),
+                        title: Text(tag.name),
+                        controlAffinity: ListTileControlAffinity.leading,
+                        onChanged: (checked) {
+                          setState(() {
+                            if (checked == true) {
+                              localSelection.add(tag.id);
+                            } else {
+                              localSelection.remove(tag.id);
+                            }
+                          });
+                        },
+                      ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(),
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(<int>{}),
+                  child: const Text('Clear'),
+                ),
+                FilledButton(
+                  onPressed: () =>
+                      Navigator.of(dialogContext).pop(localSelection),
+                  child: const Text('Apply'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    if (result == null) {
+      return;
+    }
+
+    setState(() {
+      _selectedTagIds = result;
+    });
+  }
+
+  Future<void> _save() async {
+    setState(() {
+      _hasSubmitted = true;
+    });
+
+    if (!_isValid) {
+      return;
+    }
+
+    setState(() {
+      _isSaving = true;
+    });
+
+    try {
+      final updatedDocument = await ref
+          .read(documentsRepositoryProvider)
+          .updateDocumentMetadata(
+            documentId: widget.document.id,
+            title: _titleController.text.trim(),
+            created: _createdController.text.trim(),
+            correspondentId: _selectedCorrespondentId,
+            documentTypeId: _selectedDocumentTypeId,
+            tagIds: _selectedTagIds.toList(growable: false),
+          );
+
+      ref.invalidate(documentDetailProvider(widget.document.id));
+      ref.invalidate(documentsPageProvider);
+      ref.invalidate(recentUploadsProvider);
+      ref.invalidate(todoDocumentsProvider);
+      ref
+          .read(recentlyOpenedDocumentsProvider.notifier)
+          .refreshDocument(updatedDocument);
+
+      if (!mounted) {
+        return;
+      }
+
+      Navigator.of(context).pop(updatedDocument);
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(error.toString())));
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
+      }
+    }
+  }
+
+  String _initialCreatedValue(String? value) {
+    final parsed = DateTime.tryParse(value ?? '');
+    if (parsed == null) {
+      return value?.trim() ?? '';
+    }
+
+    return _formatDate(parsed);
+  }
+
+  String _formatDate(DateTime value) {
+    final month = value.month.toString().padLeft(2, '0');
+    final day = value.day.toString().padLeft(2, '0');
+    return '${value.year}-$month-$day';
+  }
 }
 
 class _ResolvedOptionRow extends StatelessWidget {
@@ -371,22 +793,48 @@ class _DetailRow extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
+    final theme = Theme.of(context);
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 160,
-            child: Text(
-              label,
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600),
-            ),
-          ),
-          Expanded(child: Text(value!)),
-        ],
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final useStackedLayout = constraints.maxWidth < 420;
+
+          if (useStackedLayout) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(value!, style: theme.textTheme.bodyMedium),
+              ],
+            );
+          }
+
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                width: 160,
+                child: Text(
+                  label,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+              Expanded(child: Text(value!, style: theme.textTheme.bodyMedium)),
+            ],
+          );
+        },
       ),
     );
   }

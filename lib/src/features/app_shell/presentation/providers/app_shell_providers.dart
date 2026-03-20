@@ -65,6 +65,21 @@ class RecentlyOpenedDocumentsController
     unawaited(_preferences.saveDocuments(state));
   }
 
+  void refreshDocument(PaperlessDocument document) {
+    final index = state.indexWhere((item) => item.id == document.id);
+    if (index == -1) {
+      return;
+    }
+
+    final updated = state.toList(growable: true);
+    updated[index] = RecentlyOpenedDocument.fromDocument(
+      document,
+      openedAt: updated[index].openedAt,
+    );
+    state = updated.toList(growable: false);
+    unawaited(_preferences.saveDocuments(state));
+  }
+
   void clear() {
     state = const <RecentlyOpenedDocument>[];
     unawaited(_preferences.saveDocuments(state));

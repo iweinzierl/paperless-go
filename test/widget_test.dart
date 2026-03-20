@@ -395,6 +395,50 @@ void main() {
     expect(find.text('Document details'), findsOneWidget);
     expect(find.text('Open document'), findsOneWidget);
     expect(find.text('Open original'), findsOneWidget);
+    expect(find.text('Edit metadata'), findsOneWidget);
+  });
+
+  testWidgets('opens metadata editor from document details', (
+    WidgetTester tester,
+  ) async {
+    await pumpApp(
+      tester,
+      initialValues: const <String, Object>{
+        'auth.server_url': 'https://example.com/paperless/',
+        'auth.username': 'jane.doe',
+        'auth.password': 'secret',
+        'auth.token': 'token-123',
+        'auth.display_name': 'Jane Doe',
+      },
+      overrides: [
+        recentUploadsProvider.overrideWith((ref) async => [fakeRecentDocument]),
+        todoDocumentsProvider.overrideWith((ref) async => [fakeTodoDocument]),
+        documentsPageProvider.overrideWith((ref) async => fakeDocumentsPage),
+        documentDetailProvider(
+          fakeRecentDocument.id,
+        ).overrideWith((ref) async => fakeRecentDocument),
+        tagOptionsProvider.overrideWith((ref) async => fakeFilterOptions),
+        correspondentOptionsProvider.overrideWith(
+          (ref) async => fakeFilterOptions,
+        ),
+        documentTypeOptionsProvider.overrideWith(
+          (ref) async => fakeFilterOptions,
+        ),
+      ],
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Quarterly tax summary.pdf').first);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Edit metadata'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Edit metadata'), findsWidgets);
+    expect(find.text('Editable fields'), findsOneWidget);
+    expect(find.text('Title'), findsOneWidget);
+    expect(find.text('Created date'), findsOneWidget);
+    expect(find.text('Edit tags'), findsOneWidget);
   });
 
   testWidgets('navigates to documents page from bottom navigation', (
