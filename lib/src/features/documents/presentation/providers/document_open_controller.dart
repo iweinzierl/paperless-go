@@ -16,6 +16,8 @@ abstract class DocumentFileOpener {
   Future<void> open(String filePath);
 }
 
+enum DocumentOpenVariant { download, preview }
+
 class SystemDocumentFileOpener implements DocumentFileOpener {
   const SystemDocumentFileOpener();
 
@@ -39,16 +41,24 @@ class DocumentOpenController extends Notifier<Set<int>> {
   Future<void> openDocument(
     PaperlessDocument document, {
     bool original = false,
+    DocumentOpenVariant variant = DocumentOpenVariant.download,
   }) async {
     state = <int>{...state, document.id};
 
     try {
-      final filePath = await ref
-          .read(documentsRepositoryProvider)
-          .downloadDocumentToTemporaryFile(
+      final repository = ref.read(documentsRepositoryProvider);
+      final filePath = await switch (variant) {
+        DocumentOpenVariant.download =>
+          repository.downloadDocumentToTemporaryFile(
             document: document,
             original: original,
-          );
+          ),
+        DocumentOpenVariant.preview =>
+          repository.downloadPreviewToTemporaryFile(
+            document: document,
+            original: original,
+          ),
+      };
       await ref.read(documentFileOpenerProvider).open(filePath);
     } finally {
       state = state.where((id) => id != document.id).toSet();

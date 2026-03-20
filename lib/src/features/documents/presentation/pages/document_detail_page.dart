@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:paperless_ngx_app/src/features/auth/presentation/controllers/auth_session_controller.dart';
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_document.dart';
+import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_filter_option.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/providers/document_detail_provider.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/providers/document_open_controller.dart';
+import 'package:paperless_ngx_app/src/features/documents/presentation/providers/documents_providers.dart';
+import 'package:paperless_ngx_app/src/features/documents/data/repositories/documents_repository.dart';
 
 class DocumentDetailPage extends ConsumerWidget {
   const DocumentDetailPage({required this.documentId, super.key});
@@ -36,6 +40,11 @@ class _DocumentDetailBody extends ConsumerWidget {
     final openingIds = ref.watch(documentOpenControllerProvider);
     final isOpening = openingIds.contains(document.id);
     final theme = Theme.of(context);
+    final session = ref.watch(authSessionProvider);
+    final repository = ref.watch(documentsRepositoryProvider);
+    final correspondentOptions = ref.watch(correspondentOptionsProvider);
+    final documentTypeOptions = ref.watch(documentTypeOptionsProvider);
+    final tagOptions = ref.watch(tagOptionsProvider);
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
@@ -99,6 +108,18 @@ class _DocumentDetailBody extends ConsumerWidget {
                   spacing: 12,
                   runSpacing: 12,
                   children: [
+                    FilledButton.tonalIcon(
+                      onPressed: isOpening
+                          ? null
+                          : () => _openDocument(
+                              context,
+                              ref,
+                              document,
+                              variant: DocumentOpenVariant.preview,
+                            ),
+                      icon: const Icon(Icons.visibility_outlined),
+                      label: const Text('Open preview'),
+                    ),
                     FilledButton.icon(
                       onPressed: isOpening
                           ? null
@@ -128,6 +149,59 @@ class _DocumentDetailBody extends ConsumerWidget {
         ),
         const SizedBox(height: 20),
         _DetailSection(
+          title: 'Thumbnail preview',
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: AspectRatio(
+                aspectRatio: 16 / 10,
+                child: Image.network(
+                  repository.buildDocumentThumbnailUri(document.id).toString(),
+                  headers: repository.buildAuthenticatedHeaders(),
+                  fit: BoxFit.cover,
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) {
+                      return child;
+                    }
+
+                    return const ColoredBox(
+                      color: Color(0xFFF2F4F7),
+                      child: Center(child: CircularProgressIndicator()),
+                    );
+                  },
+                  errorBuilder: (context, error, stackTrace) {
+                    return ColoredBox(
+                      color: theme.colorScheme.surfaceContainerHighest,
+                      child: Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.image_not_supported_outlined,
+                                color: theme.colorScheme.primary,
+                              ),
+                              const SizedBox(height: 12),
+                              const Text('No thumbnail preview available.'),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Authenticated thumbnail request for ${session.serverUrl}',
+              style: theme.textTheme.bodySmall,
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+        _DetailSection(
           title: 'Metadata',
           children: [
             _DetailRow(label: 'File name', value: document.preferredFileName),
@@ -139,14 +213,19 @@ class _DocumentDetailBody extends ConsumerWidget {
               label: 'Archive serial number',
               value: document.archiveSerialNumber?.toString(),
             ),
-            _DetailRow(
-              label: 'Correspondent ID',
-              value: document.correspondentId?.toString(),
+            _ResolvedOptionRow(
+              label: 'Correspondent',
+              optionId: document.correspondentId,
+              options: correspondentOptions,
+              fallbackValue: document.correspondentId?.toString(),
             ),
-            _DetailRow(
-              label: 'Document type ID',
-              value: document.documentTypeId?.toString(),
+            _ResolvedOptionRow(
+              label: 'Document type',
+              optionId: document.documentTypeId,
+              options: documentTypeOptions,
+              fallbackValue: document.documentTypeId?.toString(),
             ),
+            _ResolvedTagsRow(document: document, options: tagOptions),
           ],
         ),
         if (document.content != null &&
@@ -168,11 +247,12 @@ class _DocumentDetailBody extends ConsumerWidget {
     WidgetRef ref,
     PaperlessDocument document, {
     bool original = false,
+    DocumentOpenVariant variant = DocumentOpenVariant.download,
   }) async {
     try {
       await ref
           .read(documentOpenControllerProvider.notifier)
-          .openDocument(document, original: original);
+          .openDocument(document, original: original, variant: variant);
     } catch (error) {
       if (!context.mounted) {
         return;
@@ -182,6 +262,70 @@ class _DocumentDetailBody extends ConsumerWidget {
         context,
       ).showSnackBar(SnackBar(content: Text(error.toString())));
     }
+  }
+}
+
+class _ResolvedOptionRow extends StatelessWidget {
+  const _ResolvedOptionRow({
+    required this.label,
+    required this.optionId,
+    required this.options,
+    this.fallbackValue,
+  });
+
+  final String label;
+  final int? optionId;
+  final AsyncValue<List<PaperlessFilterOption>> options;
+  final String? fallbackValue;
+
+  @override
+  Widget build(BuildContext context) {
+    if (optionId == null) {
+      return const SizedBox.shrink();
+    }
+
+    return options.when(
+      data: (items) {
+        final match = items.where((item) => item.id == optionId).firstOrNull;
+        return _DetailRow(
+          label: label,
+          value: match?.name ?? fallbackValue ?? optionId.toString(),
+        );
+      },
+      error: (error, stackTrace) =>
+          _DetailRow(label: label, value: fallbackValue ?? optionId.toString()),
+      loading: () => _DetailRow(label: label, value: 'Loading...'),
+    );
+  }
+}
+
+class _ResolvedTagsRow extends StatelessWidget {
+  const _ResolvedTagsRow({required this.document, required this.options});
+
+  final PaperlessDocument document;
+  final AsyncValue<List<PaperlessFilterOption>> options;
+
+  @override
+  Widget build(BuildContext context) {
+    if (document.tags.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return options.when(
+      data: (items) {
+        final names = document.tags
+            .map(
+              (tagId) =>
+                  items.where((item) => item.id == tagId).firstOrNull?.name ??
+                  '#$tagId',
+            )
+            .toList();
+        return _DetailRow(label: 'Tags', value: names.join(', '));
+      },
+      error: (error, stackTrace) =>
+          _DetailRow(label: 'Tags', value: document.tags.join(', ')),
+      loading: () => const _DetailRow(label: 'Tags', value: 'Loading...'),
+    );
   }
 }
 

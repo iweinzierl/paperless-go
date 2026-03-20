@@ -104,16 +104,49 @@ class DocumentsRepository {
     required PaperlessDocument document,
     bool original = false,
   }) async {
+    return _downloadFileToTemporaryDirectory(
+      document: document,
+      endpoint: 'download/',
+      original: original,
+    );
+  }
+
+  Future<String> downloadPreviewToTemporaryFile({
+    required PaperlessDocument document,
+    bool original = false,
+  }) async {
+    return _downloadFileToTemporaryDirectory(
+      document: document,
+      endpoint: 'preview/',
+      original: original,
+    );
+  }
+
+  Uri buildDocumentThumbnailUri(int documentId) {
+    return Uri.parse(
+      _session.serverUrl,
+    ).resolve('api/documents/$documentId/thumb/');
+  }
+
+  Map<String, String> buildAuthenticatedHeaders() {
     final token = _requireAuthToken();
+    return <String, String>{'Authorization': 'Token $token'};
+  }
+
+  Future<String> _downloadFileToTemporaryDirectory({
+    required PaperlessDocument document,
+    required String endpoint,
+    bool original = false,
+  }) async {
     final apiUri = Uri.parse(
       _session.serverUrl,
-    ).resolve('api/documents/${document.id}/download/');
+    ).resolve('api/documents/${document.id}/$endpoint');
     final response = await _dio.getUri<List<int>>(
       apiUri.replace(
         queryParameters: <String, String>{if (original) 'original': 'true'},
       ),
       options: Options(
-        headers: <String, Object>{'Authorization': 'Token $token'},
+        headers: buildAuthenticatedHeaders(),
         responseType: ResponseType.bytes,
       ),
     );
