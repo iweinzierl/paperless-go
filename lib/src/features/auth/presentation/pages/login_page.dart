@@ -1,12 +1,44 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:paperless_ngx_app/src/features/auth/presentation/controllers/login_controller.dart';
 
-class LoginPage extends ConsumerWidget {
+class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<LoginPage> createState() => _LoginPageState();
+}
+
+class _LoginPageState extends ConsumerState<LoginPage> {
+  late final TextEditingController _serverUrlController;
+  late final TextEditingController _usernameController;
+  late final TextEditingController _passwordController;
+
+  @override
+  void initState() {
+    super.initState();
+    _serverUrlController = TextEditingController();
+    _usernameController = TextEditingController();
+    _passwordController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _serverUrlController.dispose();
+    _usernameController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final formState = ref.watch(loginControllerProvider);
+    final controller = ref.read(loginControllerProvider.notifier);
+
+    _syncController(_serverUrlController, formState.serverUrl);
+    _syncController(_usernameController, formState.username);
+    _syncController(_passwordController, formState.password);
 
     return Scaffold(
       body: SafeArea(
@@ -33,6 +65,13 @@ class LoginPage extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     mainAxisSize: MainAxisSize.min,
                     children: [
+                      if (formState.feedbackMessage != null) ...[
+                        _LoginStatusBanner(
+                          message: formState.feedbackMessage!,
+                          isError: formState.loginStatus.hasError,
+                        ),
+                        const SizedBox(height: 20),
+                      ],
                       Container(
                         width: 64,
                         height: 64,
@@ -62,38 +101,76 @@ class LoginPage extends ConsumerWidget {
                         ),
                       ),
                       const SizedBox(height: 24),
-                      const _LoginTextField(
+                      _LoginTextField(
+                        controller: _serverUrlController,
                         label: 'Server URL',
                         hintText: 'https://paperless.example.com',
                         keyboardType: TextInputType.url,
                         prefixIcon: Icons.link,
+                        errorText: formState.serverUrlError,
+                        onChanged: controller.updateServerUrl,
                       ),
                       const SizedBox(height: 16),
-                      const _LoginTextField(
+                      _LoginTextField(
+                        controller: _usernameController,
                         label: 'Username',
                         hintText: 'john.doe',
                         keyboardType: TextInputType.emailAddress,
                         prefixIcon: Icons.person_outline,
+                        errorText: formState.usernameError,
+                        onChanged: controller.updateUsername,
                       ),
                       const SizedBox(height: 16),
-                      const _LoginTextField(
+                      _LoginTextField(
+                        controller: _passwordController,
                         label: 'Password',
                         hintText: 'Enter your password',
                         keyboardType: TextInputType.visiblePassword,
-                        obscureText: true,
+                        obscureText: formState.obscurePassword,
                         prefixIcon: Icons.lock_outline,
+                        errorText: formState.passwordError,
+                        onChanged: controller.updatePassword,
+                        suffixIcon: IconButton(
+                          onPressed: controller.togglePasswordVisibility,
+                          icon: Icon(
+                            formState.obscurePassword
+                                ? Icons.visibility_outlined
+                                : Icons.visibility_off_outlined,
+                          ),
+                        ),
                       ),
                       const SizedBox(height: 24),
                       FilledButton(
-                        onPressed: () {},
+                        onPressed: formState.isSubmitting
+                            ? null
+                            : () => controller.submit(),
                         style: FilledButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 18),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),
                           ),
                         ),
-                        child: const Text('Login'),
+                        child: formState.isSubmitting
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Text('Login'),
                       ),
+                      if (formState.connectedDisplayName != null) ...[
+                        const SizedBox(height: 18),
+                        Text(
+                          'Connected as ${formState.connectedDisplayName}',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.primary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -104,22 +181,41 @@ class LoginPage extends ConsumerWidget {
       ),
     );
   }
+
+  void _syncController(TextEditingController controller, String nextValue) {
+    if (controller.text == nextValue) {
+      return;
+    }
+
+    controller.value = TextEditingValue(
+      text: nextValue,
+      selection: TextSelection.collapsed(offset: nextValue.length),
+    );
+  }
 }
 
 class _LoginTextField extends StatelessWidget {
   const _LoginTextField({
+    required this.controller,
     required this.label,
     required this.hintText,
     required this.keyboardType,
     required this.prefixIcon,
+    required this.onChanged,
     this.obscureText = false,
+    this.errorText,
+    this.suffixIcon,
   });
 
+  final TextEditingController controller;
   final String label;
   final String hintText;
   final TextInputType keyboardType;
   final IconData prefixIcon;
+  final ValueChanged<String> onChanged;
   final bool obscureText;
+  final String? errorText;
+  final Widget? suffixIcon;
 
   @override
   Widget build(BuildContext context) {
@@ -134,14 +230,53 @@ class _LoginTextField extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         TextFormField(
+          controller: controller,
           keyboardType: keyboardType,
           obscureText: obscureText,
+          onChanged: onChanged,
           decoration: InputDecoration(
+            errorText: errorText,
             hintText: hintText,
             prefixIcon: Icon(prefixIcon),
+            suffixIcon: suffixIcon,
           ),
         ),
       ],
+    );
+  }
+}
+
+class _LoginStatusBanner extends StatelessWidget {
+  const _LoginStatusBanner({required this.message, required this.isError});
+
+  final String message;
+  final bool isError;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final backgroundColor = isError
+        ? const Color(0xFFFDECEC)
+        : const Color(0xFFE8F7EF);
+    final foregroundColor = isError
+        ? theme.colorScheme.error
+        : const Color(0xFF166534);
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Text(
+          message,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: foregroundColor,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
     );
   }
 }
