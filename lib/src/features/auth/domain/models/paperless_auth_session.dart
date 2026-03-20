@@ -13,6 +13,8 @@ class PaperlessAuthSession {
   final String? authToken;
   final String? displayName;
 
+  bool get isAuthenticated => authToken != null && authToken!.isNotEmpty;
+
   PaperlessAuthSession copyWith({
     String? serverUrl,
     String? username,

@@ -13,8 +13,11 @@ import 'package:paperless_ngx_app/src/app/app.dart';
 import 'package:paperless_ngx_app/src/core/providers/shared_preferences_provider.dart';
 
 void main() {
-  Future<void> pumpApp(WidgetTester tester) async {
-    SharedPreferences.setMockInitialValues(<String, Object>{});
+  Future<void> pumpApp(
+    WidgetTester tester, {
+    Map<String, Object> initialValues = const <String, Object>{},
+  }) async {
+    SharedPreferences.setMockInitialValues(initialValues);
     final sharedPreferences = await SharedPreferences.getInstance();
 
     await tester.pumpWidget(
@@ -32,6 +35,26 @@ void main() {
 
     expect(find.text('Connect to your server'), findsOneWidget);
     expect(find.text('Login'), findsOneWidget);
+  });
+
+  testWidgets('shows home page when a saved session exists', (
+    WidgetTester tester,
+  ) async {
+    await pumpApp(
+      tester,
+      initialValues: const <String, Object>{
+        'auth.server_url': 'https://example.com/paperless/',
+        'auth.username': 'jane.doe',
+        'auth.password': 'secret',
+        'auth.token': 'token-123',
+        'auth.display_name': 'Jane Doe',
+      },
+    );
+
+    expect(find.text('Paperless-ngx'), findsOneWidget);
+    expect(find.text('Recent uploads'), findsWidgets);
+    expect(find.text('Todos'), findsWidgets);
+    expect(find.text('Welcome back, Jane Doe'), findsOneWidget);
   });
 
   testWidgets('shows validation errors for empty login form', (

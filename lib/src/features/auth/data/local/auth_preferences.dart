@@ -41,4 +41,9 @@ class AuthPreferences {
       await _sharedPreferences.setString(_displayNameKey, displayName);
     }
   }
+
+  Future<void> clearSession() async {
+    await _sharedPreferences.remove(_authTokenKey);
+    await _sharedPreferences.remove(_displayNameKey);
+  }
 }

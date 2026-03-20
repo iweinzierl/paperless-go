@@ -3,6 +3,7 @@ import 'package:paperless_ngx_app/src/core/providers/shared_preferences_provider
 import 'package:paperless_ngx_app/src/features/auth/data/local/auth_preferences.dart';
 import 'package:paperless_ngx_app/src/features/auth/data/repositories/auth_repository.dart';
 import 'package:paperless_ngx_app/src/features/auth/domain/models/paperless_auth_session.dart';
+import 'package:paperless_ngx_app/src/features/auth/presentation/controllers/auth_session_controller.dart';
 
 final authPreferencesProvider = Provider<AuthPreferences>((ref) {
   return AuthPreferences(ref.watch(sharedPreferencesProvider));
@@ -14,6 +15,8 @@ final loginControllerProvider =
 class LoginController extends Notifier<LoginFormState> {
   AuthPreferences get _authPreferences => ref.read(authPreferencesProvider);
   AuthRepository get _authRepository => ref.read(authRepositoryProvider);
+  AuthSessionController get _authSessionController =>
+      ref.read(authSessionProvider.notifier);
 
   @override
   LoginFormState build() {
@@ -64,6 +67,7 @@ class LoginController extends Notifier<LoginFormState> {
 
     result.when(
       data: (session) {
+        _authSessionController.setSession(session);
         state = state.copyWith(
           loginStatus: const AsyncData<void>(null),
           connectedDisplayName: session.displayName,
