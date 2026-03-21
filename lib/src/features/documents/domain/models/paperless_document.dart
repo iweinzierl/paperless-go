@@ -1,3 +1,5 @@
+import 'package:paperless_ngx_app/src/core/presentation/formatters/timestamp_text.dart';
+
 class PaperlessDocument {
   const PaperlessDocument({
     required this.id,
@@ -71,9 +73,9 @@ class PaperlessDocument {
     final parts = <String>[];
 
     if (added != null && added!.isNotEmpty) {
-      parts.add(_shortTimestamp(added!));
+      parts.add('Uploaded ${_shortTimestamp(added!)}');
     } else if (created != null && created!.isNotEmpty) {
-      parts.add(_shortTimestamp(created!));
+      parts.add('Dated ${_shortTimestamp(created!)}');
     }
     if (pageCount != null) {
       parts.add('$pageCount page${pageCount == 1 ? '' : 's'}');
@@ -86,16 +88,6 @@ class PaperlessDocument {
   }
 
   static String _shortTimestamp(String value) {
-    final parsed = DateTime.tryParse(value);
-    if (parsed == null) {
-      return value;
-    }
-
-    final month = parsed.month.toString().padLeft(2, '0');
-    final day = parsed.day.toString().padLeft(2, '0');
-    final hour = parsed.hour.toString().padLeft(2, '0');
-    final minute = parsed.minute.toString().padLeft(2, '0');
-
-    return '${parsed.year}-$month-$day $hour:$minute';
+    return formatDocumentTimestamp(value);
   }
 }

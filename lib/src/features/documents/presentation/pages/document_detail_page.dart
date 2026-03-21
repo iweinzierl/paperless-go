@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:paperless_ngx_app/src/core/presentation/formatters/timestamp_text.dart';
 import 'package:paperless_ngx_app/src/features/app_shell/presentation/providers/app_shell_providers.dart';
 import 'package:paperless_ngx_app/src/features/auth/presentation/controllers/auth_session_controller.dart';
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_document.dart';
@@ -200,8 +201,14 @@ class _DocumentDetailBody extends ConsumerWidget {
           children: [
             _DetailRow(label: 'File name', value: document.preferredFileName),
             _DetailRow(label: 'Mime type', value: document.mimeType),
-            _DetailRow(label: 'Created', value: document.created),
-            _DetailRow(label: 'Added', value: document.added),
+            _DetailRow(
+              label: 'Created',
+              value: _formatMetadataTimestamp(document.created),
+            ),
+            _DetailRow(
+              label: 'Added',
+              value: _formatMetadataTimestamp(document.added),
+            ),
             _DetailRow(label: 'Pages', value: document.pageCount?.toString()),
             _DetailRow(
               label: 'Archive serial number',
@@ -862,6 +869,15 @@ class _EditDocumentMetadataPageState
     final day = value.day.toString().padLeft(2, '0');
     return '${value.year}-$month-$day';
   }
+}
+
+String? _formatMetadataTimestamp(String? value) {
+  final trimmed = value?.trim();
+  if (trimmed == null || trimmed.isEmpty) {
+    return null;
+  }
+
+  return formatDocumentTimestamp(trimmed);
 }
 
 class _ResolvedOptionRow extends StatelessWidget {

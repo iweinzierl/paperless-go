@@ -64,7 +64,7 @@ void main() {
   final fakeRecentlyOpenedDocument = RecentlyOpenedDocument(
     id: 99,
     title: 'Rent contract.pdf',
-    subtitle: '2026-03-18 10:15 · 6 pages',
+    subtitle: 'Uploaded 18 Mar 2026, 10:15 · 6 pages',
     openedAt: DateTime(2026, 3, 20, 9, 45),
   );
 
@@ -326,7 +326,7 @@ void main() {
     );
     expect(find.text('Added'), findsNothing);
     expect(find.text('Quarterly tax summary.pdf'), findsOneWidget);
-    expect(find.text('2026-03-20 12:00 · 4 pages'), findsOneWidget);
+    expect(find.text('Uploaded 20 Mar 2026, 12:00 · 4 pages'), findsOneWidget);
   });
 
   testWidgets('shows snackbar after manual home refresh', (
@@ -732,7 +732,7 @@ void main() {
     expect(find.text('Updated just now'), findsOneWidget);
     expect(find.text('Verification queue'), findsNothing);
     expect(find.text('Insurance claim.pdf'), findsOneWidget);
-    expect(find.text('2026-03-19 08:30 · 2 pages'), findsOneWidget);
+    expect(find.text('Uploaded 19 Mar 2026, 08:30 · 2 pages'), findsOneWidget);
   });
 
   testWidgets('links to settings when no TODO tags are configured', (

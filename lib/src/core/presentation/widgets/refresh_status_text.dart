@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:paperless_ngx_app/src/core/presentation/formatters/timestamp_text.dart';
 
 class RefreshStatusText extends StatelessWidget {
   const RefreshStatusText({
@@ -29,7 +30,7 @@ class RefreshStatusText extends StatelessWidget {
 
   String _buildLabel() {
     if (_hasRefreshFailure()) {
-      return 'Refresh failed at ${_formatTime(lastRefreshFailedAt!)}';
+      return 'Refresh failed ${formatRefreshTimestamp(lastRefreshFailedAt!)}';
     }
 
     if (isRefreshing && lastUpdatedAt == null) {
@@ -42,7 +43,7 @@ class RefreshStatusText extends StatelessWidget {
 
     final now = DateTime.now();
     final difference = now.difference(lastUpdatedAt!);
-    final formattedTime = _formatTime(lastUpdatedAt!);
+    final formattedTime = formatRefreshTimestamp(lastUpdatedAt!, now: now);
 
     if (isRefreshing) {
       return 'Refreshing... last updated $formattedTime';
@@ -69,11 +70,5 @@ class RefreshStatusText extends StatelessWidget {
     }
 
     return lastRefreshFailedAt!.isAfter(lastUpdatedAt!);
-  }
-
-  String _formatTime(DateTime value) {
-    final hours = value.hour.toString().padLeft(2, '0');
-    final minutes = value.minute.toString().padLeft(2, '0');
-    return '$hours:$minutes';
   }
 }
