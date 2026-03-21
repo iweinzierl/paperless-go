@@ -13,6 +13,7 @@ import 'package:paperless_ngx_app/src/features/app_shell/presentation/widgets/ap
 import 'package:paperless_ngx_app/src/features/auth/presentation/controllers/auth_session_controller.dart';
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_document.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/pages/document_detail_page.dart';
+import 'package:paperless_ngx_app/src/features/documents/presentation/pages/scan_document_page.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/providers/documents_providers.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/widgets/paperless_document_card.dart';
 
@@ -62,12 +63,26 @@ class HomePage extends ConsumerWidget {
         ),
         body: const TabBarView(children: [_RecentUploadsTab(), _TodosTab()]),
         floatingActionButton: FloatingActionButton.extended(
-          onPressed: () {},
+          onPressed: () => _openScanDocument(context),
           icon: const Icon(Icons.upload_file_outlined),
-          label: Text(l10n.scanLaterAction),
+          label: Text(l10n.scanDocumentAction),
         ),
       ),
     );
+  }
+
+  Future<void> _openScanDocument(BuildContext context) async {
+    final taskId = await Navigator.of(context).push<String>(
+      MaterialPageRoute<String>(builder: (context) => const ScanDocumentPage()),
+    );
+
+    if (!context.mounted || taskId == null || taskId.isEmpty) {
+      return;
+    }
+
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(context.l10n.scanDocumentQueued)));
   }
 
   Future<void> _refreshHome(BuildContext context, WidgetRef ref) async {

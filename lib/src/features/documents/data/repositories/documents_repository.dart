@@ -77,6 +77,47 @@ class DocumentsRepository {
     return PaperlessDocument.fromJson(_asJsonMap(response.data));
   }
 
+  Future<String> uploadDocument({
+    required String filePath,
+    String? title,
+  }) async {
+    final token = _requireAuthToken();
+    final apiUri = Uri.parse(
+      _session.serverUrl,
+    ).resolve('api/documents/post_document/');
+
+    try {
+      final response = await _dio.postUri(
+        apiUri,
+        data: FormData.fromMap(<String, Object>{
+          'document': await MultipartFile.fromFile(
+            filePath,
+            filename: _fileNameFromPath(filePath),
+          ),
+          if (title != null && title.trim().isNotEmpty) 'title': title.trim(),
+        }),
+        options: Options(
+          headers: <String, Object>{'Authorization': 'Token $token'},
+        ),
+      );
+
+      final data = response.data;
+      if (data is String && data.trim().isNotEmpty) {
+        return data.trim();
+      }
+
+      if (data is num) {
+        return data.toString();
+      }
+
+      throw const DocumentsFailure(
+        'The server returned an unexpected upload response.',
+      );
+    } on DioException catch (error) {
+      throw _uploadFailureFromDio(error);
+    }
+  }
+
   Future<PaperlessDocumentPage> fetchDocuments({
     int page = 1,
     int pageSize = 20,
@@ -314,6 +355,36 @@ class DocumentsRepository {
     };
 
     return '$sanitizedBaseName$extension';
+  }
+
+  DocumentsFailure _uploadFailureFromDio(DioException error) {
+    final response = error.response;
+    final data = response?.data;
+
+    if (data is String && data.trim().isNotEmpty) {
+      return DocumentsFailure(data.trim());
+    }
+
+    if (data is Map) {
+      final values = data.values
+          .expand<String>((value) {
+            if (value is Iterable) {
+              return value.map((item) => item.toString().trim());
+            }
+            return <String>[value.toString().trim()];
+          })
+          .where((message) => message.isNotEmpty)
+          .toList(growable: false);
+      if (values.isNotEmpty) {
+        return DocumentsFailure(values.join('\n'));
+      }
+    }
+
+    return const DocumentsFailure('Could not upload the scanned document.');
+  }
+
+  String _fileNameFromPath(String filePath) {
+    return Uri.file(filePath).pathSegments.last;
   }
 }
 

@@ -536,6 +536,108 @@ abstract class AppLocalizations {
   /// **'Scan later'**
   String get scanLaterAction;
 
+  /// No description provided for @scanDocumentAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan document'**
+  String get scanDocumentAction;
+
+  /// No description provided for @scanDocumentTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan document'**
+  String get scanDocumentTitle;
+
+  /// No description provided for @scanDocumentDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Capture one or more pages, review them, and upload the resulting PDF to paperless-ngx.'**
+  String get scanDocumentDescription;
+
+  /// No description provided for @scanDocumentEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Start a new scan'**
+  String get scanDocumentEmptyTitle;
+
+  /// No description provided for @scanDocumentEmptyDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Use your device camera to capture a paper document. Each scan is combined into one PDF before upload.'**
+  String get scanDocumentEmptyDescription;
+
+  /// No description provided for @scanDocumentTitleFieldLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Document title'**
+  String get scanDocumentTitleFieldLabel;
+
+  /// No description provided for @scanDocumentTitleFieldHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional title override'**
+  String get scanDocumentTitleFieldHint;
+
+  /// No description provided for @scanDocumentPages.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one {1 scanned page} other {{count} scanned pages}}'**
+  String scanDocumentPages(int count);
+
+  /// No description provided for @scanDocumentAddPagesAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan more pages'**
+  String get scanDocumentAddPagesAction;
+
+  /// No description provided for @scanDocumentReplacePagesAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan again'**
+  String get scanDocumentReplacePagesAction;
+
+  /// No description provided for @scanDocumentUploadAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload scan'**
+  String get scanDocumentUploadAction;
+
+  /// No description provided for @scanDocumentUploadingAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Uploading...'**
+  String get scanDocumentUploadingAction;
+
+  /// No description provided for @scanDocumentQueued.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan queued for processing.'**
+  String get scanDocumentQueued;
+
+  /// No description provided for @scanDocumentScanFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The scanner could not start on this device.'**
+  String get scanDocumentScanFailed;
+
+  /// No description provided for @scanDocumentUploadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The scan could not be uploaded.'**
+  String get scanDocumentUploadFailed;
+
+  /// No description provided for @removeScannedPageTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove scanned page'**
+  String get removeScannedPageTooltip;
+
+  /// No description provided for @scannedPageLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Page {page}'**
+  String scannedPageLabel(int page);
+
   /// No description provided for @homeUpdated.
   ///
   /// In en, this message translates to:

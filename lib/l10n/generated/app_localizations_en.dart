@@ -244,6 +244,70 @@ class AppLocalizationsEn extends AppLocalizations {
   String get scanLaterAction => 'Scan later';
 
   @override
+  String get scanDocumentAction => 'Scan document';
+
+  @override
+  String get scanDocumentTitle => 'Scan document';
+
+  @override
+  String get scanDocumentDescription =>
+      'Capture one or more pages, review them, and upload the resulting PDF to paperless-ngx.';
+
+  @override
+  String get scanDocumentEmptyTitle => 'Start a new scan';
+
+  @override
+  String get scanDocumentEmptyDescription =>
+      'Use your device camera to capture a paper document. Each scan is combined into one PDF before upload.';
+
+  @override
+  String get scanDocumentTitleFieldLabel => 'Document title';
+
+  @override
+  String get scanDocumentTitleFieldHint => 'Optional title override';
+
+  @override
+  String scanDocumentPages(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count scanned pages',
+      one: '1 scanned page',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get scanDocumentAddPagesAction => 'Scan more pages';
+
+  @override
+  String get scanDocumentReplacePagesAction => 'Scan again';
+
+  @override
+  String get scanDocumentUploadAction => 'Upload scan';
+
+  @override
+  String get scanDocumentUploadingAction => 'Uploading...';
+
+  @override
+  String get scanDocumentQueued => 'Scan queued for processing.';
+
+  @override
+  String get scanDocumentScanFailed =>
+      'The scanner could not start on this device.';
+
+  @override
+  String get scanDocumentUploadFailed => 'The scan could not be uploaded.';
+
+  @override
+  String get removeScannedPageTooltip => 'Remove scanned page';
+
+  @override
+  String scannedPageLabel(int page) {
+    return 'Page $page';
+  }
+
+  @override
   String get homeUpdated => 'Home updated.';
 
   @override

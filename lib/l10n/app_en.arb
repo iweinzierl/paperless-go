@@ -77,6 +77,37 @@
   "recentUploadsTab": "Recent uploads",
   "todosTab": "Todos",
   "scanLaterAction": "Scan later",
+  "scanDocumentAction": "Scan document",
+  "scanDocumentTitle": "Scan document",
+  "scanDocumentDescription": "Capture one or more pages, review them, and upload the resulting PDF to paperless-ngx.",
+  "scanDocumentEmptyTitle": "Start a new scan",
+  "scanDocumentEmptyDescription": "Use your device camera to capture a paper document. Each scan is combined into one PDF before upload.",
+  "scanDocumentTitleFieldLabel": "Document title",
+  "scanDocumentTitleFieldHint": "Optional title override",
+  "scanDocumentPages": "{count, plural, one {1 scanned page} other {{count} scanned pages}}",
+  "@scanDocumentPages": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "scanDocumentAddPagesAction": "Scan more pages",
+  "scanDocumentReplacePagesAction": "Scan again",
+  "scanDocumentUploadAction": "Upload scan",
+  "scanDocumentUploadingAction": "Uploading...",
+  "scanDocumentQueued": "Scan queued for processing.",
+  "scanDocumentScanFailed": "The scanner could not start on this device.",
+  "scanDocumentUploadFailed": "The scan could not be uploaded.",
+  "removeScannedPageTooltip": "Remove scanned page",
+  "scannedPageLabel": "Page {page}",
+  "@scannedPageLabel": {
+    "placeholders": {
+      "page": {
+        "type": "int"
+      }
+    }
+  },
   "homeUpdated": "Home updated.",
   "homeRefreshFailed": "Home refresh failed.",
   "noUploadsYetTitle": "No uploads yet",

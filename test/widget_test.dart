@@ -345,6 +345,42 @@ void main() {
     expect(find.text('Uploaded 20 Mar 2026, 12:00 · 4 pages'), findsOneWidget);
   });
 
+  testWidgets('opens the scan document flow from the home page', (
+    WidgetTester tester,
+  ) async {
+    await pumpApp(
+      tester,
+      initialValues: const <String, Object>{
+        'auth.server_url': 'https://example.com/paperless/',
+        'auth.username': 'jane.doe',
+        'auth.password': 'secret',
+        'auth.token': 'token-123',
+        'auth.display_name': 'Jane Doe',
+      },
+      overrides: [
+        recentUploadsProvider.overrideWith((ref) async => [fakeRecentDocument]),
+        todoDocumentsProvider.overrideWith((ref) async => [fakeTodoDocument]),
+        documentsPageProvider.overrideWith((ref) async => fakeDocumentsPage),
+        tagOptionsProvider.overrideWith((ref) async => fakeFilterOptions),
+        correspondentOptionsProvider.overrideWith(
+          (ref) async => fakeFilterOptions,
+        ),
+        documentTypeOptionsProvider.overrideWith(
+          (ref) async => fakeFilterOptions,
+        ),
+      ],
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(
+      find.widgetWithText(FloatingActionButton, 'Scan document'),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Start a new scan'), findsOneWidget);
+    expect(find.text('Upload scan'), findsNothing);
+  });
+
   testWidgets('shows snackbar after manual home refresh', (
     WidgetTester tester,
   ) async {

@@ -246,6 +246,70 @@ class AppLocalizationsIt extends AppLocalizations {
   String get scanLaterAction => 'Scansiona più tardi';
 
   @override
+  String get scanDocumentAction => 'Scansiona documento';
+
+  @override
+  String get scanDocumentTitle => 'Scansiona documento';
+
+  @override
+  String get scanDocumentDescription =>
+      'Acquisisci una o più pagine, controllale e carica il PDF risultante su paperless-ngx.';
+
+  @override
+  String get scanDocumentEmptyTitle => 'Avvia una nuova scansione';
+
+  @override
+  String get scanDocumentEmptyDescription =>
+      'Usa la fotocamera del dispositivo per acquisire un documento cartaceo. Tutte le pagine scansionate vengono unite in un unico PDF prima del caricamento.';
+
+  @override
+  String get scanDocumentTitleFieldLabel => 'Titolo del documento';
+
+  @override
+  String get scanDocumentTitleFieldHint => 'Titolo facoltativo da usare';
+
+  @override
+  String scanDocumentPages(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count pagine scansionate',
+      one: '1 pagina scansionata',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get scanDocumentAddPagesAction => 'Scansiona altre pagine';
+
+  @override
+  String get scanDocumentReplacePagesAction => 'Scansiona di nuovo';
+
+  @override
+  String get scanDocumentUploadAction => 'Carica scansione';
+
+  @override
+  String get scanDocumentUploadingAction => 'Caricamento...';
+
+  @override
+  String get scanDocumentQueued => 'Scansione accodata per l\'elaborazione.';
+
+  @override
+  String get scanDocumentScanFailed =>
+      'Impossibile avviare lo scanner su questo dispositivo.';
+
+  @override
+  String get scanDocumentUploadFailed => 'Impossibile caricare la scansione.';
+
+  @override
+  String get removeScannedPageTooltip => 'Rimuovi pagina scansionata';
+
+  @override
+  String scannedPageLabel(int page) {
+    return 'Pagina $page';
+  }
+
+  @override
   String get homeUpdated => 'Home aggiornata.';
 
   @override

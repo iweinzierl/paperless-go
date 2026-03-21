@@ -248,6 +248,71 @@ class AppLocalizationsFr extends AppLocalizations {
   String get scanLaterAction => 'Numériser plus tard';
 
   @override
+  String get scanDocumentAction => 'Numériser un document';
+
+  @override
+  String get scanDocumentTitle => 'Numériser un document';
+
+  @override
+  String get scanDocumentDescription =>
+      'Capturez une ou plusieurs pages, vérifiez-les, puis importez le PDF obtenu dans paperless-ngx.';
+
+  @override
+  String get scanDocumentEmptyTitle => 'Lancer un nouveau scan';
+
+  @override
+  String get scanDocumentEmptyDescription =>
+      'Utilisez l\'appareil photo de votre appareil pour capturer un document papier. Toutes les pages numérisées sont regroupées dans un seul PDF avant l\'import.';
+
+  @override
+  String get scanDocumentTitleFieldLabel => 'Titre du document';
+
+  @override
+  String get scanDocumentTitleFieldHint => 'Titre facultatif à utiliser';
+
+  @override
+  String scanDocumentPages(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count pages numérisées',
+      one: '1 page numérisée',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get scanDocumentAddPagesAction => 'Numériser d\'autres pages';
+
+  @override
+  String get scanDocumentReplacePagesAction => 'Recommencer le scan';
+
+  @override
+  String get scanDocumentUploadAction => 'Importer le scan';
+
+  @override
+  String get scanDocumentUploadingAction => 'Import en cours...';
+
+  @override
+  String get scanDocumentQueued =>
+      'Le scan a été mis en file d\'attente pour traitement.';
+
+  @override
+  String get scanDocumentScanFailed =>
+      'Le scanner n\'a pas pu être lancé sur cet appareil.';
+
+  @override
+  String get scanDocumentUploadFailed => 'Le scan n\'a pas pu être importé.';
+
+  @override
+  String get removeScannedPageTooltip => 'Supprimer la page numérisée';
+
+  @override
+  String scannedPageLabel(int page) {
+    return 'Page $page';
+  }
+
+  @override
   String get homeUpdated => 'Accueil mis à jour.';
 
   @override

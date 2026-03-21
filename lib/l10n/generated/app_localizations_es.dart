@@ -249,6 +249,70 @@ class AppLocalizationsEs extends AppLocalizations {
   String get scanLaterAction => 'Escanear más tarde';
 
   @override
+  String get scanDocumentAction => 'Escanear documento';
+
+  @override
+  String get scanDocumentTitle => 'Escanear documento';
+
+  @override
+  String get scanDocumentDescription =>
+      'Captura una o varias páginas, revísalas y sube el PDF resultante a paperless-ngx.';
+
+  @override
+  String get scanDocumentEmptyTitle => 'Iniciar un nuevo escaneo';
+
+  @override
+  String get scanDocumentEmptyDescription =>
+      'Usa la cámara del dispositivo para capturar un documento en papel. Todas las páginas escaneadas se combinan en un único PDF antes de subirlo.';
+
+  @override
+  String get scanDocumentTitleFieldLabel => 'Título del documento';
+
+  @override
+  String get scanDocumentTitleFieldHint => 'Título opcional para usar';
+
+  @override
+  String scanDocumentPages(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count páginas escaneadas',
+      one: '1 página escaneada',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get scanDocumentAddPagesAction => 'Escanear más páginas';
+
+  @override
+  String get scanDocumentReplacePagesAction => 'Escanear de nuevo';
+
+  @override
+  String get scanDocumentUploadAction => 'Subir escaneo';
+
+  @override
+  String get scanDocumentUploadingAction => 'Subiendo...';
+
+  @override
+  String get scanDocumentQueued => 'Escaneo en cola para su procesamiento.';
+
+  @override
+  String get scanDocumentScanFailed =>
+      'No se pudo iniciar el escáner en este dispositivo.';
+
+  @override
+  String get scanDocumentUploadFailed => 'No se pudo subir el escaneo.';
+
+  @override
+  String get removeScannedPageTooltip => 'Quitar página escaneada';
+
+  @override
+  String scannedPageLabel(int page) {
+    return 'Página $page';
+  }
+
+  @override
   String get homeUpdated => 'Inicio actualizado.';
 
   @override

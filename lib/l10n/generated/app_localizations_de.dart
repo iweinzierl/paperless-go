@@ -248,6 +248,71 @@ class AppLocalizationsDe extends AppLocalizations {
   String get scanLaterAction => 'Später scannen';
 
   @override
+  String get scanDocumentAction => 'Dokument scannen';
+
+  @override
+  String get scanDocumentTitle => 'Dokument scannen';
+
+  @override
+  String get scanDocumentDescription =>
+      'Erfasse eine oder mehrere Seiten, prüfe sie und lade die resultierende PDF zu paperless-ngx hoch.';
+
+  @override
+  String get scanDocumentEmptyTitle => 'Neuen Scan starten';
+
+  @override
+  String get scanDocumentEmptyDescription =>
+      'Verwende die Kamera deines Geräts, um ein Papierdokument zu erfassen. Alle gescannten Seiten werden vor dem Upload zu einer PDF zusammengefasst.';
+
+  @override
+  String get scanDocumentTitleFieldLabel => 'Dokumenttitel';
+
+  @override
+  String get scanDocumentTitleFieldHint => 'Optionaler abweichender Titel';
+
+  @override
+  String scanDocumentPages(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count gescannte Seiten',
+      one: '1 gescannte Seite',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get scanDocumentAddPagesAction => 'Weitere Seiten scannen';
+
+  @override
+  String get scanDocumentReplacePagesAction => 'Neu scannen';
+
+  @override
+  String get scanDocumentUploadAction => 'Scan hochladen';
+
+  @override
+  String get scanDocumentUploadingAction => 'Lädt hoch...';
+
+  @override
+  String get scanDocumentQueued => 'Scan zur Verarbeitung vorgemerkt.';
+
+  @override
+  String get scanDocumentScanFailed =>
+      'Der Scanner konnte auf diesem Gerät nicht gestartet werden.';
+
+  @override
+  String get scanDocumentUploadFailed =>
+      'Der Scan konnte nicht hochgeladen werden.';
+
+  @override
+  String get removeScannedPageTooltip => 'Gescannte Seite entfernen';
+
+  @override
+  String scannedPageLabel(int page) {
+    return 'Seite $page';
+  }
+
+  @override
   String get homeUpdated => 'Startseite aktualisiert.';
 
   @override

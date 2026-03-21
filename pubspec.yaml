@@ -28,6 +28,7 @@ environment:
 # the latest version available on pub.dev. To see which dependencies have newer
 # versions available, run `flutter pub outdated`.
 dependencies:
+  cunning_document_scanner: ^1.4.0
   flutter:
     sdk: flutter
   flutter_localizations:
@@ -43,6 +44,7 @@ dependencies:
   open_filex: ^4.7.0
   package_info_plus: ^8.3.1
   path_provider: ^2.1.5
+  pdf: ^3.11.3
   retrofit: ^4.7.2
   shared_preferences: ^2.5.3
   url_launcher: ^6.3.2
