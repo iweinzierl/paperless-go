@@ -1,0 +1,35 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Android: Generate upload keystore",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/android/generate_upload_keystore.sh",
+      "problemMatcher": []
+    },
+    {
+      "label": "Android: Build signed AAB",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/android/build_signed_aab.sh",
+      "problemMatcher": []
+    },
+    {
+      "label": "Android: Validate Play setup",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/android/run_fastlane.sh check_play_store_setup",
+      "problemMatcher": []
+    },
+    {
+      "label": "Android: Upload Play metadata",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/android/run_fastlane.sh metadata",
+      "problemMatcher": []
+    },
+    {
+      "label": "Android: Upload internal test",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/android/run_fastlane.sh internal",
+      "problemMatcher": []
+    }
+  ]
+}

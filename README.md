@@ -32,3 +32,14 @@ filter for specific tags, correspondents and document types.
 * `Riverpod` is the brain and used for state management within the app.
 * `shared_preferences` shall be used to store and manage user preferences (e.g. URL of the server, username, password).
 * `Hive` will be used to cache data in the app to speed up app launches while loading server data in parallel.
+
+## Google Play Internal Testing
+
+Google Play internal testing tooling is set up with Fastlane.
+
+See [docs/google_play_internal_testing.md](docs/google_play_internal_testing.md) for:
+- release signing setup
+- Play Console service account setup
+- editable store listing metadata files
+- screenshot and image directories
+- upload commands for metadata, assets, and internal-track releases

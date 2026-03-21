@@ -1,0 +1,109 @@
+default_platform(:android)
+
+FASTLANE_DIR = __dir__
+PLAY_SERVICE_ACCOUNT_JSON = File.expand_path(
+  ENV["SUPPLY_JSON_KEY"] || "play-store-service-account.json",
+  FASTLANE_DIR,
+)
+ANDROID_KEY_PROPERTIES = File.expand_path("../android/key.properties", FASTLANE_DIR)
+
+platform :android do
+  desc "Check that Play Store release prerequisites are available"
+  lane :check_play_store_setup do |options|
+    UI.user_error!(
+      "Missing Play service account JSON: #{PLAY_SERVICE_ACCOUNT_JSON}",
+    ) unless File.exist?(PLAY_SERVICE_ACCOUNT_JSON)
+
+    next unless options[:require_signing]
+
+    has_key_properties = File.exist?(ANDROID_KEY_PROPERTIES)
+    has_env_signing = %w[
+      ANDROID_STORE_FILE
+      ANDROID_STORE_PASSWORD
+      ANDROID_KEY_ALIAS
+      ANDROID_KEY_PASSWORD
+    ].all? { |key| ENV[key].to_s.strip != "" }
+
+    unless has_key_properties || has_env_signing
+      UI.user_error!(
+        "Missing Android release signing config. Add android/key.properties or export the ANDROID_* signing variables.",
+      )
+    end
+  end
+
+  desc "Upload listing metadata, store images, and screenshots"
+  lane :metadata do
+    check_play_store_setup(require_signing: false)
+
+    upload_to_play_store(
+      skip_upload_aab: true,
+      skip_upload_apk: true,
+      skip_upload_metadata: false,
+      skip_upload_images: false,
+      skip_upload_screenshots: false,
+    )
+  end
+
+  desc "Upload only Play Store images and screenshots"
+  lane :assets do
+    check_play_store_setup(require_signing: false)
+
+    upload_to_play_store(
+      skip_upload_aab: true,
+      skip_upload_apk: true,
+      skip_upload_metadata: true,
+      skip_upload_images: false,
+      skip_upload_screenshots: false,
+    )
+  end
+
+  desc "Build a release app bundle and upload only the binary to the internal track"
+  lane :binary do |options|
+    check_play_store_setup(require_signing: true)
+    build_release_bundle
+
+    upload_to_play_store(
+      track: options[:track] || "internal",
+      release_status: options[:release_status] || "draft",
+      aab: options[:aab] || "build/app/outputs/bundle/release/app-release.aab",
+      skip_upload_metadata: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true,
+    )
+  end
+
+  desc "Build a release app bundle and upload it with metadata/assets to the internal track"
+  lane :internal do |options|
+    check_play_store_setup(require_signing: true)
+    build_release_bundle
+
+    upload_to_play_store(
+      track: options[:track] || "internal",
+      release_status: options[:release_status] || "draft",
+      aab: options[:aab] || "build/app/outputs/bundle/release/app-release.aab",
+      skip_upload_metadata: false,
+      skip_upload_images: false,
+      skip_upload_screenshots: false,
+    )
+  end
+
+  desc "Validate a Play upload without publishing it"
+  lane :validate do |options|
+    check_play_store_setup(require_signing: true)
+    build_release_bundle
+
+    upload_to_play_store(
+      track: options[:track] || "internal",
+      release_status: options[:release_status] || "draft",
+      aab: options[:aab] || "build/app/outputs/bundle/release/app-release.aab",
+      skip_upload_metadata: false,
+      skip_upload_images: false,
+      skip_upload_screenshots: false,
+      validate_only: true,
+    )
+  end
+
+  private_lane :build_release_bundle do
+    sh("flutter build appbundle --release")
+  end
+end
