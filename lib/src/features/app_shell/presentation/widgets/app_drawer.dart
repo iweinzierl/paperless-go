@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:paperless_ngx_app/src/core/presentation/localization/app_localizations_x.dart';
 import 'package:paperless_ngx_app/src/features/app_shell/domain/models/app_drawer_statistics.dart';
 import 'package:paperless_ngx_app/src/features/app_shell/presentation/pages/help_feedback_page.dart';
 import 'package:paperless_ngx_app/src/features/app_shell/presentation/pages/recently_opened_page.dart';
@@ -12,32 +13,36 @@ class AppDrawer extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final stats = ref.watch(appDrawerStatisticsProvider);
+    final l10n = context.l10n;
 
     return Drawer(
       child: SafeArea(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
           children: [
-            const Padding(
-              padding: EdgeInsets.fromLTRB(12, 8, 12, 16),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 16),
               child: Text(
-                'Paperless-ngx',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+                l10n.appTitle,
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
             _DrawerDestination(
               icon: Icons.history,
-              title: 'Recently opened',
+              title: l10n.drawerRecentlyOpened,
               onTap: () => _openPage(context, const RecentlyOpenedPage()),
             ),
             _DrawerDestination(
               icon: Icons.settings_outlined,
-              title: 'Settings',
+              title: l10n.drawerSettings,
               onTap: () => _openPage(context, const SettingsPage()),
             ),
             _DrawerDestination(
               icon: Icons.help_outline,
-              title: 'Help & Feedback',
+              title: l10n.drawerHelpFeedback,
               onTap: () => _openPage(context, const HelpFeedbackPage()),
             ),
             const SizedBox(height: 16),
@@ -85,6 +90,8 @@ class _StatisticsPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -93,44 +100,53 @@ class _StatisticsPanel extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Statistics',
+                l10n.drawerStatisticsTitle,
                 style: Theme.of(
                   context,
                 ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 12),
-              _StatisticRow(label: 'Documents', value: value.documents),
               _StatisticRow(
-                label: 'Correspondents',
+                label: l10n.drawerDocuments,
+                value: value.documents,
+              ),
+              _StatisticRow(
+                label: l10n.drawerCorrespondents,
                 value: value.correspondents,
               ),
-              _StatisticRow(label: 'Tags', value: value.tags),
+              _StatisticRow(label: l10n.drawerTags, value: value.tags),
               _StatisticRow(
-                label: 'Document types',
+                label: l10n.drawerDocumentTypes,
                 value: value.documentTypes,
               ),
             ],
           ),
-          error: (error, stackTrace) => const Column(
+          error: (error, stackTrace) => Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Statistics',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                l10n.drawerStatisticsTitle,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
-              SizedBox(height: 8),
-              Text('Statistics are unavailable right now.'),
+              const SizedBox(height: 8),
+              Text(l10n.drawerStatisticsUnavailable),
             ],
           ),
-          loading: () => const Column(
+          loading: () => Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Statistics',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                l10n.drawerStatisticsTitle,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
-              SizedBox(height: 12),
-              Center(child: CircularProgressIndicator()),
+              const SizedBox(height: 12),
+              const Center(child: CircularProgressIndicator()),
             ],
           ),
         ),

@@ -1,9 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:paperless_ngx_app/src/core/providers/shared_preferences_provider.dart';
 import 'package:paperless_ngx_app/src/features/auth/data/local/auth_preferences.dart';
-import 'package:paperless_ngx_app/src/features/auth/data/repositories/auth_repository.dart';
 import 'package:paperless_ngx_app/src/features/auth/domain/models/paperless_auth_session.dart';
 import 'package:paperless_ngx_app/src/features/auth/presentation/controllers/auth_session_controller.dart';
+import 'package:paperless_ngx_app/src/features/auth/data/repositories/auth_repository.dart';
 
 final authPreferencesProvider = Provider<AuthPreferences>((ref) {
   return AuthPreferences(ref.watch(sharedPreferencesProvider));
@@ -26,15 +26,15 @@ class LoginController extends Notifier<LoginFormState> {
   }
 
   void updateServerUrl(String value) {
-    state = state.copyWith(serverUrl: value, clearFeedbackMessage: true);
+    state = state.copyWith(serverUrl: value);
   }
 
   void updateUsername(String value) {
-    state = state.copyWith(username: value, clearFeedbackMessage: true);
+    state = state.copyWith(username: value);
   }
 
   void updatePassword(String value) {
-    state = state.copyWith(password: value, clearFeedbackMessage: true);
+    state = state.copyWith(password: value);
   }
 
   void togglePasswordVisibility() {
@@ -44,7 +44,6 @@ class LoginController extends Notifier<LoginFormState> {
   Future<void> submit() async {
     final nextState = state.copyWith(
       hasSubmitted: true,
-      clearFeedbackMessage: true,
       loginStatus: const AsyncLoading<void>(),
     );
 
@@ -71,25 +70,15 @@ class LoginController extends Notifier<LoginFormState> {
         state = state.copyWith(
           loginStatus: const AsyncData<void>(null),
           connectedDisplayName: session.displayName,
-          feedbackMessage: 'Connected successfully.',
         );
       },
       error: (error, stackTrace) {
         state = state.copyWith(
           loginStatus: AsyncError<void>(error, stackTrace),
-          feedbackMessage: _toErrorMessage(error),
         );
       },
       loading: () {},
     );
-  }
-
-  String _toErrorMessage(Object error) {
-    if (error is AuthFailure) {
-      return error.message;
-    }
-
-    return 'Login failed. Please try again.';
   }
 }
 
@@ -101,7 +90,6 @@ class LoginFormState {
     required this.obscurePassword,
     required this.hasSubmitted,
     required this.loginStatus,
-    this.feedbackMessage,
     this.connectedDisplayName,
   });
 
@@ -123,51 +111,60 @@ class LoginFormState {
   final bool obscurePassword;
   final bool hasSubmitted;
   final AsyncValue<void> loginStatus;
-  final String? feedbackMessage;
   final String? connectedDisplayName;
 
   bool get isSubmitting => loginStatus.isLoading;
 
   bool get isValid =>
-      serverUrlError == null && usernameError == null && passwordError == null;
+      _hasValidServerUrl && username.trim().isNotEmpty && password.isNotEmpty;
 
-  String? get serverUrlError {
+  bool get _hasValidServerUrl {
+    final trimmed = serverUrl.trim();
+    if (trimmed.isEmpty) {
+      return false;
+    }
+
+    final uri = Uri.tryParse(trimmed);
+    return uri != null && uri.hasScheme && uri.host.isNotEmpty;
+  }
+
+  String? serverUrlError(String requiredMessage, String fullUrlMessage) {
     if (!hasSubmitted) {
       return null;
     }
 
     final trimmed = serverUrl.trim();
     if (trimmed.isEmpty) {
-      return 'Enter your paperless-ngx server URL.';
+      return requiredMessage;
     }
 
     final uri = Uri.tryParse(trimmed);
     if (uri == null || !uri.hasScheme || uri.host.isEmpty) {
-      return 'Use a full URL like https://paperless.example.com.';
+      return fullUrlMessage;
     }
 
     return null;
   }
 
-  String? get usernameError {
+  String? usernameError(String requiredMessage) {
     if (!hasSubmitted) {
       return null;
     }
 
     if (username.trim().isEmpty) {
-      return 'Enter your username.';
+      return requiredMessage;
     }
 
     return null;
   }
 
-  String? get passwordError {
+  String? passwordError(String requiredMessage) {
     if (!hasSubmitted) {
       return null;
     }
 
     if (password.isEmpty) {
-      return 'Enter your password.';
+      return requiredMessage;
     }
 
     return null;
@@ -180,9 +177,7 @@ class LoginFormState {
     bool? obscurePassword,
     bool? hasSubmitted,
     AsyncValue<void>? loginStatus,
-    String? feedbackMessage,
     String? connectedDisplayName,
-    bool clearFeedbackMessage = false,
   }) {
     return LoginFormState(
       serverUrl: serverUrl ?? this.serverUrl,
@@ -191,9 +186,6 @@ class LoginFormState {
       obscurePassword: obscurePassword ?? this.obscurePassword,
       hasSubmitted: hasSubmitted ?? this.hasSubmitted,
       loginStatus: loginStatus ?? this.loginStatus,
-      feedbackMessage: clearFeedbackMessage
-          ? null
-          : (feedbackMessage ?? this.feedbackMessage),
       connectedDisplayName: connectedDisplayName ?? this.connectedDisplayName,
     );
   }

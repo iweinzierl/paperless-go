@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:paperless_ngx_app/src/core/presentation/localization/app_localizations_x.dart';
 import 'package:paperless_ngx_app/src/core/data/local/sync_status_preferences.dart';
 import 'package:paperless_ngx_app/src/core/providers/sync_status_preferences_provider.dart';
 import 'package:paperless_ngx_app/src/core/presentation/widgets/refresh_status_text.dart';
@@ -48,6 +49,8 @@ class _DocumentsPageState extends ConsumerState<DocumentsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
     ref.listen<AsyncValue<PaperlessDocumentPage>>(documentsPageProvider, (
       previous,
       next,
@@ -89,17 +92,17 @@ class _DocumentsPageState extends ConsumerState<DocumentsPage> {
     return Scaffold(
       drawer: const AppDrawer(),
       appBar: AppBar(
-        title: const Text('Documents'),
+        title: Text(l10n.documentsTitle),
         actions: [
           IconButton(
-            tooltip: 'Refresh documents',
+            tooltip: l10n.refreshDocumentsTooltip,
             onPressed: documentsPage.isRefreshing
                 ? null
                 : () => _handleManualRefresh(context),
             icon: const Icon(Icons.refresh),
           ),
           IconButton(
-            tooltip: 'Log out',
+            tooltip: l10n.logoutTooltip,
             onPressed: () => ref.read(authSessionProvider.notifier).signOut(),
             icon: const Icon(Icons.logout),
           ),
@@ -120,11 +123,11 @@ class _DocumentsPageState extends ConsumerState<DocumentsPage> {
                         textInputAction: TextInputAction.search,
                         onSubmitted: _submitSearch,
                         decoration: InputDecoration(
-                          hintText: 'Search by title',
+                          hintText: l10n.searchByTitleHint,
                           prefixIcon: const Icon(Icons.search),
                           suffixIcon: query.isNotEmpty
                               ? IconButton(
-                                  tooltip: 'Clear search',
+                                  tooltip: l10n.clearSearchTooltip,
                                   onPressed: _clearSearch,
                                   icon: const Icon(Icons.close),
                                 )
@@ -134,7 +137,7 @@ class _DocumentsPageState extends ConsumerState<DocumentsPage> {
                     ),
                     const SizedBox(width: 12),
                     IconButton.filledTonal(
-                      tooltip: 'Filters',
+                      tooltip: l10n.filtersTooltip,
                       onPressed: () => _openFilters(context),
                       icon: Badge.count(
                         isLabelVisible:
@@ -172,7 +175,7 @@ class _DocumentsPageState extends ConsumerState<DocumentsPage> {
                 if (_activeFilterCount(filterState, ordering) > 0)
                   const SizedBox(height: 12),
                 Text(
-                  'Connected to ${session.serverUrl}',
+                  l10n.connectedToServer(session.serverUrl),
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
                 const SizedBox(height: 4),
@@ -287,7 +290,7 @@ class _DocumentsPageState extends ConsumerState<DocumentsPage> {
       }
 
       scaffoldMessenger.showSnackBar(
-        const SnackBar(content: Text('Documents updated.')),
+        SnackBar(content: Text(context.l10n.documentsUpdated)),
       );
     } catch (_) {
       if (!context.mounted) {
@@ -295,7 +298,7 @@ class _DocumentsPageState extends ConsumerState<DocumentsPage> {
       }
 
       scaffoldMessenger.showSnackBar(
-        const SnackBar(content: Text('Document refresh failed.')),
+        SnackBar(content: Text(context.l10n.documentRefreshFailed)),
       );
     }
   }
@@ -357,6 +360,7 @@ class _ActiveDocumentsControls extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
     final tagOptions = ref.watch(tagOptionsProvider);
     final correspondentOptions = ref.watch(correspondentOptionsProvider);
     final documentTypeOptions = ref.watch(documentTypeOptionsProvider);
@@ -366,11 +370,11 @@ class _ActiveDocumentsControls extends ConsumerWidget {
       final sortLabel = documentsSortOptions
           .where((option) => option.ordering == ordering)
           .firstOrNull
-          ?.label;
+          ?.ordering;
       if (sortLabel != null) {
         chips.add(
           InputChip(
-            label: Text(sortLabel),
+            label: Text(documentSortOptionLabel(l10n, sortLabel)),
             onDeleted: onResetOrdering,
             deleteIcon: const Icon(Icons.close),
           ),
@@ -382,21 +386,21 @@ class _ActiveDocumentsControls extends ConsumerWidget {
       chips: chips,
       optionId: filterState.tagId,
       options: tagOptions,
-      fallbackPrefix: 'Tag',
+      fallbackPrefix: l10n.filterTagLabel,
       onDeleted: onClearTag,
     );
     _addFilterChip(
       chips: chips,
       optionId: filterState.correspondentId,
       options: correspondentOptions,
-      fallbackPrefix: 'Correspondent',
+      fallbackPrefix: l10n.filterCorrespondentLabel,
       onDeleted: onClearCorrespondent,
     );
     _addFilterChip(
       chips: chips,
       optionId: filterState.documentTypeId,
       options: documentTypeOptions,
-      fallbackPrefix: 'Document type',
+      fallbackPrefix: l10n.filterDocumentTypeLabel,
       onDeleted: onClearDocumentType,
     );
 
@@ -449,17 +453,16 @@ class _DocumentsList extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final currentPage = ref.watch(documentsCurrentPageProvider);
     final openingIds = ref.watch(documentOpenControllerProvider);
+    final l10n = context.l10n;
 
     if (page.results.isEmpty) {
       return ListView(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
-        children: const [
+        children: [
           Padding(
-            padding: EdgeInsets.all(24),
-            child: Center(
-              child: Text('No documents match the current search.'),
-            ),
+            padding: const EdgeInsets.all(24),
+            child: Center(child: Text(l10n.noDocumentsMatchSearch)),
           ),
         ],
       );
@@ -470,7 +473,7 @@ class _DocumentsList extends ConsumerWidget {
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
       children: [
         Text(
-          '${page.count} documents',
+          l10n.documentCount(page.count),
           style: Theme.of(
             context,
           ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
@@ -488,7 +491,7 @@ class _DocumentsList extends ConsumerWidget {
                 OutlinedButton.icon(
                   onPressed: () => _openDetails(context, ref, document),
                   icon: const Icon(Icons.info_outline),
-                  label: const Text('Details'),
+                  label: Text(l10n.detailsAction),
                 ),
                 FilledButton.tonalIcon(
                   onPressed: openingIds.contains(document.id)
@@ -500,7 +503,9 @@ class _DocumentsList extends ConsumerWidget {
                         : Icons.open_in_new,
                   ),
                   label: Text(
-                    openingIds.contains(document.id) ? 'Opening...' : 'Open',
+                    openingIds.contains(document.id)
+                        ? l10n.openingAction
+                        : l10n.openAction,
                   ),
                 ),
               ],
@@ -514,15 +519,15 @@ class _DocumentsList extends ConsumerWidget {
             OutlinedButton.icon(
               onPressed: onPreviousPage,
               icon: const Icon(Icons.chevron_left),
-              label: const Text('Previous'),
+              label: Text(l10n.previousAction),
             ),
             const Spacer(),
-            Text('Page $currentPage'),
+            Text(l10n.pageIndicator(currentPage)),
             const Spacer(),
             FilledButton.icon(
               onPressed: onNextPage,
               icon: const Icon(Icons.chevron_right),
-              label: const Text('Next'),
+              label: Text(l10n.nextAction),
             ),
           ],
         ),
@@ -578,12 +583,12 @@ class _DocumentsError extends StatelessWidget {
       children: [
         Column(
           children: [
-            const Text('Could not load documents.'),
+            Text(context.l10n.couldNotLoadDocuments),
             const SizedBox(height: 12),
             FilledButton.icon(
               onPressed: onRetry,
               icon: const Icon(Icons.refresh),
-              label: const Text('Retry'),
+              label: Text(context.l10n.retryAction),
             ),
           ],
         ),

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:paperless_ngx_app/src/core/presentation/formatters/document_text.dart';
+import 'package:paperless_ngx_app/src/core/presentation/localization/app_localizations_x.dart';
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_document.dart';
 
 class PaperlessDocumentCard extends StatelessWidget {
@@ -19,6 +21,16 @@ class PaperlessDocumentCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final l10n = context.l10n;
+    final subtitle = formatDocumentSubtitle(
+      l10n: l10n,
+      localeName: context.localeName,
+      id: document.id,
+      added: document.added,
+      created: document.created,
+      pageCount: document.pageCount,
+      archiveSerialNumber: document.archiveSerialNumber,
+    );
 
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -77,7 +89,7 @@ class PaperlessDocumentCard extends StatelessWidget {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            document.subtitle,
+                            subtitle,
                             style: theme.textTheme.bodySmall?.copyWith(
                               color: theme.colorScheme.onSurfaceVariant,
                             ),

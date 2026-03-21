@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:paperless_ngx_app/src/core/presentation/formatters/document_text.dart';
+import 'package:paperless_ngx_app/src/core/presentation/localization/app_localizations_x.dart';
 import 'package:paperless_ngx_app/src/core/presentation/formatters/timestamp_text.dart';
 import 'package:paperless_ngx_app/src/features/app_shell/presentation/providers/app_shell_providers.dart';
 import 'package:paperless_ngx_app/src/features/auth/presentation/controllers/auth_session_controller.dart';
@@ -20,7 +22,7 @@ class DocumentDetailPage extends ConsumerWidget {
     final documentAsync = ref.watch(documentDetailProvider(documentId));
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Document details')),
+      appBar: AppBar(title: Text(context.l10n.documentDetailsTitle)),
       body: documentAsync.when(
         data: (document) => _DocumentDetailBody(document: document),
         error: (error, stackTrace) => _DocumentDetailError(
@@ -42,6 +44,7 @@ class _DocumentDetailBody extends ConsumerWidget {
     final openingIds = ref.watch(documentOpenControllerProvider);
     final isOpening = openingIds.contains(document.id);
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final session = ref.watch(authSessionProvider);
     final repository = ref.watch(documentsRepositoryProvider);
     final correspondentOptions = ref.watch(correspondentOptionsProvider);
@@ -97,7 +100,15 @@ class _DocumentDetailBody extends ConsumerWidget {
                           ),
                           const SizedBox(height: 6),
                           Text(
-                            document.subtitle,
+                            formatDocumentSubtitle(
+                              l10n: l10n,
+                              localeName: context.localeName,
+                              id: document.id,
+                              added: document.added,
+                              created: document.created,
+                              pageCount: document.pageCount,
+                              archiveSerialNumber: document.archiveSerialNumber,
+                            ),
                             style: theme.textTheme.bodyMedium,
                           ),
                         ],
@@ -113,7 +124,7 @@ class _DocumentDetailBody extends ConsumerWidget {
                     OutlinedButton.icon(
                       onPressed: () => _editMetadata(context, ref, document),
                       icon: const Icon(Icons.edit_outlined),
-                      label: const Text('Edit metadata'),
+                      label: Text(l10n.editMetadataAction),
                     ),
                     FilledButton.icon(
                       onPressed: isOpening
@@ -122,7 +133,11 @@ class _DocumentDetailBody extends ConsumerWidget {
                       icon: Icon(
                         isOpening ? Icons.hourglass_top : Icons.open_in_new,
                       ),
-                      label: Text(isOpening ? 'Opening...' : 'Open document'),
+                      label: Text(
+                        isOpening
+                            ? l10n.openingAction
+                            : l10n.openDocumentAction,
+                      ),
                     ),
                     OutlinedButton.icon(
                       onPressed: isOpening
@@ -134,7 +149,7 @@ class _DocumentDetailBody extends ConsumerWidget {
                               original: true,
                             ),
                       icon: const Icon(Icons.file_download_outlined),
-                      label: const Text('Open original'),
+                      label: Text(l10n.openOriginalAction),
                     ),
                   ],
                 ),
@@ -144,7 +159,7 @@ class _DocumentDetailBody extends ConsumerWidget {
         ),
         const SizedBox(height: 20),
         _DetailSection(
-          title: 'Thumbnail preview',
+          title: l10n.thumbnailPreviewTitle,
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(16),
@@ -178,7 +193,7 @@ class _DocumentDetailBody extends ConsumerWidget {
                                 color: theme.colorScheme.primary,
                               ),
                               const SizedBox(height: 12),
-                              const Text('No thumbnail preview available.'),
+                              Text(l10n.noThumbnailPreviewAvailable),
                             ],
                           ),
                         ),
@@ -190,38 +205,44 @@ class _DocumentDetailBody extends ConsumerWidget {
             ),
             const SizedBox(height: 12),
             Text(
-              'Authenticated thumbnail request for ${session.serverUrl}',
+              l10n.authenticatedThumbnailRequest(session.serverUrl),
               style: theme.textTheme.bodySmall,
             ),
           ],
         ),
         const SizedBox(height: 20),
         _DetailSection(
-          title: 'Metadata',
+          title: l10n.metadataTitle,
           children: [
-            _DetailRow(label: 'File name', value: document.preferredFileName),
-            _DetailRow(label: 'Mime type', value: document.mimeType),
             _DetailRow(
-              label: 'Created',
-              value: _formatMetadataTimestamp(document.created),
+              label: l10n.fileNameLabel,
+              value: document.preferredFileName,
+            ),
+            _DetailRow(label: l10n.mimeTypeLabel, value: document.mimeType),
+            _DetailRow(
+              label: l10n.createdLabel,
+              value: _formatMetadataTimestamp(context, document.created),
             ),
             _DetailRow(
-              label: 'Added',
-              value: _formatMetadataTimestamp(document.added),
+              label: l10n.addedLabel,
+              value: _formatMetadataTimestamp(context, document.added),
             ),
-            _DetailRow(label: 'Pages', value: document.pageCount?.toString()),
             _DetailRow(
-              label: 'Archive serial number',
+              label: l10n.pagesLabel,
+              value: document.pageCount?.toString(),
+            ),
+            _DetailRow(
+              label: l10n.archiveSerialNumberLabel,
               value: document.archiveSerialNumber?.toString(),
             ),
             _ResolvedOptionRow(
-              label: 'Correspondent',
+              label: l10n.correspondentLabel,
               optionId: document.correspondentId,
               options: correspondentOptions,
               fallbackValue: document.correspondentId?.toString(),
             ),
             _ResolvedOptionRow(
-              label: 'Document type',
+              label: l10n.documentTypeLabel,
               optionId: document.documentTypeId,
               options: documentTypeOptions,
               fallbackValue: document.documentTypeId?.toString(),
@@ -233,7 +254,7 @@ class _DocumentDetailBody extends ConsumerWidget {
             document.content!.trim().isNotEmpty) ...[
           const SizedBox(height: 20),
           _DetailSection(
-            title: 'Content preview',
+            title: l10n.contentPreviewTitle,
             children: [
               Text(document.content!.trim(), style: theme.textTheme.bodyMedium),
             ],
@@ -283,7 +304,7 @@ class _DocumentDetailBody extends ConsumerWidget {
 
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
-      ..showSnackBar(const SnackBar(content: Text('Metadata updated.')));
+      ..showSnackBar(SnackBar(content: Text(context.l10n.metadataUpdated)));
   }
 }
 
@@ -340,7 +361,7 @@ class _EditDocumentMetadataPageState
     }
 
     if (_titleController.text.trim().isEmpty) {
-      return 'Enter a document title.';
+      return context.l10n.enterNameValidation;
     }
 
     return null;
@@ -357,7 +378,7 @@ class _EditDocumentMetadataPageState
     }
 
     if (DateTime.tryParse(trimmed) == null) {
-      return 'Use a valid date like 2026-03-20.';
+      return context.l10n.invalidDateValidation;
     }
 
     return null;
@@ -368,6 +389,7 @@ class _EditDocumentMetadataPageState
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final correspondents = ref.watch(correspondentOptionsProvider);
     final documentTypes = ref.watch(documentTypeOptionsProvider);
     final tags = ref.watch(tagOptionsProvider);
@@ -381,11 +403,11 @@ class _EditDocumentMetadataPageState
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Edit metadata'),
+        title: Text(l10n.editMetadataTitle),
         actions: [
           TextButton(
             onPressed: _isBusy ? null : _save,
-            child: Text(_isSaving ? 'Saving...' : 'Save'),
+            child: Text(_isSaving ? l10n.savingAction : l10n.saveAction),
           ),
         ],
       ),
@@ -393,13 +415,13 @@ class _EditDocumentMetadataPageState
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
         children: [
           _DetailSection(
-            title: 'Editable fields',
+            title: l10n.editableFieldsTitle,
             children: [
               TextField(
                 controller: _titleController,
                 textInputAction: TextInputAction.next,
                 decoration: InputDecoration(
-                  labelText: 'Title',
+                  labelText: l10n.titleLabel,
                   errorText: _titleError,
                 ),
               ),
@@ -407,8 +429,8 @@ class _EditDocumentMetadataPageState
               TextField(
                 controller: _createdController,
                 decoration: InputDecoration(
-                  labelText: 'Created date',
-                  hintText: 'YYYY-MM-DD',
+                  labelText: l10n.createdDateLabel,
+                  hintText: l10n.createdDateHint,
                   errorText: _createdError,
                   suffixIcon: IconButton(
                     onPressed: _isBusy ? null : _pickCreatedDate,
@@ -418,10 +440,10 @@ class _EditDocumentMetadataPageState
               ),
               const SizedBox(height: 16),
               _FieldActionHeader(
-                title: 'Correspondent',
+                title: l10n.correspondentLabel,
                 actionLabel: _isCreatingCorrespondent
-                    ? 'Adding...'
-                    : 'New correspondent',
+                    ? l10n.addingAction
+                    : l10n.newCorrespondentAction,
                 actionIcon: _isCreatingCorrespondent
                     ? const SizedBox(
                         width: 18,
@@ -438,14 +460,14 @@ class _EditDocumentMetadataPageState
                 data: (items) => DropdownButtonFormField<int?>(
                   isExpanded: true,
                   value: _selectedCorrespondentId,
-                  decoration: const InputDecoration(
-                    hintText: 'Choose a correspondent',
+                  decoration: InputDecoration(
+                    hintText: l10n.chooseCorrespondentHint,
                   ),
                   items: [
-                    const DropdownMenuItem<int?>(
+                    DropdownMenuItem<int?>(
                       value: null,
                       child: Text(
-                        'No correspondent',
+                        l10n.noCorrespondentOption,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
@@ -465,7 +487,7 @@ class _EditDocumentMetadataPageState
                         },
                 ),
                 error: (error, stackTrace) => Text(
-                  'Could not load correspondents.',
+                  l10n.couldNotLoadCorrespondents,
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: theme.colorScheme.error,
                   ),
@@ -474,10 +496,10 @@ class _EditDocumentMetadataPageState
               ),
               const SizedBox(height: 16),
               _FieldActionHeader(
-                title: 'Document type',
+                title: l10n.documentTypeLabel,
                 actionLabel: _isCreatingDocumentType
-                    ? 'Adding...'
-                    : 'New document type',
+                    ? l10n.addingAction
+                    : l10n.newDocumentTypeAction,
                 actionIcon: _isCreatingDocumentType
                     ? const SizedBox(
                         width: 18,
@@ -494,14 +516,14 @@ class _EditDocumentMetadataPageState
                 data: (items) => DropdownButtonFormField<int?>(
                   isExpanded: true,
                   value: _selectedDocumentTypeId,
-                  decoration: const InputDecoration(
-                    hintText: 'Choose a document type',
+                  decoration: InputDecoration(
+                    hintText: l10n.chooseDocumentTypeHint,
                   ),
                   items: [
-                    const DropdownMenuItem<int?>(
+                    DropdownMenuItem<int?>(
                       value: null,
                       child: Text(
-                        'No document type',
+                        l10n.noDocumentTypeOption,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
@@ -521,7 +543,7 @@ class _EditDocumentMetadataPageState
                         },
                 ),
                 error: (error, stackTrace) => Text(
-                  'Could not load document types.',
+                  l10n.couldNotLoadDocumentTypes,
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: theme.colorScheme.error,
                   ),
@@ -530,8 +552,10 @@ class _EditDocumentMetadataPageState
               ),
               const SizedBox(height: 20),
               _FieldActionHeader(
-                title: 'Tags',
-                actionLabel: _isCreatingTag ? 'Adding...' : 'New tag',
+                title: l10n.tagsLabel,
+                actionLabel: _isCreatingTag
+                    ? l10n.addingAction
+                    : l10n.newTagAction,
                 actionIcon: _isCreatingTag
                     ? const SizedBox(
                         width: 18,
@@ -544,7 +568,7 @@ class _EditDocumentMetadataPageState
               const SizedBox(height: 8),
               if (selectedTagNames.isEmpty)
                 Text(
-                  'No tags selected.',
+                  l10n.noTagsSelected,
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
@@ -563,14 +587,14 @@ class _EditDocumentMetadataPageState
                 data: (items) => FilledButton.tonalIcon(
                   onPressed: _isBusy ? null : () => _openTagSelection(items),
                   icon: const Icon(Icons.sell_outlined),
-                  label: const Text('Edit tags'),
+                  label: Text(l10n.editTagsAction),
                 ),
                 error: (error, stackTrace) => OutlinedButton.icon(
                   onPressed: _isBusy
                       ? null
                       : () => ref.invalidate(tagOptionsProvider),
                   icon: const Icon(Icons.refresh),
-                  label: const Text('Retry tag loading'),
+                  label: Text(l10n.retryTagLoadingAction),
                 ),
                 loading: () => const LinearProgressIndicator(),
               ),
@@ -611,7 +635,7 @@ class _EditDocumentMetadataPageState
         return StatefulBuilder(
           builder: (context, setState) {
             return AlertDialog(
-              title: const Text('Select tags'),
+              title: Text(context.l10n.selectTagsDialogTitle),
               content: SizedBox(
                 width: double.maxFinite,
                 child: ListView(
@@ -638,16 +662,16 @@ class _EditDocumentMetadataPageState
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(dialogContext).pop(),
-                  child: const Text('Cancel'),
+                  child: Text(context.l10n.cancelAction),
                 ),
                 TextButton(
                   onPressed: () => Navigator.of(dialogContext).pop(<int>{}),
-                  child: const Text('Clear'),
+                  child: Text(context.l10n.clearAction),
                 ),
                 FilledButton(
                   onPressed: () =>
                       Navigator.of(dialogContext).pop(localSelection),
-                  child: const Text('Apply'),
+                  child: Text(context.l10n.applyAction),
                 ),
               ],
             );
@@ -667,8 +691,8 @@ class _EditDocumentMetadataPageState
 
   Future<void> _createCorrespondent() async {
     final name = await _promptForNewOption(
-      title: 'New correspondent',
-      fieldLabel: 'Correspondent name',
+      title: context.l10n.newCorrespondentAction,
+      fieldLabel: context.l10n.correspondentNameLabel,
     );
     if (name == null) {
       return;
@@ -691,7 +715,7 @@ class _EditDocumentMetadataPageState
       setState(() {
         _selectedCorrespondentId = created.id;
       });
-      _showStatusMessage('Correspondent created.');
+      _showStatusMessage(context.l10n.correspondentCreated);
     } catch (error) {
       _showStatusMessage(error.toString());
     } finally {
@@ -705,8 +729,8 @@ class _EditDocumentMetadataPageState
 
   Future<void> _createDocumentType() async {
     final name = await _promptForNewOption(
-      title: 'New document type',
-      fieldLabel: 'Document type name',
+      title: context.l10n.newDocumentTypeAction,
+      fieldLabel: context.l10n.documentTypeNameLabel,
     );
     if (name == null) {
       return;
@@ -729,7 +753,7 @@ class _EditDocumentMetadataPageState
       setState(() {
         _selectedDocumentTypeId = created.id;
       });
-      _showStatusMessage('Document type created.');
+      _showStatusMessage(context.l10n.documentTypeCreated);
     } catch (error) {
       _showStatusMessage(error.toString());
     } finally {
@@ -743,8 +767,8 @@ class _EditDocumentMetadataPageState
 
   Future<void> _createTag() async {
     final name = await _promptForNewOption(
-      title: 'New tag',
-      fieldLabel: 'Tag name',
+      title: context.l10n.newTagAction,
+      fieldLabel: context.l10n.tagNameLabel,
     );
     if (name == null) {
       return;
@@ -767,7 +791,7 @@ class _EditDocumentMetadataPageState
       setState(() {
         _selectedTagIds = <int>{..._selectedTagIds, created.id};
       });
-      _showStatusMessage('Tag created.');
+      _showStatusMessage(context.l10n.tagCreated);
     } catch (error) {
       _showStatusMessage(error.toString());
     } finally {
@@ -871,13 +895,17 @@ class _EditDocumentMetadataPageState
   }
 }
 
-String? _formatMetadataTimestamp(String? value) {
+String? _formatMetadataTimestamp(BuildContext context, String? value) {
   final trimmed = value?.trim();
   if (trimmed == null || trimmed.isEmpty) {
     return null;
   }
 
-  return formatDocumentTimestamp(trimmed);
+  return formatDocumentTimestamp(
+    context.l10n,
+    trimmed,
+    localeName: context.localeName,
+  );
 }
 
 class _ResolvedOptionRow extends StatelessWidget {
@@ -909,7 +937,8 @@ class _ResolvedOptionRow extends StatelessWidget {
       },
       error: (error, stackTrace) =>
           _DetailRow(label: label, value: fallbackValue ?? optionId.toString()),
-      loading: () => _DetailRow(label: label, value: 'Loading...'),
+      loading: () =>
+          _DetailRow(label: label, value: context.l10n.loadingStatus),
     );
   }
 }
@@ -981,7 +1010,7 @@ class _CreateOptionDialogState extends State<_CreateOptionDialog> {
     final value = _controller.text.trim();
     if (value.isEmpty) {
       setState(() {
-        _errorText = 'Enter a name.';
+        _errorText = context.l10n.enterNameValidation;
       });
       return;
     }
@@ -1006,9 +1035,12 @@ class _CreateOptionDialogState extends State<_CreateOptionDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
+          child: Text(context.l10n.cancelAction),
         ),
-        FilledButton(onPressed: _submit, child: const Text('Create')),
+        FilledButton(
+          onPressed: _submit,
+          child: Text(context.l10n.createAction),
+        ),
       ],
     );
   }
@@ -1035,11 +1067,19 @@ class _ResolvedTagsRow extends StatelessWidget {
                   '#$tagId',
             )
             .toList();
-        return _DetailRow(label: 'Tags', value: names.join(', '));
+        return _DetailRow(
+          label: context.l10n.tagsLabel,
+          value: names.join(', '),
+        );
       },
-      error: (error, stackTrace) =>
-          _DetailRow(label: 'Tags', value: document.tags.join(', ')),
-      loading: () => const _DetailRow(label: 'Tags', value: 'Loading...'),
+      error: (error, stackTrace) => _DetailRow(
+        label: context.l10n.tagsLabel,
+        value: document.tags.join(', '),
+      ),
+      loading: () => _DetailRow(
+        label: context.l10n.tagsLabel,
+        value: context.l10n.loadingStatus,
+      ),
     );
   }
 }
@@ -1156,12 +1196,12 @@ class _DocumentDetailError extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('Could not load the document details.'),
+            Text(context.l10n.couldNotLoadDocumentDetails),
             const SizedBox(height: 12),
             FilledButton.icon(
               onPressed: onRetry,
               icon: const Icon(Icons.refresh),
-              label: const Text('Retry'),
+              label: Text(context.l10n.retryAction),
             ),
           ],
         ),

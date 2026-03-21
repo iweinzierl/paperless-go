@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:paperless_ngx_app/src/core/presentation/localization/app_localizations_x.dart';
+import 'package:paperless_ngx_app/src/features/auth/presentation/formatters/auth_text.dart';
 import 'package:paperless_ngx_app/src/features/auth/presentation/controllers/login_controller.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
@@ -34,6 +36,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final l10n = context.l10n;
     final formState = ref.watch(loginControllerProvider);
     final controller = ref.read(loginControllerProvider.notifier);
 
@@ -73,10 +76,14 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      if (formState.feedbackMessage != null) ...[
+                      if (formState.loginStatus.hasError) ...[
                         _LoginStatusBanner(
-                          message: formState.feedbackMessage!,
-                          isError: formState.loginStatus.hasError,
+                          message: localizeAuthFailure(
+                            l10n,
+                            formState.loginStatus.error!,
+                            genericFallback: l10n.loginFailedGeneric,
+                          ),
+                          isError: true,
                         ),
                         const SizedBox(height: 20),
                       ],
@@ -96,14 +103,14 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       ),
                       const SizedBox(height: 24),
                       Text(
-                        'Connect to your server',
+                        l10n.loginConnectTitle,
                         style: theme.textTheme.headlineSmall?.copyWith(
                           fontWeight: FontWeight.w700,
                         ),
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Use your paperless-ngx URL and account credentials to access your documents.',
+                        l10n.loginConnectDescription,
                         style: theme.textTheme.bodyMedium?.copyWith(
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
@@ -111,32 +118,39 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       const SizedBox(height: 24),
                       _LoginTextField(
                         controller: _serverUrlController,
-                        label: 'Server URL',
-                        hintText: 'https://paperless.example.com',
+                        label: l10n.serverUrlLabel,
+                        hintText: l10n.serverUrlHint,
                         keyboardType: TextInputType.url,
                         prefixIcon: Icons.link,
-                        errorText: formState.serverUrlError,
+                        errorText: formState.serverUrlError(
+                          l10n.loginValidationServerUrlRequired,
+                          l10n.loginValidationFullUrl,
+                        ),
                         onChanged: controller.updateServerUrl,
                       ),
                       const SizedBox(height: 16),
                       _LoginTextField(
                         controller: _usernameController,
-                        label: 'Username',
-                        hintText: 'john.doe',
+                        label: l10n.usernameLabel,
+                        hintText: l10n.usernameHint,
                         keyboardType: TextInputType.emailAddress,
                         prefixIcon: Icons.person_outline,
-                        errorText: formState.usernameError,
+                        errorText: formState.usernameError(
+                          l10n.loginValidationUsernameRequired,
+                        ),
                         onChanged: controller.updateUsername,
                       ),
                       const SizedBox(height: 16),
                       _LoginTextField(
                         controller: _passwordController,
-                        label: 'Password',
-                        hintText: 'Enter your password',
+                        label: l10n.passwordLabel,
+                        hintText: l10n.passwordHint,
                         keyboardType: TextInputType.visiblePassword,
                         obscureText: formState.obscurePassword,
                         prefixIcon: Icons.lock_outline,
-                        errorText: formState.passwordError,
+                        errorText: formState.passwordError(
+                          l10n.loginValidationPasswordRequired,
+                        ),
                         onChanged: controller.updatePassword,
                         suffixIcon: IconButton(
                           onPressed: controller.togglePasswordVisibility,
@@ -166,12 +180,12 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                   strokeWidth: 2,
                                 ),
                               )
-                            : const Text('Login'),
+                            : Text(l10n.loginButton),
                       ),
                       if (formState.connectedDisplayName != null) ...[
                         const SizedBox(height: 18),
                         Text(
-                          'Connected as ${formState.connectedDisplayName}',
+                          l10n.connectedAs(formState.connectedDisplayName!),
                           style: theme.textTheme.bodyMedium?.copyWith(
                             color: theme.colorScheme.primary,
                             fontWeight: FontWeight.w600,

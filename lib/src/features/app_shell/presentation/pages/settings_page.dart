@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:paperless_ngx_app/src/core/presentation/localization/app_localizations_x.dart';
 import 'package:paperless_ngx_app/src/features/app_shell/domain/models/app_behavior_settings.dart';
 import 'package:paperless_ngx_app/src/features/app_shell/presentation/controllers/settings_controller.dart';
 import 'package:paperless_ngx_app/src/features/app_shell/presentation/providers/app_behavior_providers.dart';
+import 'package:paperless_ngx_app/src/features/auth/presentation/formatters/auth_text.dart';
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_filter_option.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/providers/documents_providers.dart';
 
@@ -37,19 +39,35 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
   @override
   Widget build(BuildContext context) {
-    ref.listen<SettingsFormState>(settingsControllerProvider, (previous, next) {
-      final oldFeedback = previous?.feedbackMessage;
-      final newFeedback = next.feedbackMessage;
+    final l10n = context.l10n;
 
-      if (newFeedback == null ||
-          newFeedback == oldFeedback ||
-          !context.mounted) {
+    ref.listen<SettingsFormState>(settingsControllerProvider, (previous, next) {
+      if (!context.mounted) {
         return;
       }
 
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(SnackBar(content: Text(newFeedback)));
+      final completedSave = previous?.isSaving == true && !next.isSaving;
+      if (!completedSave) {
+        return;
+      }
+
+      final messenger = ScaffoldMessenger.of(context)..hideCurrentSnackBar();
+      if (next.saveStatus.hasError) {
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(
+              localizeAuthFailure(
+                l10n,
+                next.saveStatus.error!,
+                genericFallback: l10n.settingsSaveFailedGeneric,
+              ),
+            ),
+          ),
+        );
+        return;
+      }
+
+      messenger.showSnackBar(SnackBar(content: Text(l10n.settingsSaveSuccess)));
     });
 
     final state = ref.watch(settingsControllerProvider);
@@ -62,7 +80,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     _syncControllers(state);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
+      appBar: AppBar(title: Text(l10n.settingsTitle)),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
         children: [
@@ -73,20 +91,22 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             ),
             const SizedBox(height: 16),
           ],
-          const _SectionHeader(label: 'Connection'),
+          _SectionHeader(label: l10n.settingsConnectionSection),
           _SettingsGroup(
             children: [
               _SettingsTile(
                 icon: Icons.cloud_outlined,
-                title: 'Server URL',
-                subtitle:
-                    'Paperless-ngx endpoint used for login, sync, and downloads.',
+                title: l10n.serverUrlLabel,
+                subtitle: l10n.settingsServerUrlSubtitle,
                 child: TextField(
                   controller: _serverUrlController,
                   keyboardType: TextInputType.url,
                   decoration: InputDecoration(
-                    hintText: 'https://paperless.example.com/',
-                    errorText: state.serverUrlError,
+                    hintText: '${l10n.serverUrlHint}/',
+                    errorText: state.serverUrlError(
+                      l10n.loginValidationServerUrlRequired,
+                      l10n.loginValidationFullUrl,
+                    ),
                   ),
                   onChanged: ref
                       .read(settingsControllerProvider.notifier)
@@ -96,11 +116,15 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               const _SettingsDivider(),
               _SettingsTile(
                 icon: Icons.person_outline,
-                title: 'Username',
-                subtitle: 'Account used to authenticate against the server.',
+                title: l10n.usernameLabel,
+                subtitle: l10n.settingsUsernameSubtitle,
                 child: TextField(
                   controller: _usernameController,
-                  decoration: InputDecoration(errorText: state.usernameError),
+                  decoration: InputDecoration(
+                    errorText: state.usernameError(
+                      l10n.loginValidationUsernameRequired,
+                    ),
+                  ),
                   onChanged: ref
                       .read(settingsControllerProvider.notifier)
                       .updateUsername,
@@ -109,12 +133,16 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               const _SettingsDivider(),
               _SettingsTile(
                 icon: Icons.lock_outline,
-                title: 'Password',
-                subtitle: 'Stored locally and verified again when you save.',
+                title: l10n.passwordLabel,
+                subtitle: l10n.settingsPasswordSubtitle,
                 child: TextField(
                   controller: _passwordController,
                   obscureText: true,
-                  decoration: InputDecoration(errorText: state.passwordError),
+                  decoration: InputDecoration(
+                    errorText: state.passwordError(
+                      l10n.loginValidationPasswordRequired,
+                    ),
+                  ),
                   onChanged: ref
                       .read(settingsControllerProvider.notifier)
                       .updatePassword,
@@ -138,21 +166,24 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
                         : const Icon(Icons.save_outlined),
-                    label: Text(state.isSaving ? 'Saving...' : 'Save settings'),
+                    label: Text(
+                      state.isSaving
+                          ? l10n.savingAction
+                          : l10n.saveSettingsAction,
+                    ),
                   ),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 20),
-          const _SectionHeader(label: 'Appearance & Behavior'),
+          _SectionHeader(label: l10n.settingsAppearanceBehaviorSection),
           _SettingsGroup(
             children: [
               _SettingsTile(
                 icon: Icons.dark_mode_outlined,
-                title: 'Theme mode',
-                subtitle:
-                    'Choose whether the app uses the light or dark color palette.',
+                title: l10n.themeModeTitle,
+                subtitle: l10n.themeModeSubtitle,
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: DropdownButtonHideUnderline(
@@ -167,14 +198,14 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                             .read(appBehaviorSettingsProvider.notifier)
                             .setThemeMode(value);
                       },
-                      items: const [
+                      items: [
                         DropdownMenuItem(
                           value: AppThemeMode.light,
-                          child: Text('Light'),
+                          child: Text(l10n.themeModeLight),
                         ),
                         DropdownMenuItem(
                           value: AppThemeMode.dark,
-                          child: Text('Dark'),
+                          child: Text(l10n.themeModeDark),
                         ),
                       ],
                     ),
@@ -184,9 +215,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               const _SettingsDivider(),
               _SettingsToggleTile(
                 icon: Icons.image_outlined,
-                title: 'Cache thumbnails and previews',
-                subtitle:
-                    'Persist the preference for faster browsing as local caching expands.',
+                title: l10n.cachePreviewsTitle,
+                subtitle: l10n.cachePreviewsSubtitle,
                 value: behaviorSettings.cachePreviewsEnabled,
                 onChanged: ref
                     .read(appBehaviorSettingsProvider.notifier)
@@ -195,7 +225,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             ],
           ),
           const SizedBox(height: 20),
-          const _SectionHeader(label: 'Todos'),
+          _SectionHeader(label: l10n.settingsTodosSection),
           _SettingsGroup(
             children: [
               Padding(
@@ -217,13 +247,13 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'TODO tags',
+                            l10n.todoTagsTitle,
                             style: Theme.of(context).textTheme.titleMedium
                                 ?.copyWith(fontWeight: FontWeight.w600),
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'Select which server tags should feed the Todos tab.',
+                            l10n.todoTagsSubtitle,
                             style: Theme.of(context).textTheme.bodyMedium
                                 ?.copyWith(
                                   color: Theme.of(
@@ -246,7 +276,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                                   ),
                                 ),
                                 icon: const Icon(Icons.tune_outlined),
-                                label: const Text('Select TODO tags'),
+                                label: Text(l10n.selectTodoTagsAction),
                               );
                             },
                             error: (error, stackTrace) {
@@ -254,7 +284,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    'Could not load available tags.',
+                                    l10n.couldNotLoadAvailableTags,
                                     style: TextStyle(
                                       color: Theme.of(
                                         context,
@@ -266,22 +296,22 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                                     onPressed: () =>
                                         ref.invalidate(tagOptionsProvider),
                                     icon: const Icon(Icons.refresh),
-                                    label: const Text('Retry tag loading'),
+                                    label: Text(l10n.retryTagLoadingAction),
                                   ),
                                 ],
                               );
                             },
-                            loading: () => const Row(
+                            loading: () => Row(
                               children: [
-                                SizedBox(
+                                const SizedBox(
                                   width: 18,
                                   height: 18,
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2,
                                   ),
                                 ),
-                                SizedBox(width: 12),
-                                Text('Loading available tags...'),
+                                const SizedBox(width: 12),
+                                Text(l10n.loadingAvailableTags),
                               ],
                             ),
                           ),
@@ -334,11 +364,11 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         return StatefulBuilder(
           builder: (context, setState) {
             return AlertDialog(
-              title: const Text('Select TODO tags'),
+              title: Text(context.l10n.selectTodoTagsDialogTitle),
               content: SizedBox(
                 width: double.maxFinite,
                 child: tags.isEmpty
-                    ? const Text('No tags are available on the server.')
+                    ? Text(context.l10n.noTagsAvailableOnServer)
                     : ListView(
                         shrinkWrap: true,
                         children: [
@@ -363,7 +393,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(dialogContext).pop(),
-                  child: const Text('Cancel'),
+                  child: Text(context.l10n.cancelAction),
                 ),
                 TextButton(
                   onPressed: () => Navigator.of(dialogContext).pop(
@@ -372,7 +402,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                       tagNames: <String>[],
                     ),
                   ),
-                  child: const Text('Clear'),
+                  child: Text(context.l10n.clearAction),
                 ),
                 FilledButton(
                   onPressed: () => Navigator.of(dialogContext).pop(
@@ -387,7 +417,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                           .toList(growable: false),
                     ),
                   ),
-                  child: const Text('Apply'),
+                  child: Text(context.l10n.applyAction),
                 ),
               ],
             );
@@ -463,6 +493,8 @@ class _ConnectionStatusBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -483,7 +515,7 @@ class _ConnectionStatusBanner extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Connected as $displayName',
+                  l10n.connectedAs(displayName),
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     color: Theme.of(context).colorScheme.onPrimaryContainer,
                     fontWeight: FontWeight.w700,
@@ -683,6 +715,8 @@ class _SelectedTodoTags extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
     if (tagNames.isEmpty) {
       return DecoratedBox(
         decoration: BoxDecoration(
@@ -708,14 +742,14 @@ class _SelectedTodoTags extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'No TODO tags selected yet.',
+                      l10n.noTodoTagsSelectedYet,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Use Select TODO tags below to choose which documents appear in the Todos tab.',
+                      l10n.noTodoTagsSelectedDescription,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),

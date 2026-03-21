@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:paperless_ngx_app/src/core/presentation/localization/app_localizations_x.dart';
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_filter_option.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/models/documents_filter_state.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/models/documents_sort_option.dart';
@@ -43,10 +44,12 @@ class _DocumentsFiltersPageState extends ConsumerState<DocumentsFiltersPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Filters'),
-        actions: [TextButton(onPressed: _reset, child: const Text('Reset'))],
+        title: Text(l10n.filtersTitle),
+        actions: [TextButton(onPressed: _reset, child: Text(l10n.resetAction))],
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -65,7 +68,7 @@ class _DocumentsFiltersPageState extends ConsumerState<DocumentsFiltersPage> {
           ),
           const SizedBox(height: 16),
           _FilterDropdown(
-            label: 'Tag',
+            label: l10n.filterTagLabel,
             selectedId: _filterState.tagId,
             options: ref.watch(tagOptionsProvider),
             onChanged: (value) {
@@ -79,7 +82,7 @@ class _DocumentsFiltersPageState extends ConsumerState<DocumentsFiltersPage> {
           ),
           const SizedBox(height: 16),
           _FilterDropdown(
-            label: 'Correspondent',
+            label: l10n.filterCorrespondentLabel,
             selectedId: _filterState.correspondentId,
             options: ref.watch(correspondentOptionsProvider),
             onChanged: (value) {
@@ -93,7 +96,7 @@ class _DocumentsFiltersPageState extends ConsumerState<DocumentsFiltersPage> {
           ),
           const SizedBox(height: 16),
           _FilterDropdown(
-            label: 'Document type',
+            label: l10n.filterDocumentTypeLabel,
             selectedId: _filterState.documentTypeId,
             options: ref.watch(documentTypeOptionsProvider),
             onChanged: (value) {
@@ -112,7 +115,7 @@ class _DocumentsFiltersPageState extends ConsumerState<DocumentsFiltersPage> {
         child: FilledButton.icon(
           onPressed: _apply,
           icon: const Icon(Icons.check),
-          label: const Text('Apply filters'),
+          label: Text(l10n.applyFiltersAction),
         ),
       ),
     );
@@ -143,18 +146,20 @@ class _SortDropdown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
     return DropdownButtonFormField<String>(
       initialValue: selectedOrdering,
       isExpanded: true,
-      decoration: const InputDecoration(
-        labelText: 'Sort by',
-        prefixIcon: Icon(Icons.sort),
+      decoration: InputDecoration(
+        labelText: l10n.sortByLabel,
+        prefixIcon: const Icon(Icons.sort),
       ),
       items: documentsSortOptions
           .map(
             (option) => DropdownMenuItem<String>(
               value: option.ordering,
-              child: Text(option.label),
+              child: Text(documentSortOptionLabel(l10n, option.ordering)),
             ),
           )
           .toList(),
@@ -180,12 +185,13 @@ class _FilterDropdown extends StatelessWidget {
   Widget build(BuildContext context) {
     return options.when(
       data: (items) {
+        final l10n = context.l10n;
         return DropdownButtonFormField<int?>(
           initialValue: selectedId,
           isExpanded: true,
           decoration: InputDecoration(labelText: label),
           items: [
-            const DropdownMenuItem<int?>(value: null, child: Text('Any')),
+            DropdownMenuItem<int?>(value: null, child: Text(l10n.anyOption)),
             ...items.map(
               (item) => DropdownMenuItem<int?>(
                 value: item.id,
@@ -197,20 +203,22 @@ class _FilterDropdown extends StatelessWidget {
         );
       },
       error: (error, stackTrace) {
+        final l10n = context.l10n;
         return TextFormField(
           enabled: false,
           decoration: InputDecoration(
             labelText: label,
-            hintText: 'Could not load',
+            hintText: l10n.couldNotLoadStatus,
           ),
         );
       },
       loading: () {
+        final l10n = context.l10n;
         return TextFormField(
           enabled: false,
           decoration: InputDecoration(
             labelText: label,
-            hintText: 'Loading...',
+            hintText: l10n.loadingStatus,
             suffixIcon: const Padding(
               padding: EdgeInsets.all(12),
               child: SizedBox(

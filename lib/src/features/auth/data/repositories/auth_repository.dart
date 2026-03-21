@@ -38,7 +38,7 @@ class AuthRepository {
         displayName: profile.displayName,
       );
     } on DioException catch (error) {
-      throw AuthFailure(_messageFromError(error));
+      throw _messageFromError(error);
     }
   }
 
@@ -79,55 +79,71 @@ class AuthRepository {
       return data.map((key, value) => MapEntry(key.toString(), value));
     }
 
-    throw const AuthFailure('The server returned an unexpected response.');
+    throw const AuthFailure(AuthFailureCode.unexpectedResponse);
   }
 
-  String _messageFromError(DioException error) {
+  AuthFailure _messageFromError(DioException error) {
     final responseData = error.response?.data;
 
     if (responseData is Map<String, dynamic>) {
       final nonFieldErrors = responseData['non_field_errors'];
       if (nonFieldErrors is List && nonFieldErrors.isNotEmpty) {
-        return nonFieldErrors.first.toString();
+        return AuthFailure.serverMessage(nonFieldErrors.first.toString());
       }
 
       final details = responseData['detail'];
       if (details is String && details.isNotEmpty) {
-        return details;
+        return AuthFailure.serverMessage(details);
       }
     }
 
     if (responseData is String && responseData.contains('CSRF')) {
-      return 'The request reached the wrong paperless page instead of the API. Check the base URL, especially if the server is hosted below a subpath.';
+      return const AuthFailure(AuthFailureCode.wrongPageInsteadOfApi);
     }
 
     if (error.response?.statusCode == 400 ||
         error.response?.statusCode == 401) {
-      return 'Authentication failed. Check your URL, username, and password.';
+      return const AuthFailure(AuthFailureCode.authenticationFailed);
     }
 
     if (error.response?.statusCode == 403) {
-      return 'The server rejected the login request. Check the base URL, especially if paperless-ngx is hosted below a subpath.';
+      return const AuthFailure(AuthFailureCode.serverRejectedLogin);
     }
 
     if (error.type == DioExceptionType.connectionTimeout ||
         error.type == DioExceptionType.receiveTimeout ||
         error.type == DioExceptionType.sendTimeout ||
         error.type == DioExceptionType.connectionError) {
-      return 'Unable to reach the paperless-ngx server.';
+      return const AuthFailure(AuthFailureCode.unableToReachServer);
     }
 
-    return 'Login failed. Please try again.';
+    return const AuthFailure(AuthFailureCode.generic);
   }
 }
 
-class AuthFailure implements Exception {
-  const AuthFailure(this.message);
+enum AuthFailureCode {
+  invalidServerUrl,
+  unexpectedResponse,
+  wrongPageInsteadOfApi,
+  authenticationFailed,
+  serverRejectedLogin,
+  unableToReachServer,
+  generic,
+  serverMessage,
+}
 
-  final String message;
+class AuthFailure implements Exception {
+  const AuthFailure(this.code, {this.serverMessage});
+
+  const AuthFailure.serverMessage(String message)
+    : code = AuthFailureCode.serverMessage,
+      serverMessage = message;
+
+  final AuthFailureCode code;
+  final String? serverMessage;
 
   @override
-  String toString() => message;
+  String toString() => serverMessage ?? code.name;
 }
 
 String normalizePaperlessBaseUrl(String serverUrl) {
@@ -135,9 +151,7 @@ String normalizePaperlessBaseUrl(String serverUrl) {
   final uri = Uri.tryParse(trimmed);
 
   if (uri == null || !uri.hasScheme || uri.host.isEmpty) {
-    throw const AuthFailure(
-      'Enter a valid server URL including http:// or https://.',
-    );
+    throw const AuthFailure(AuthFailureCode.invalidServerUrl);
   }
 
   var normalizedPath = uri.path.replaceFirst(RegExp(r'/+$'), '');

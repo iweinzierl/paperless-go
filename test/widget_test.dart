@@ -27,7 +27,6 @@ import 'package:paperless_ngx_app/src/features/documents/data/repositories/docum
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_document.dart';
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_document_page.dart';
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_filter_option.dart';
-import 'package:paperless_ngx_app/src/features/documents/presentation/models/documents_sort_option.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/providers/document_detail_provider.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/providers/documents_providers.dart';
 
@@ -64,8 +63,9 @@ void main() {
   final fakeRecentlyOpenedDocument = RecentlyOpenedDocument(
     id: 99,
     title: 'Rent contract.pdf',
-    subtitle: 'Uploaded 18 Mar 2026, 10:15 · 6 pages',
     openedAt: DateTime(2026, 3, 20, 9, 45),
+    added: '2026-03-18T10:15:00Z',
+    pageCount: 6,
   );
 
   Future<void> pumpApp(
@@ -607,7 +607,7 @@ void main() {
     expect(find.byType(RefreshIndicator), findsOneWidget);
     expect(find.text('Updated just now'), findsOneWidget);
     expect(find.text('Documents'), findsWidgets);
-    expect(find.text('1 documents'), findsOneWidget);
+    expect(find.text('1 document'), findsOneWidget);
     expect(find.text('Search by title'), findsOneWidget);
     expect(find.text('Details'), findsOneWidget);
     expect(find.text('Open'), findsOneWidget);
@@ -692,7 +692,7 @@ void main() {
     expect(find.text('Correspondent'), findsOneWidget);
     expect(find.text('Document type'), findsOneWidget);
     expect(find.text('Apply filters'), findsOneWidget);
-    expect(find.text(documentsSortOptions.first.label), findsOneWidget);
+    expect(find.text('Created date (newest first)'), findsOneWidget);
   });
 
   testWidgets('shows tagged review documents on the Todos tab', (

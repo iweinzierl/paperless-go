@@ -1,5 +1,3 @@
-import 'package:paperless_ngx_app/src/core/presentation/formatters/timestamp_text.dart';
-
 class PaperlessDocument {
   const PaperlessDocument({
     required this.id,
@@ -67,27 +65,5 @@ class PaperlessDocument {
     }
 
     return 'document-$id';
-  }
-
-  String get subtitle {
-    final parts = <String>[];
-
-    if (added != null && added!.isNotEmpty) {
-      parts.add('Uploaded ${_shortTimestamp(added!)}');
-    } else if (created != null && created!.isNotEmpty) {
-      parts.add('Dated ${_shortTimestamp(created!)}');
-    }
-    if (pageCount != null) {
-      parts.add('$pageCount page${pageCount == 1 ? '' : 's'}');
-    }
-    if (archiveSerialNumber != null) {
-      parts.add('ASN $archiveSerialNumber');
-    }
-
-    return parts.isEmpty ? 'Document #$id' : parts.join(' · ');
-  }
-
-  static String _shortTimestamp(String value) {
-    return formatDocumentTimestamp(value);
   }
 }

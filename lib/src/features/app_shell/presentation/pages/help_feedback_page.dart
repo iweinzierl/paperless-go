@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:paperless_ngx_app/src/core/presentation/localization/app_localizations_x.dart';
 import 'package:paperless_ngx_app/src/features/auth/presentation/controllers/auth_session_controller.dart';
 import 'package:paperless_ngx_app/src/features/app_shell/presentation/providers/help_feedback_providers.dart';
 
@@ -11,21 +12,21 @@ class HelpFeedbackPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final session = ref.watch(authSessionProvider);
     final packageInfo = ref.watch(packageInfoProvider);
+    final l10n = context.l10n;
     final appVersion = packageInfo.maybeWhen(
       data: (value) => '${value.version}+${value.buildNumber}',
-      orElse: () => 'unknown',
+      orElse: () => l10n.unknownLabel,
     );
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Help & Feedback')),
+      appBar: AppBar(title: Text(l10n.helpFeedbackTitle)),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
         children: [
           _SupportTile(
             icon: Icons.help_outline,
-            title: 'Documentation',
-            description:
-                'Open the paperless-ngx documentation for setup, usage, and API guidance.',
+            title: l10n.documentationTitle,
+            description: l10n.documentationDescription,
             onTap: () => _openLink(
               context,
               ref,
@@ -35,9 +36,8 @@ class HelpFeedbackPage extends ConsumerWidget {
           const SizedBox(height: 12),
           _SupportTile(
             icon: Icons.feedback_outlined,
-            title: 'Report an issue',
-            description:
-                'Open the upstream issue tracker to report bugs or request improvements.',
+            title: l10n.reportIssueTitle,
+            description: l10n.reportIssueDescription,
             onTap: () => _openLink(
               context,
               ref,
@@ -50,9 +50,8 @@ class HelpFeedbackPage extends ConsumerWidget {
           const SizedBox(height: 12),
           _SupportTile(
             icon: Icons.content_copy_outlined,
-            title: 'Copy support summary',
-            description:
-                'Copy app version and server details to the clipboard before filing feedback.',
+            title: l10n.copySupportSummaryTitle,
+            description: l10n.copySupportSummaryDescription,
             onTap: () => _openLink(
               context,
               ref,
@@ -79,7 +78,7 @@ class HelpFeedbackPage extends ConsumerWidget {
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
         ..showSnackBar(
-          const SnackBar(content: Text('Support summary copied.')),
+          SnackBar(content: Text(context.l10n.supportSummaryCopied)),
         );
       return;
     }

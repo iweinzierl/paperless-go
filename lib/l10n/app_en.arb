@@ -1,0 +1,294 @@
+{
+  "@@locale": "en",
+  "appTitle": "Paperless-ngx",
+  "navigationHome": "Home",
+  "navigationDocuments": "Documents",
+  "serverUrlLabel": "Server URL",
+  "serverUrlHint": "https://paperless.example.com",
+  "usernameLabel": "Username",
+  "usernameHint": "john.doe",
+  "passwordLabel": "Password",
+  "passwordHint": "Enter your password",
+  "cancelAction": "Cancel",
+  "clearAction": "Clear",
+  "applyAction": "Apply",
+  "retryAction": "Retry",
+  "saveAction": "Save",
+  "savingAction": "Saving...",
+  "createAction": "Create",
+  "addingAction": "Adding...",
+  "loadingStatus": "Loading...",
+  "couldNotLoadStatus": "Could not load",
+  "loginConnectTitle": "Connect to your server",
+  "loginConnectDescription": "Use your paperless-ngx URL and account credentials to access your documents.",
+  "loginButton": "Login",
+  "connectedAs": "Connected as {displayName}",
+  "@connectedAs": {
+    "placeholders": {
+      "displayName": {}
+    }
+  },
+  "loginValidationServerUrlRequired": "Enter your paperless-ngx server URL.",
+  "loginValidationFullUrl": "Use a full URL like https://paperless.example.com.",
+  "loginValidationUsernameRequired": "Enter your username.",
+  "loginValidationPasswordRequired": "Enter your password.",
+  "loginSuccess": "Connected successfully.",
+  "loginFailedGeneric": "Login failed. Please try again.",
+  "authUnexpectedResponse": "The server returned an unexpected response.",
+  "authWrongPageInsteadOfApi": "The request reached the wrong paperless page instead of the API. Check the base URL, especially if the server is hosted below a subpath.",
+  "authAuthenticationFailed": "Authentication failed. Check your URL, username, and password.",
+  "authServerRejectedLogin": "The server rejected the login request. Check the base URL, especially if paperless-ngx is hosted below a subpath.",
+  "authUnableToReachServer": "Unable to reach the paperless-ngx server.",
+  "authInvalidServerUrl": "Enter a valid server URL including http:// or https://.",
+  "settingsTitle": "Settings",
+  "settingsConnectionSection": "Connection",
+  "settingsAppearanceBehaviorSection": "Appearance & Behavior",
+  "settingsTodosSection": "Todos",
+  "settingsServerUrlSubtitle": "Paperless-ngx endpoint used for login, sync, and downloads.",
+  "settingsUsernameSubtitle": "Account used to authenticate against the server.",
+  "settingsPasswordSubtitle": "Stored locally and verified again when you save.",
+  "saveSettingsAction": "Save settings",
+  "settingsSaveSuccess": "Settings saved and connection verified.",
+  "settingsSaveFailedGeneric": "Could not save settings. Please try again.",
+  "themeModeTitle": "Theme mode",
+  "themeModeSubtitle": "Choose whether the app uses the light or dark color palette.",
+  "themeModeLight": "Light",
+  "themeModeDark": "Dark",
+  "cachePreviewsTitle": "Cache thumbnails and previews",
+  "cachePreviewsSubtitle": "Persist the preference for faster browsing as local caching expands.",
+  "todoTagsTitle": "TODO tags",
+  "todoTagsSubtitle": "Select which server tags should feed the Todos tab.",
+  "selectTodoTagsAction": "Select TODO tags",
+  "couldNotLoadAvailableTags": "Could not load available tags.",
+  "retryTagLoadingAction": "Retry tag loading",
+  "loadingAvailableTags": "Loading available tags...",
+  "selectTodoTagsDialogTitle": "Select TODO tags",
+  "noTagsAvailableOnServer": "No tags are available on the server.",
+  "homeRefreshTooltip": "Refresh home",
+  "logoutTooltip": "Log out",
+  "recentUploadsTab": "Recent uploads",
+  "todosTab": "Todos",
+  "scanLaterAction": "Scan later",
+  "homeUpdated": "Home updated.",
+  "homeRefreshFailed": "Home refresh failed.",
+  "noUploadsYetTitle": "No uploads yet",
+  "noUploadsYetDescription": "Recent documents will appear here once your server has processed uploads.",
+  "couldNotLoadRecentUploadsTitle": "Could not load recent uploads",
+  "couldNotLoadRecentUploadsDescription": "The home page reached your server, but document loading failed. Pull to refresh later.",
+  "nothingToReviewTitle": "Nothing to review",
+  "nothingToReviewDescription": "Documents with your configured TODO tags will appear here once they need manual attention.",
+  "verificationQueueTitle": "Verification queue",
+  "verificationQueueDescription": "Documents matching your configured TODO tags are listed here for manual review. Choose one or more TODO tags in Settings so documents can appear in the review queue.",
+  "openTodoTagSettingsAction": "Open TODO tag settings",
+  "couldNotLoadReviewQueueTitle": "Could not load review queue",
+  "couldNotLoadReviewQueueDescription": "The app could not load documents matching your configured TODO tags right now.",
+  "drawerRecentlyOpened": "Recently opened",
+  "drawerSettings": "Settings",
+  "drawerHelpFeedback": "Help & Feedback",
+  "drawerStatisticsTitle": "Statistics",
+  "drawerDocuments": "Documents",
+  "drawerCorrespondents": "Correspondents",
+  "drawerTags": "Tags",
+  "drawerDocumentTypes": "Document types",
+  "drawerStatisticsUnavailable": "Statistics are unavailable right now.",
+  "refreshFailedLabel": "Refresh failed {timestamp}",
+  "@refreshFailedLabel": {
+    "placeholders": {
+      "timestamp": {}
+    }
+  },
+  "refreshingLabel": "Refreshing...",
+  "waitingForFirstSyncLabel": "Waiting for first sync",
+  "refreshingLastUpdatedLabel": "Refreshing... last updated {timestamp}",
+  "@refreshingLastUpdatedLabel": {
+    "placeholders": {
+      "timestamp": {}
+    }
+  },
+  "updatedJustNowLabel": "Updated just now",
+  "updatedMinutesAgo": "Updated {minutes, plural, one {1 min ago} other {{minutes} min ago}}",
+  "@updatedMinutesAgo": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "updatedAtLabel": "Updated {timestamp}",
+  "@updatedAtLabel": {
+    "placeholders": {
+      "timestamp": {}
+    }
+  },
+  "todayAtLabel": "today at {time}",
+  "@todayAtLabel": {
+    "placeholders": {
+      "time": {}
+    }
+  },
+  "yesterdayAtLabel": "yesterday at {time}",
+  "@yesterdayAtLabel": {
+    "placeholders": {
+      "time": {}
+    }
+  },
+  "documentsTitle": "Documents",
+  "refreshDocumentsTooltip": "Refresh documents",
+  "searchByTitleHint": "Search by title",
+  "clearSearchTooltip": "Clear search",
+  "filtersTooltip": "Filters",
+  "connectedToServer": "Connected to {serverUrl}",
+  "@connectedToServer": {
+    "placeholders": {
+      "serverUrl": {}
+    }
+  },
+  "documentsUpdated": "Documents updated.",
+  "documentRefreshFailed": "Document refresh failed.",
+  "filtersTitle": "Filters",
+  "resetAction": "Reset",
+  "sortByLabel": "Sort by",
+  "filterTagLabel": "Tag",
+  "filterCorrespondentLabel": "Correspondent",
+  "filterDocumentTypeLabel": "Document type",
+  "anyOption": "Any",
+  "applyFiltersAction": "Apply filters",
+  "sortCreatedNewest": "Created date (newest first)",
+  "sortCreatedOldest": "Created date (oldest first)",
+  "sortAddedNewest": "Added date (newest first)",
+  "sortAddedOldest": "Added date (oldest first)",
+  "sortTitleAz": "Title (A-Z)",
+  "sortTitleZa": "Title (Z-A)",
+  "documentCount": "{count, plural, one {1 document} other {{count} documents}}",
+  "@documentCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "noDocumentsMatchSearch": "No documents match the current search.",
+  "detailsAction": "Details",
+  "openAction": "Open",
+  "openingAction": "Opening...",
+  "previousAction": "Previous",
+  "pageIndicator": "Page {page}",
+  "@pageIndicator": {
+    "placeholders": {
+      "page": {
+        "type": "int"
+      }
+    }
+  },
+  "nextAction": "Next",
+  "couldNotLoadDocuments": "Could not load documents.",
+  "recentlyOpenedTitle": "Recently opened",
+  "clearHistoryTooltip": "Clear history",
+  "recentlyOpenedEmpty": "Documents you open or inspect will appear here.",
+  "clearRecentlyOpenedTitle": "Clear recently opened?",
+  "clearRecentlyOpenedDescription": "This removes the local history of documents you opened from the drawer.",
+  "recentlyOpenedCleared": "Recently opened cleared.",
+  "openedAtLabel": "Opened {time}",
+  "@openedAtLabel": {
+    "placeholders": {
+      "time": {}
+    }
+  },
+  "helpFeedbackTitle": "Help & Feedback",
+  "documentationTitle": "Documentation",
+  "documentationDescription": "Open the paperless-ngx documentation for setup, usage, and API guidance.",
+  "reportIssueTitle": "Report an issue",
+  "reportIssueDescription": "Open the upstream issue tracker to report bugs or request improvements.",
+  "copySupportSummaryTitle": "Copy support summary",
+  "copySupportSummaryDescription": "Copy app version and server details to the clipboard before filing feedback.",
+  "supportSummaryCopied": "Support summary copied.",
+  "unknownLabel": "unknown",
+  "documentDetailsTitle": "Document details",
+  "editMetadataAction": "Edit metadata",
+  "openDocumentAction": "Open document",
+  "openOriginalAction": "Open original",
+  "thumbnailPreviewTitle": "Thumbnail preview",
+  "noThumbnailPreviewAvailable": "No thumbnail preview available.",
+  "authenticatedThumbnailRequest": "Authenticated thumbnail request for {serverUrl}",
+  "@authenticatedThumbnailRequest": {
+    "placeholders": {
+      "serverUrl": {}
+    }
+  },
+  "metadataTitle": "Metadata",
+  "fileNameLabel": "File name",
+  "mimeTypeLabel": "Mime type",
+  "createdLabel": "Created",
+  "addedLabel": "Added",
+  "pagesLabel": "Pages",
+  "archiveSerialNumberLabel": "Archive serial number",
+  "correspondentLabel": "Correspondent",
+  "documentTypeLabel": "Document type",
+  "tagsLabel": "Tags",
+  "contentPreviewTitle": "Content preview",
+  "metadataUpdated": "Metadata updated.",
+  "editMetadataTitle": "Edit metadata",
+  "editableFieldsTitle": "Editable fields",
+  "titleLabel": "Title",
+  "createdDateLabel": "Created date",
+  "createdDateHint": "YYYY-MM-DD",
+  "newCorrespondentAction": "New correspondent",
+  "correspondentNameLabel": "Correspondent name",
+  "chooseCorrespondentHint": "Choose a correspondent",
+  "noCorrespondentOption": "No correspondent",
+  "couldNotLoadCorrespondents": "Could not load correspondents.",
+  "newDocumentTypeAction": "New document type",
+  "documentTypeNameLabel": "Document type name",
+  "chooseDocumentTypeHint": "Choose a document type",
+  "noDocumentTypeOption": "No document type",
+  "couldNotLoadDocumentTypes": "Could not load document types.",
+  "newTagAction": "New tag",
+  "tagNameLabel": "Tag name",
+  "noTagsSelected": "No tags selected.",
+  "noTodoTagsSelectedYet": "No TODO tags selected yet.",
+  "noTodoTagsSelectedDescription": "Use Select TODO tags below to choose which documents appear in the Todos tab.",
+  "editTagsAction": "Edit tags",
+  "selectTagsDialogTitle": "Select tags",
+  "enterNameValidation": "Enter a name.",
+  "invalidDateValidation": "Use a valid date like 2026-03-20.",
+  "correspondentCreated": "Correspondent created.",
+  "documentTypeCreated": "Document type created.",
+  "tagCreated": "Tag created.",
+  "couldNotLoadDocumentDetails": "Could not load the document details.",
+  "documentSubtitleUploaded": "Uploaded {timestamp}",
+  "@documentSubtitleUploaded": {
+    "placeholders": {
+      "timestamp": {}
+    }
+  },
+  "documentSubtitleDated": "Dated {timestamp}",
+  "@documentSubtitleDated": {
+    "placeholders": {
+      "timestamp": {}
+    }
+  },
+  "documentPages": "{count, plural, one {1 page} other {{count} pages}}",
+  "@documentPages": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "documentAsn": "ASN {value}",
+  "@documentAsn": {
+    "placeholders": {
+      "value": {
+        "type": "int"
+      }
+    }
+  },
+  "documentFallback": "Document #{id}",
+  "@documentFallback": {
+    "placeholders": {
+      "id": {
+        "type": "int"
+      }
+    }
+  }
+}

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:paperless_ngx_app/src/core/presentation/localization/app_localizations_x.dart';
 import 'package:paperless_ngx_app/src/core/presentation/formatters/timestamp_text.dart';
 
 class RefreshStatusText extends StatelessWidget {
@@ -19,7 +20,7 @@ class RefreshStatusText extends StatelessWidget {
     final hasRefreshFailure = _hasRefreshFailure();
 
     return Text(
-      _buildLabel(),
+      _buildLabel(context),
       style: theme.textTheme.bodySmall?.copyWith(
         color: hasRefreshFailure
             ? theme.colorScheme.error
@@ -28,36 +29,50 @@ class RefreshStatusText extends StatelessWidget {
     );
   }
 
-  String _buildLabel() {
+  String _buildLabel(BuildContext context) {
+    final l10n = context.l10n;
+    final localeName = context.localeName;
+
     if (_hasRefreshFailure()) {
-      return 'Refresh failed ${formatRefreshTimestamp(lastRefreshFailedAt!)}';
+      return l10n.refreshFailedLabel(
+        formatRefreshTimestamp(
+          l10n,
+          lastRefreshFailedAt!,
+          localeName: localeName,
+        ),
+      );
     }
 
     if (isRefreshing && lastUpdatedAt == null) {
-      return 'Refreshing...';
+      return l10n.refreshingLabel;
     }
 
     if (lastUpdatedAt == null) {
-      return 'Waiting for first sync';
+      return l10n.waitingForFirstSyncLabel;
     }
 
     final now = DateTime.now();
     final difference = now.difference(lastUpdatedAt!);
-    final formattedTime = formatRefreshTimestamp(lastUpdatedAt!, now: now);
+    final formattedTime = formatRefreshTimestamp(
+      l10n,
+      lastUpdatedAt!,
+      now: now,
+      localeName: localeName,
+    );
 
     if (isRefreshing) {
-      return 'Refreshing... last updated $formattedTime';
+      return l10n.refreshingLastUpdatedLabel(formattedTime);
     }
 
     if (difference < const Duration(minutes: 1)) {
-      return 'Updated just now';
+      return l10n.updatedJustNowLabel;
     }
 
     if (difference < const Duration(hours: 1)) {
-      return 'Updated ${difference.inMinutes} min ago';
+      return l10n.updatedMinutesAgo(difference.inMinutes);
     }
 
-    return 'Updated $formattedTime';
+    return l10n.updatedAtLabel(formattedTime);
   }
 
   bool _hasRefreshFailure() {

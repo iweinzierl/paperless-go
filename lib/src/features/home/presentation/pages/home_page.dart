@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:paperless_ngx_app/src/core/presentation/localization/app_localizations_x.dart';
 import 'package:paperless_ngx_app/src/core/data/local/sync_status_preferences.dart';
 import 'package:paperless_ngx_app/src/core/providers/sync_status_preferences_provider.dart';
 import 'package:paperless_ngx_app/src/core/presentation/widgets/refresh_status_text.dart';
@@ -24,31 +25,38 @@ class HomePage extends ConsumerWidget {
     final todoDocuments = ref.watch(todoDocumentsProvider);
     final isRefreshingHome =
         recentUploads.isRefreshing || todoDocuments.isRefreshing;
+    final l10n = context.l10n;
 
     return DefaultTabController(
       length: 2,
       child: Scaffold(
         drawer: const AppDrawer(),
         appBar: AppBar(
-          title: const Text('Paperless-ngx'),
+          title: Text(l10n.appTitle),
           actions: [
             IconButton(
-              tooltip: 'Refresh home',
+              tooltip: l10n.homeRefreshTooltip,
               onPressed: isRefreshingHome
                   ? null
                   : () => _refreshHome(context, ref),
               icon: const Icon(Icons.refresh),
             ),
             IconButton(
-              tooltip: 'Log out',
+              tooltip: l10n.logoutTooltip,
               onPressed: () => ref.read(authSessionProvider.notifier).signOut(),
               icon: const Icon(Icons.logout),
             ),
           ],
-          bottom: const TabBar(
+          bottom: TabBar(
             tabs: [
-              Tab(text: 'Recent uploads', icon: Icon(Icons.schedule_outlined)),
-              Tab(text: 'Todos', icon: Icon(Icons.fact_check_outlined)),
+              Tab(
+                text: l10n.recentUploadsTab,
+                icon: const Icon(Icons.schedule_outlined),
+              ),
+              Tab(
+                text: l10n.todosTab,
+                icon: const Icon(Icons.fact_check_outlined),
+              ),
             ],
           ),
         ),
@@ -56,7 +64,7 @@ class HomePage extends ConsumerWidget {
         floatingActionButton: FloatingActionButton.extended(
           onPressed: () {},
           icon: const Icon(Icons.upload_file_outlined),
-          label: const Text('Scan later'),
+          label: Text(l10n.scanLaterAction),
         ),
       ),
     );
@@ -76,7 +84,7 @@ class HomePage extends ConsumerWidget {
       }
 
       scaffoldMessenger.showSnackBar(
-        const SnackBar(content: Text('Home updated.')),
+        SnackBar(content: Text(context.l10n.homeUpdated)),
       );
     } catch (_) {
       if (!context.mounted) {
@@ -84,7 +92,7 @@ class HomePage extends ConsumerWidget {
       }
 
       scaffoldMessenger.showSnackBar(
-        const SnackBar(content: Text('Home refresh failed.')),
+        SnackBar(content: Text(context.l10n.homeRefreshFailed)),
       );
     }
   }
@@ -111,6 +119,8 @@ class _RecentUploadsTabState extends ConsumerState<_RecentUploadsTab> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
     ref.listen<AsyncValue<List<PaperlessDocument>>>(recentUploadsProvider, (
       previous,
       next,
@@ -174,10 +184,9 @@ class _RecentUploadsTabState extends ConsumerState<_RecentUploadsTab> {
                     ),
                     const SizedBox(height: 12),
                     if (documents.isEmpty)
-                      const _EmptyStateCard(
-                        title: 'No uploads yet',
-                        description:
-                            'Recent documents will appear here once your server has processed uploads.',
+                      _EmptyStateCard(
+                        title: l10n.noUploadsYetTitle,
+                        description: l10n.noUploadsYetDescription,
                       ),
                     for (final document in documents) ...[
                       PaperlessDocumentCard(
@@ -205,10 +214,10 @@ class _RecentUploadsTabState extends ConsumerState<_RecentUploadsTab> {
                           ),
                         ),
                         const SizedBox(height: 12),
-                        const _EmptyStateCard(
-                          title: 'Could not load recent uploads',
+                        _EmptyStateCard(
+                          title: l10n.couldNotLoadRecentUploadsTitle,
                           description:
-                              'The home page reached your server, but document loading failed. Pull to refresh later.',
+                              l10n.couldNotLoadRecentUploadsDescription,
                         ),
                       ],
                     );
@@ -279,6 +288,7 @@ class _TodosTabState extends ConsumerState<_TodosTab> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final behaviorSettings = ref.watch(appBehaviorSettingsProvider);
     ref.listen<AsyncValue<List<PaperlessDocument>>>(todoDocumentsProvider, (
       previous,
@@ -348,14 +358,14 @@ class _TodosTabState extends ConsumerState<_TodosTab> {
                     if (documents.isEmpty)
                       _EmptyStateCard(
                         title: hasConfiguredTodoTags
-                            ? 'Nothing to review'
-                            : 'Verification queue',
+                            ? l10n.nothingToReviewTitle
+                            : l10n.verificationQueueTitle,
                         description: hasConfiguredTodoTags
-                            ? 'Documents with your configured TODO tags will appear here once they need manual attention.'
-                            : 'Documents matching your configured TODO tags are listed here for manual review. Choose one or more TODO tags in Settings so documents can appear in the review queue.',
+                            ? l10n.nothingToReviewDescription
+                            : l10n.verificationQueueDescription,
                         actionLabel: hasConfiguredTodoTags
                             ? null
-                            : 'Open TODO tag settings',
+                            : l10n.openTodoTagSettingsAction,
                         onActionPressed: hasConfiguredTodoTags
                             ? null
                             : () => _openTodoSettings(context),
@@ -386,10 +396,9 @@ class _TodosTabState extends ConsumerState<_TodosTab> {
                           ),
                         ),
                         const SizedBox(height: 12),
-                        const _EmptyStateCard(
-                          title: 'Could not load review queue',
-                          description:
-                              'The app could not load documents matching your configured TODO tags right now.',
+                        _EmptyStateCard(
+                          title: l10n.couldNotLoadReviewQueueTitle,
+                          description: l10n.couldNotLoadReviewQueueDescription,
                         ),
                       ],
                     );
@@ -442,50 +451,6 @@ class _TodosTabState extends ConsumerState<_TodosTab> {
     Navigator.of(
       context,
     ).push(MaterialPageRoute<void>(builder: (context) => const SettingsPage()));
-  }
-}
-
-class _SectionHint extends StatelessWidget {
-  const _SectionHint({required this.title, required this.description});
-
-  final String title;
-  final String description;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: theme.colorScheme.outline.withValues(alpha: 0.18),
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: theme.colorScheme.onSurface,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              description,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }
 

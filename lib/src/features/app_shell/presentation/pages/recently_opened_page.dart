@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:paperless_ngx_app/src/core/presentation/formatters/document_text.dart';
+import 'package:paperless_ngx_app/src/core/presentation/localization/app_localizations_x.dart';
 import 'package:paperless_ngx_app/src/features/app_shell/domain/models/recently_opened_document.dart';
 import 'package:paperless_ngx_app/src/features/app_shell/presentation/providers/app_shell_providers.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/pages/document_detail_page.dart';
@@ -10,13 +12,14 @@ class RecentlyOpenedPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final documents = ref.watch(recentlyOpenedDocumentsProvider);
+    final l10n = context.l10n;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Recently opened'),
+        title: Text(l10n.recentlyOpenedTitle),
         actions: [
           IconButton(
-            tooltip: 'Clear history',
+            tooltip: l10n.clearHistoryTooltip,
             onPressed: documents.isEmpty
                 ? null
                 : () => _confirmClearHistory(context, ref),
@@ -25,11 +28,11 @@ class RecentlyOpenedPage extends ConsumerWidget {
         ],
       ),
       body: documents.isEmpty
-          ? const Center(
+          ? Center(
               child: Padding(
-                padding: EdgeInsets.all(24),
+                padding: const EdgeInsets.all(24),
                 child: Text(
-                  'Documents you open or inspect will appear here.',
+                  l10n.recentlyOpenedEmpty,
                   textAlign: TextAlign.center,
                 ),
               ),
@@ -51,18 +54,16 @@ class RecentlyOpenedPage extends ConsumerWidget {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Clear recently opened?'),
-          content: const Text(
-            'This removes the local history of documents you opened from the drawer.',
-          ),
+          title: Text(context.l10n.clearRecentlyOpenedTitle),
+          content: Text(context.l10n.clearRecentlyOpenedDescription),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancel'),
+              child: Text(context.l10n.cancelAction),
             ),
             FilledButton(
               onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Clear'),
+              child: Text(context.l10n.clearAction),
             ),
           ],
         );
@@ -76,7 +77,9 @@ class RecentlyOpenedPage extends ConsumerWidget {
     ref.read(recentlyOpenedDocumentsProvider.notifier).clear();
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
-      ..showSnackBar(const SnackBar(content: Text('Recently opened cleared.')));
+      ..showSnackBar(
+        SnackBar(content: Text(context.l10n.recentlyOpenedCleared)),
+      );
   }
 }
 
@@ -87,6 +90,23 @@ class _RecentDocumentTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final localizedSubtitle =
+        document.added != null ||
+            document.created != null ||
+            document.pageCount != null ||
+            document.archiveSerialNumber != null
+        ? formatDocumentSubtitle(
+            l10n: l10n,
+            localeName: context.localeName,
+            id: document.id,
+            added: document.added,
+            created: document.created,
+            pageCount: document.pageCount,
+            archiveSerialNumber: document.archiveSerialNumber,
+          )
+        : document.legacySubtitle ?? '';
+
     return Card(
       child: ListTile(
         onTap: () {
@@ -99,16 +119,16 @@ class _RecentDocumentTile extends StatelessWidget {
         leading: const CircleAvatar(child: Icon(Icons.history)),
         title: Text(document.title),
         subtitle: Text(
-          '${_formatOpenedAt(document.openedAt)} · ${document.subtitle}',
+          '${_formatOpenedAt(context, document.openedAt)} · $localizedSubtitle',
         ),
         trailing: const Icon(Icons.chevron_right),
       ),
     );
   }
 
-  String _formatOpenedAt(DateTime value) {
+  String _formatOpenedAt(BuildContext context, DateTime value) {
     final hours = value.hour.toString().padLeft(2, '0');
     final minutes = value.minute.toString().padLeft(2, '0');
-    return 'Opened $hours:$minutes';
+    return context.l10n.openedAtLabel('$hours:$minutes');
   }
 }

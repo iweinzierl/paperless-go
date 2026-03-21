@@ -1,9 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:paperless_ngx_app/src/features/auth/data/local/auth_preferences.dart';
-import 'package:paperless_ngx_app/src/features/auth/data/repositories/auth_repository.dart';
 import 'package:paperless_ngx_app/src/features/auth/domain/models/paperless_auth_session.dart';
 import 'package:paperless_ngx_app/src/features/auth/presentation/controllers/auth_session_controller.dart';
 import 'package:paperless_ngx_app/src/features/auth/presentation/controllers/login_controller.dart';
+import 'package:paperless_ngx_app/src/features/auth/data/repositories/auth_repository.dart';
 
 final settingsControllerProvider =
     NotifierProvider<SettingsController, SettingsFormState>(
@@ -23,25 +23,20 @@ class SettingsController extends Notifier<SettingsFormState> {
   }
 
   void updateServerUrl(String value) {
-    state = state.copyWith(serverUrl: value, clearFeedbackMessage: true);
+    state = state.copyWith(serverUrl: value);
   }
 
   void updateUsername(String value) {
-    state = state.copyWith(username: value, clearFeedbackMessage: true);
+    state = state.copyWith(username: value);
   }
 
   void updatePassword(String value) {
-    state = state.copyWith(password: value, clearFeedbackMessage: true);
-  }
-
-  void clearFeedback() {
-    state = state.copyWith(clearFeedbackMessage: true);
+    state = state.copyWith(password: value);
   }
 
   Future<void> submit() async {
     final nextState = state.copyWith(
       hasSubmitted: true,
-      clearFeedbackMessage: true,
       saveStatus: const AsyncLoading<void>(),
     );
 
@@ -68,25 +63,13 @@ class SettingsController extends Notifier<SettingsFormState> {
         state = state.copyWith(
           saveStatus: const AsyncData<void>(null),
           connectedDisplayName: session.displayName,
-          feedbackMessage: 'Settings saved and connection verified.',
         );
       },
       error: (error, stackTrace) {
-        state = state.copyWith(
-          saveStatus: AsyncError<void>(error, stackTrace),
-          feedbackMessage: _toErrorMessage(error),
-        );
+        state = state.copyWith(saveStatus: AsyncError<void>(error, stackTrace));
       },
       loading: () {},
     );
-  }
-
-  String _toErrorMessage(Object error) {
-    if (error is AuthFailure) {
-      return error.message;
-    }
-
-    return 'Could not save settings. Please try again.';
   }
 }
 
@@ -97,7 +80,6 @@ class SettingsFormState {
     required this.password,
     required this.hasSubmitted,
     required this.saveStatus,
-    this.feedbackMessage,
     this.connectedDisplayName,
   });
 
@@ -108,7 +90,6 @@ class SettingsFormState {
       password: session.password,
       hasSubmitted: false,
       saveStatus: const AsyncData<void>(null),
-      feedbackMessage: null,
       connectedDisplayName: session.displayName,
     );
   }
@@ -118,51 +99,60 @@ class SettingsFormState {
   final String password;
   final bool hasSubmitted;
   final AsyncValue<void> saveStatus;
-  final String? feedbackMessage;
   final String? connectedDisplayName;
 
   bool get isSaving => saveStatus.isLoading;
 
   bool get isValid =>
-      serverUrlError == null && usernameError == null && passwordError == null;
+      _hasValidServerUrl && username.trim().isNotEmpty && password.isNotEmpty;
 
-  String? get serverUrlError {
+  bool get _hasValidServerUrl {
+    final trimmed = serverUrl.trim();
+    if (trimmed.isEmpty) {
+      return false;
+    }
+
+    final uri = Uri.tryParse(trimmed);
+    return uri != null && uri.hasScheme && uri.host.isNotEmpty;
+  }
+
+  String? serverUrlError(String requiredMessage, String fullUrlMessage) {
     if (!hasSubmitted) {
       return null;
     }
 
     final trimmed = serverUrl.trim();
     if (trimmed.isEmpty) {
-      return 'Enter your paperless-ngx server URL.';
+      return requiredMessage;
     }
 
     final uri = Uri.tryParse(trimmed);
     if (uri == null || !uri.hasScheme || uri.host.isEmpty) {
-      return 'Use a full URL like https://paperless.example.com.';
+      return fullUrlMessage;
     }
 
     return null;
   }
 
-  String? get usernameError {
+  String? usernameError(String requiredMessage) {
     if (!hasSubmitted) {
       return null;
     }
 
     if (username.trim().isEmpty) {
-      return 'Enter your username.';
+      return requiredMessage;
     }
 
     return null;
   }
 
-  String? get passwordError {
+  String? passwordError(String requiredMessage) {
     if (!hasSubmitted) {
       return null;
     }
 
     if (password.isEmpty) {
-      return 'Enter your password.';
+      return requiredMessage;
     }
 
     return null;
@@ -174,9 +164,7 @@ class SettingsFormState {
     String? password,
     bool? hasSubmitted,
     AsyncValue<void>? saveStatus,
-    String? feedbackMessage,
     String? connectedDisplayName,
-    bool clearFeedbackMessage = false,
   }) {
     return SettingsFormState(
       serverUrl: serverUrl ?? this.serverUrl,
@@ -184,9 +172,6 @@ class SettingsFormState {
       password: password ?? this.password,
       hasSubmitted: hasSubmitted ?? this.hasSubmitted,
       saveStatus: saveStatus ?? this.saveStatus,
-      feedbackMessage: clearFeedbackMessage
-          ? null
-          : (feedbackMessage ?? this.feedbackMessage),
       connectedDisplayName: connectedDisplayName ?? this.connectedDisplayName,
     );
   }

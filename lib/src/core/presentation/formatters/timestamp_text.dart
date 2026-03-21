@@ -1,4 +1,11 @@
-String formatDocumentTimestamp(String value) {
+import 'package:intl/intl.dart';
+import 'package:paperless_ngx_app/l10n/generated/app_localizations.dart';
+
+String formatDocumentTimestamp(
+  AppLocalizations l10n,
+  String value, {
+  required String localeName,
+}) {
   final parsed = DateTime.tryParse(value);
   if (parsed == null) {
     return value;
@@ -6,31 +13,35 @@ String formatDocumentTimestamp(String value) {
 
   final hasExplicitTime = value.contains('T') || value.contains(':');
   return hasExplicitTime
-      ? formatAbsoluteDateTime(parsed)
-      : formatAbsoluteDate(parsed);
+      ? formatAbsoluteDateTime(parsed, localeName: localeName)
+      : formatAbsoluteDate(parsed, localeName: localeName);
 }
 
-String formatAbsoluteDate(DateTime value, {DateTime? now}) {
-  final month = _monthLabel(value.month);
-  return '${value.day} $month ${value.year}';
+String formatAbsoluteDate(DateTime value, {required String localeName}) {
+  return DateFormat('d MMM yyyy', localeName).format(value);
 }
 
-String formatAbsoluteDateTime(DateTime value, {DateTime? now}) {
-  return '${formatAbsoluteDate(value, now: now)}, ${_formatTime(value)}';
+String formatAbsoluteDateTime(DateTime value, {required String localeName}) {
+  return '${formatAbsoluteDate(value, localeName: localeName)}, ${_formatTime(value, localeName: localeName)}';
 }
 
-String formatRefreshTimestamp(DateTime value, {DateTime? now}) {
+String formatRefreshTimestamp(
+  AppLocalizations l10n,
+  DateTime value, {
+  DateTime? now,
+  required String localeName,
+}) {
   final reference = now ?? DateTime.now();
   if (_isSameDay(value, reference)) {
-    return 'today at ${_formatTime(value)}';
+    return l10n.todayAtLabel(_formatTime(value, localeName: localeName));
   }
 
   final yesterday = reference.subtract(const Duration(days: 1));
   if (_isSameDay(value, yesterday)) {
-    return 'yesterday at ${_formatTime(value)}';
+    return l10n.yesterdayAtLabel(_formatTime(value, localeName: localeName));
   }
 
-  return formatAbsoluteDateTime(value, now: reference);
+  return formatAbsoluteDateTime(value, localeName: localeName);
 }
 
 bool _isSameDay(DateTime left, DateTime right) {
@@ -39,39 +50,6 @@ bool _isSameDay(DateTime left, DateTime right) {
       left.day == right.day;
 }
 
-String _formatTime(DateTime value) {
-  final hours = value.hour.toString().padLeft(2, '0');
-  final minutes = value.minute.toString().padLeft(2, '0');
-  return '$hours:$minutes';
-}
-
-String _monthLabel(int month) {
-  switch (month) {
-    case 1:
-      return 'Jan';
-    case 2:
-      return 'Feb';
-    case 3:
-      return 'Mar';
-    case 4:
-      return 'Apr';
-    case 5:
-      return 'May';
-    case 6:
-      return 'Jun';
-    case 7:
-      return 'Jul';
-    case 8:
-      return 'Aug';
-    case 9:
-      return 'Sep';
-    case 10:
-      return 'Oct';
-    case 11:
-      return 'Nov';
-    case 12:
-      return 'Dec';
-  }
-
-  return 'Unknown';
+String _formatTime(DateTime value, {required String localeName}) {
+  return DateFormat.Hm(localeName).format(value);
 }
