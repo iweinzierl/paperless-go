@@ -88,7 +88,14 @@ Or point Fastlane to a different path with:
 Run:
 
 ```bash
+gem install --user-install bundler:2.4.22
 bundle install
+```
+
+If your shell cannot find the user-installed Bundler executable afterwards, add the Ruby user gem bin directory to your shell path. On the default macOS system Ruby this is commonly:
+
+```bash
+export PATH="$HOME/.gem/ruby/2.6.0/bin:$PATH"
 ```
 
 ## Common Commands
@@ -98,25 +105,25 @@ All commands are run from the project root.
 ### Upload metadata, images, and screenshots only
 
 ```bash
-bundle exec fastlane android metadata
+./scripts/android/run_fastlane.sh metadata
 ```
 
 ### Upload only images and screenshots
 
 ```bash
-bundle exec fastlane android assets
+./scripts/android/run_fastlane.sh assets
 ```
 
 ### Build and upload a new Android App Bundle to internal testing
 
 ```bash
-bundle exec fastlane android internal
+./scripts/android/run_fastlane.sh internal
 ```
 
 ### Build and upload only the bundle to internal testing
 
 ```bash
-bundle exec fastlane android binary
+./scripts/android/run_fastlane.sh binary
 ```
 
 ### Build a signed Android App Bundle locally
@@ -128,7 +135,7 @@ bundle exec fastlane android binary
 ### Validate the upload without publishing it
 
 ```bash
-bundle exec fastlane android validate
+./scripts/android/run_fastlane.sh validate
 ```
 
 ## Track And Release Options
@@ -136,7 +143,7 @@ bundle exec fastlane android validate
 You can override the track or release status when needed:
 
 ```bash
-bundle exec fastlane android internal track:internal release_status:draft
+./scripts/android/run_fastlane.sh internal track:internal release_status:draft
 ```
 
 Supported `release_status` values typically include:
