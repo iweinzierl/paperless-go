@@ -374,6 +374,54 @@ abstract class AppLocalizations {
   /// **'Could not save settings. Please try again.'**
   String get settingsSaveFailedGeneric;
 
+  /// No description provided for @appLanguageTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'App language'**
+  String get appLanguageTitle;
+
+  /// No description provided for @appLanguageSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose whether the app follows the system language or always uses a specific translation.'**
+  String get appLanguageSubtitle;
+
+  /// No description provided for @appLanguageSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'System default'**
+  String get appLanguageSystem;
+
+  /// No description provided for @appLanguageEnglish.
+  ///
+  /// In en, this message translates to:
+  /// **'English'**
+  String get appLanguageEnglish;
+
+  /// No description provided for @appLanguageGerman.
+  ///
+  /// In en, this message translates to:
+  /// **'Deutsch'**
+  String get appLanguageGerman;
+
+  /// No description provided for @appLanguageFrench.
+  ///
+  /// In en, this message translates to:
+  /// **'Français'**
+  String get appLanguageFrench;
+
+  /// No description provided for @appLanguageItalian.
+  ///
+  /// In en, this message translates to:
+  /// **'Italiano'**
+  String get appLanguageItalian;
+
+  /// No description provided for @appLanguageSpanish.
+  ///
+  /// In en, this message translates to:
+  /// **'Español'**
+  String get appLanguageSpanish;
+
   /// No description provided for @themeModeTitle.
   ///
   /// In en, this message translates to:

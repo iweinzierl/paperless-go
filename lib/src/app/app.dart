@@ -20,6 +20,7 @@ class PaperlessNgxApp extends ConsumerWidget {
       debugShowCheckedModeBanner: false,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
+      locale: behaviorSettings.appLanguage.locale,
       theme: buildAppTheme(),
       darkTheme: buildAppTheme(brightness: Brightness.dark),
       themeMode: behaviorSettings.themeMode.materialThemeMode,

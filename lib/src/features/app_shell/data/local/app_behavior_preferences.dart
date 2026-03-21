@@ -5,6 +5,7 @@ class AppBehaviorPreferences {
   const AppBehaviorPreferences(this._sharedPreferences);
 
   static const _cachePreviewsKey = 'app_behavior.cache_previews_enabled';
+  static const _appLanguageKey = 'app_behavior.app_language';
   static const _themeModeKey = 'app_behavior.theme_mode';
   static const _todoTagIdsKey = 'app_behavior.todo_tag_ids';
   static const _todoTagsKey = 'app_behavior.todo_tag_names';
@@ -20,6 +21,9 @@ class AppBehaviorPreferences {
     return AppBehaviorSettings(
       cachePreviewsEnabled:
           _sharedPreferences.getBool(_cachePreviewsKey) ?? true,
+      appLanguage: AppLanguage.fromStorageValue(
+        _sharedPreferences.getString(_appLanguageKey),
+      ),
       themeMode: AppThemeMode.fromStorageValue(
         _sharedPreferences.getString(_themeModeKey),
       ),
@@ -32,6 +36,10 @@ class AppBehaviorPreferences {
     await _sharedPreferences.setBool(
       _cachePreviewsKey,
       settings.cachePreviewsEnabled,
+    );
+    await _sharedPreferences.setString(
+      _appLanguageKey,
+      settings.appLanguage.storageValue,
     );
     await _sharedPreferences.setString(
       _themeModeKey,

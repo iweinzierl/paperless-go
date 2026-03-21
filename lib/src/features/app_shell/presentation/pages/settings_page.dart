@@ -181,6 +181,37 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           _SettingsGroup(
             children: [
               _SettingsTile(
+                icon: Icons.language_outlined,
+                title: l10n.appLanguageTitle,
+                subtitle: l10n.appLanguageSubtitle,
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<AppLanguage>(
+                      value: behaviorSettings.appLanguage,
+                      onChanged: (value) {
+                        if (value == null) {
+                          return;
+                        }
+
+                        ref
+                            .read(appBehaviorSettingsProvider.notifier)
+                            .setAppLanguage(value);
+                      },
+                      items: AppLanguage.values
+                          .map(
+                            (value) => DropdownMenuItem<AppLanguage>(
+                              value: value,
+                              child: Text(_appLanguageLabel(context, value)),
+                            ),
+                          )
+                          .toList(growable: false),
+                    ),
+                  ),
+                ),
+              ),
+              const _SettingsDivider(),
+              _SettingsTile(
                 icon: Icons.dark_mode_outlined,
                 title: l10n.themeModeTitle,
                 subtitle: l10n.themeModeSubtitle,
@@ -326,6 +357,25 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         ],
       ),
     );
+  }
+
+  String _appLanguageLabel(BuildContext context, AppLanguage value) {
+    final l10n = context.l10n;
+
+    switch (value) {
+      case AppLanguage.system:
+        return l10n.appLanguageSystem;
+      case AppLanguage.english:
+        return l10n.appLanguageEnglish;
+      case AppLanguage.german:
+        return l10n.appLanguageGerman;
+      case AppLanguage.french:
+        return l10n.appLanguageFrench;
+      case AppLanguage.italian:
+        return l10n.appLanguageItalian;
+      case AppLanguage.spanish:
+        return l10n.appLanguageSpanish;
+    }
   }
 
   void _syncControllers(SettingsFormState state) {

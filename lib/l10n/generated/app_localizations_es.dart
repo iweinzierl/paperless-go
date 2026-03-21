@@ -161,6 +161,31 @@ class AppLocalizationsEs extends AppLocalizations {
       'No se pudieron guardar los ajustes. Inténtalo de nuevo.';
 
   @override
+  String get appLanguageTitle => 'Idioma de la aplicación';
+
+  @override
+  String get appLanguageSubtitle =>
+      'Elige si la aplicación sigue el idioma del sistema o usa siempre una traducción concreta.';
+
+  @override
+  String get appLanguageSystem => 'Predeterminado del sistema';
+
+  @override
+  String get appLanguageEnglish => 'English';
+
+  @override
+  String get appLanguageGerman => 'Deutsch';
+
+  @override
+  String get appLanguageFrench => 'Français';
+
+  @override
+  String get appLanguageItalian => 'Italiano';
+
+  @override
+  String get appLanguageSpanish => 'Español';
+
+  @override
   String get themeModeTitle => 'Tema';
 
   @override

@@ -161,6 +161,31 @@ class AppLocalizationsFr extends AppLocalizations {
       'Impossible d\'enregistrer les paramètres. Veuillez réessayer.';
 
   @override
+  String get appLanguageTitle => 'Langue de l\'application';
+
+  @override
+  String get appLanguageSubtitle =>
+      'Choisissez si l\'application suit la langue du système ou utilise toujours une traduction précise.';
+
+  @override
+  String get appLanguageSystem => 'Langue du système';
+
+  @override
+  String get appLanguageEnglish => 'English';
+
+  @override
+  String get appLanguageGerman => 'Deutsch';
+
+  @override
+  String get appLanguageFrench => 'Français';
+
+  @override
+  String get appLanguageItalian => 'Italiano';
+
+  @override
+  String get appLanguageSpanish => 'Español';
+
+  @override
   String get themeModeTitle => 'Thème';
 
   @override

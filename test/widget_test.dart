@@ -143,6 +143,8 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('Appearance & Behavior'), findsOneWidget);
+    expect(find.text('App language'), findsOneWidget);
+    expect(find.text('System default'), findsOneWidget);
     expect(find.text('Cache thumbnails and previews'), findsOneWidget);
     await tester.scrollUntilVisible(
       find.text('Theme mode'),
@@ -175,6 +177,20 @@ void main() {
     final materialApp = tester.widget<MaterialApp>(find.byType(MaterialApp));
 
     expect(materialApp.themeMode, equals(ThemeMode.dark));
+  });
+
+  testWidgets('uses saved app language override on startup', (
+    WidgetTester tester,
+  ) async {
+    await pumpApp(
+      tester,
+      initialValues: const <String, Object>{'app_behavior.app_language': 'fr'},
+    );
+    await tester.pumpAndSettle();
+
+    final materialApp = tester.widget<MaterialApp>(find.byType(MaterialApp));
+
+    expect(materialApp.locale, equals(const Locale('fr')));
   });
 
   testWidgets('updates theme mode from settings', (WidgetTester tester) async {

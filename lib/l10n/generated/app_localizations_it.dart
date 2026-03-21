@@ -160,6 +160,31 @@ class AppLocalizationsIt extends AppLocalizations {
       'Impossibile salvare le impostazioni. Riprova.';
 
   @override
+  String get appLanguageTitle => 'Lingua dell\'app';
+
+  @override
+  String get appLanguageSubtitle =>
+      'Scegli se l\'app deve seguire la lingua del sistema o usare sempre una traduzione specifica.';
+
+  @override
+  String get appLanguageSystem => 'Predefinita del sistema';
+
+  @override
+  String get appLanguageEnglish => 'English';
+
+  @override
+  String get appLanguageGerman => 'Deutsch';
+
+  @override
+  String get appLanguageFrench => 'Français';
+
+  @override
+  String get appLanguageItalian => 'Italiano';
+
+  @override
+  String get appLanguageSpanish => 'Español';
+
+  @override
   String get themeModeTitle => 'Tema';
 
   @override

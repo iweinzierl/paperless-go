@@ -26,6 +26,11 @@ class AppBehaviorSettingsController extends Notifier<AppBehaviorSettings> {
     unawaited(_preferences.saveSettings(state));
   }
 
+  void setAppLanguage(AppLanguage value) {
+    state = state.copyWith(appLanguage: value);
+    unawaited(_preferences.saveSettings(state));
+  }
+
   void setThemeMode(AppThemeMode value) {
     state = state.copyWith(themeMode: value);
     unawaited(_preferences.saveSettings(state));

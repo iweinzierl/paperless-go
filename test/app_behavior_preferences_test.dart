@@ -16,6 +16,7 @@ void main() {
 
     final settings = preferences.readSettings();
 
+    expect(settings.appLanguage, equals(AppLanguage.system));
     expect(settings.themeMode, equals(AppThemeMode.dark));
     expect(settings.normalizedTodoTagIds, equals(const <int>[2, 4]));
     expect(
@@ -35,6 +36,7 @@ void main() {
 
       final settings = preferences.readSettings();
 
+      expect(settings.appLanguage, equals(AppLanguage.system));
       expect(settings.themeMode, equals(AppThemeMode.light));
       expect(settings.normalizedTodoTagIds, isEmpty);
       expect(settings.normalizedTodoTagNames, equals(const <String>['Prüfen']));
@@ -49,12 +51,17 @@ void main() {
     await preferences.saveSettings(
       const AppBehaviorSettings(
         cachePreviewsEnabled: true,
+        appLanguage: AppLanguage.german,
         themeMode: AppThemeMode.dark,
         todoTagIds: <int>[7, 3],
         todoTagNames: <String>['Review', 'Inbox'],
       ),
     );
 
+    expect(
+      sharedPreferences.getString('app_behavior.app_language'),
+      equals('de'),
+    );
     expect(
       sharedPreferences.getString('app_behavior.theme_mode'),
       equals('dark'),
@@ -78,6 +85,19 @@ void main() {
 
     final settings = preferences.readSettings();
 
+    expect(settings.appLanguage, equals(AppLanguage.system));
     expect(settings.themeMode, equals(AppThemeMode.light));
+  });
+
+  test('reads saved app language override', () async {
+    SharedPreferences.setMockInitialValues(const <String, Object>{
+      'app_behavior.app_language': 'fr',
+    });
+    final sharedPreferences = await SharedPreferences.getInstance();
+    final preferences = AppBehaviorPreferences(sharedPreferences);
+
+    final settings = preferences.readSettings();
+
+    expect(settings.appLanguage, equals(AppLanguage.french));
   });
 }
