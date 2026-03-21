@@ -336,12 +336,6 @@ class _TodosTabState extends ConsumerState<_TodosTab> {
                   physics: const AlwaysScrollableScrollPhysics(),
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
                   children: [
-                    const _SectionHint(
-                      title: 'Verification queue',
-                      description:
-                          'Documents matching your configured TODO tags are listed here for manual review.',
-                    ),
-                    const SizedBox(height: 12),
                     Align(
                       alignment: Alignment.centerRight,
                       child: RefreshStatusText(
@@ -355,10 +349,10 @@ class _TodosTabState extends ConsumerState<_TodosTab> {
                       _EmptyStateCard(
                         title: hasConfiguredTodoTags
                             ? 'Nothing to review'
-                            : 'No TODO tags configured',
+                            : 'Verification queue',
                         description: hasConfiguredTodoTags
                             ? 'Documents with your configured TODO tags will appear here once they need manual attention.'
-                            : 'Choose one or more TODO tags in Settings so documents can appear in the review queue.',
+                            : 'Documents matching your configured TODO tags are listed here for manual review. Choose one or more TODO tags in Settings so documents can appear in the review queue.',
                         actionLabel: hasConfiguredTodoTags
                             ? null
                             : 'Open TODO tag settings',

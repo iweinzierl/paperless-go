@@ -730,7 +730,7 @@ void main() {
 
     expect(find.byType(RefreshIndicator), findsOneWidget);
     expect(find.text('Updated just now'), findsOneWidget);
-    expect(find.text('Verification queue'), findsOneWidget);
+    expect(find.text('Verification queue'), findsNothing);
     expect(find.text('Insurance claim.pdf'), findsOneWidget);
     expect(find.text('2026-03-19 08:30 · 2 pages'), findsOneWidget);
   });
@@ -767,7 +767,14 @@ void main() {
     await tester.tap(find.text('Todos'));
     await tester.pumpAndSettle();
 
-    expect(find.text('No TODO tags configured'), findsOneWidget);
+    expect(find.text('Verification queue'), findsOneWidget);
+    expect(find.text('No TODO tags configured'), findsNothing);
+    expect(
+      find.text(
+        'Documents matching your configured TODO tags are listed here for manual review. Choose one or more TODO tags in Settings so documents can appear in the review queue.',
+      ),
+      findsOneWidget,
+    );
     expect(find.text('Open TODO tag settings'), findsOneWidget);
 
     await tester.tap(find.text('Open TODO tag settings'));
