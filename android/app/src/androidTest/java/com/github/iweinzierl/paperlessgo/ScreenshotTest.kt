@@ -90,7 +90,7 @@ class ScreenshotTest {
         val preferences = flutterPreferences()
         with(preferences.edit()) {
             putString("flutter.debug.screenshot_scenario", scenario.preferenceValue)
-            putString("flutter.app_behavior.app_language", "en")
+            putString("flutter.app_behavior.app_language", appLanguageForLocale())
             putString("flutter.sync.documents.last_success_at", "2026-03-21T09:30:00.000Z")
 
             if (authenticated) {
@@ -102,6 +102,16 @@ class ScreenshotTest {
             }
 
             commit()
+        }
+    }
+
+    private fun appLanguageForLocale(): String {
+        return when (Screengrab.getLocale().substringBefore('-').lowercase()) {
+            "de" -> "de"
+            "es" -> "es"
+            "fr" -> "fr"
+            "it" -> "it"
+            else -> "en"
         }
     }
 

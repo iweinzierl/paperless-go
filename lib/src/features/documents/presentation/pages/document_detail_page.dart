@@ -47,6 +47,9 @@ class _DocumentDetailBody extends ConsumerWidget {
     final l10n = context.l10n;
     final session = ref.watch(authSessionProvider);
     final repository = ref.watch(documentsRepositoryProvider);
+    final thumbnailWidget = repository.buildDocumentThumbnailWidget(document);
+    final thumbnailImageProvider = repository
+        .buildDocumentThumbnailImageProvider(document.id);
     final correspondentOptions = ref.watch(correspondentOptionsProvider);
     final documentTypeOptions = ref.watch(documentTypeOptionsProvider);
     final tagOptions = ref.watch(tagOptionsProvider);
@@ -165,42 +168,54 @@ class _DocumentDetailBody extends ConsumerWidget {
               borderRadius: BorderRadius.circular(16),
               child: AspectRatio(
                 aspectRatio: 16 / 10,
-                child: Image.network(
-                  repository.buildDocumentThumbnailUri(document.id).toString(),
-                  headers: repository.buildAuthenticatedHeaders(),
-                  fit: BoxFit.cover,
-                  loadingBuilder: (context, child, loadingProgress) {
-                    if (loadingProgress == null) {
-                      return child;
-                    }
+                child:
+                    thumbnailWidget ??
+                    (thumbnailImageProvider != null
+                        ? Image(
+                            image: thumbnailImageProvider,
+                            fit: BoxFit.cover,
+                          )
+                        : Image.network(
+                            repository
+                                .buildDocumentThumbnailUri(document.id)
+                                .toString(),
+                            headers: repository.buildAuthenticatedHeaders(),
+                            fit: BoxFit.cover,
+                            loadingBuilder: (context, child, loadingProgress) {
+                              if (loadingProgress == null) {
+                                return child;
+                              }
 
-                    return ColoredBox(
-                      color: theme.colorScheme.surfaceContainerLow,
-                      child: Center(child: CircularProgressIndicator()),
-                    );
-                  },
-                  errorBuilder: (context, error, stackTrace) {
-                    return ColoredBox(
-                      color: theme.colorScheme.surfaceContainerHighest,
-                      child: Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(24),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.image_not_supported_outlined,
-                                color: theme.colorScheme.primary,
-                              ),
-                              const SizedBox(height: 12),
-                              Text(l10n.noThumbnailPreviewAvailable),
-                            ],
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
+                              return ColoredBox(
+                                color: theme.colorScheme.surfaceContainerLow,
+                                child: Center(
+                                  child: CircularProgressIndicator(),
+                                ),
+                              );
+                            },
+                            errorBuilder: (context, error, stackTrace) {
+                              return ColoredBox(
+                                color:
+                                    theme.colorScheme.surfaceContainerHighest,
+                                child: Center(
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(24),
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          Icons.image_not_supported_outlined,
+                                          color: theme.colorScheme.primary,
+                                        ),
+                                        const SizedBox(height: 12),
+                                        Text(l10n.noThumbnailPreviewAvailable),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          )),
               ),
             ),
             const SizedBox(height: 12),

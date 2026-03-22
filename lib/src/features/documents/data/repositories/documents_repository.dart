@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:dio/dio.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:paperless_ngx_app/src/core/network/dio_provider.dart';
@@ -208,6 +209,14 @@ class DocumentsRepository {
     return Uri.parse(
       _session.serverUrl,
     ).resolve('api/documents/$documentId/thumb/');
+  }
+
+  ImageProvider<Object>? buildDocumentThumbnailImageProvider(int documentId) {
+    return null;
+  }
+
+  Widget? buildDocumentThumbnailWidget(PaperlessDocument document) {
+    return null;
   }
 
   Map<String, String> buildAuthenticatedHeaders() {

@@ -15,11 +15,13 @@ Future<void> main() async {
   final screenshotScenario = maybeParseScreenshotScenario(
     sharedPreferences.getString(screenshotScenarioPreferenceKey),
   );
+  final screenshotLanguageCode =
+      sharedPreferences.getString('app_behavior.app_language') ?? 'en';
   final overrides = <Override>[
     sharedPreferencesProvider.overrideWithValue(sharedPreferences),
     if (screenshotScenario != null)
       documentsRepositoryProvider.overrideWithValue(
-        ScreenshotDocumentsRepository(),
+        ScreenshotDocumentsRepository(languageCode: screenshotLanguageCode),
       ),
   ];
 
