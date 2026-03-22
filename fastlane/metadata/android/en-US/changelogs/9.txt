@@ -1,0 +1,2 @@
+- added Play Store screenshots for the home and settings screens
+- refined the store listing presentation across all supported languages

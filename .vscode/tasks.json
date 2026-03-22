@@ -63,6 +63,50 @@
 			],
 			"isBackground": false,
 			"group": "build"
+		},
+		{
+			"label": "verify metadata lane",
+			"type": "shell",
+			"command": "fastlane",
+			"args": [
+				"android",
+				"metadata"
+			],
+			"isBackground": false,
+			"group": "build"
+		},
+		{
+			"label": "verify metadata lane after draft fix",
+			"type": "shell",
+			"command": "fastlane",
+			"args": [
+				"android",
+				"metadata"
+			],
+			"isBackground": false,
+			"group": "build"
+		},
+		{
+			"label": "verify metadata lane after promote-status fix",
+			"type": "shell",
+			"command": "fastlane",
+			"args": [
+				"android",
+				"metadata"
+			],
+			"isBackground": false,
+			"group": "build"
+		},
+		{
+			"label": "verify metadata-only lane",
+			"type": "shell",
+			"command": "fastlane",
+			"args": [
+				"android",
+				"metadata"
+			],
+			"isBackground": false,
+			"group": "build"
 		}
 	]
 }

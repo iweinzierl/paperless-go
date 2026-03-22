@@ -104,8 +104,8 @@ platform :android do
       version_code: options[:version_code] || current_version_code,
       aab: options[:aab] || "build/app/outputs/bundle/release/app-release.aab",
       skip_upload_metadata: false,
-      skip_upload_images: false,
-      skip_upload_screenshots: false,
+      skip_upload_images: true,
+      skip_upload_screenshots: true,
     )
   end
 
