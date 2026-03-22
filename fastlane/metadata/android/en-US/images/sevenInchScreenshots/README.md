@@ -1,0 +1,1 @@
+Add 7-inch tablet screenshots here when available.

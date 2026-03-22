@@ -63,6 +63,14 @@ Build a release app bundle and upload it with metadata/assets to the internal tr
 
 Validate a Play upload without publishing it
 
+### android generate_screenshots
+
+```sh
+[bundle exec] fastlane android generate_screenshots
+```
+
+Build screenshot artifacts and capture Play Store screenshots with Screengrab
+
 ----
 
 This README.md is auto-generated and will be re-generated every time [_fastlane_](https://fastlane.tools) is run.

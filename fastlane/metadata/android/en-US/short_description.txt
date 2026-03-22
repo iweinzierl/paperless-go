@@ -1,0 +1,1 @@
+Paperless Go gives you mobile access to your paperless-ngx documents.

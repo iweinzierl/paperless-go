@@ -1,0 +1,2 @@
+- aktualisierte Play-Store-Screenshots
+- verbesserte Release-Metadaten und Lokalisierung des Store-Eintrags

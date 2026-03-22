@@ -1,0 +1,8 @@
+app_package_name("com.github.iweinzierl.paperlessgo")
+use_tests_in_packages(["com.github.iweinzierl.paperlessgo"])
+test_instrumentation_runner("androidx.test.runner.AndroidJUnitRunner")
+app_apk_path(File.expand_path("build/app/outputs/apk/debug/app-debug.apk", __dir__))
+tests_apk_path(File.expand_path("build/app/outputs/apk/androidTest/debug/app-debug-androidTest.apk", __dir__))
+output_directory(File.expand_path("metadata/android", __dir__))
+locales(["en-GB"])
+clear_previous_screenshots(true)

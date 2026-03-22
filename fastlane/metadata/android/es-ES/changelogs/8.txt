@@ -1,0 +1,2 @@
+- capturas de Play Store actualizadas
+- metadatos de la version y localizacion de la ficha mejorados

@@ -1,0 +1,2 @@
+- captures d'ecran Play Store mises a jour
+- metadonnees de version et localisation de la fiche ameliorees

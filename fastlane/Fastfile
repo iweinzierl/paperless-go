@@ -1,4 +1,4 @@
-default_platform(:android)
+(:android)
 
 FASTLANE_DIR = __dir__
 PLAY_SERVICE_ACCOUNT_JSON = File.expand_path(
@@ -6,6 +6,19 @@ PLAY_SERVICE_ACCOUNT_JSON = File.expand_path(
   FASTLANE_DIR,
 )
 ANDROID_KEY_PROPERTIES = File.expand_path("../android/key.properties", FASTLANE_DIR)
+PUBSPEC_FILE = File.expand_path("../pubspec.yaml", FASTLANE_DIR)
+
+def current_version_code
+  pubspec_contents = File.read(PUBSPEC_FILE)
+  version_line = pubspec_contents.each_line.find { |line| line.start_with?("version:") }
+
+  UI.user_error!("Missing version in #{PUBSPEC_FILE}") if version_line.nil?
+
+  version_code = version_line.split("+", 2)[1]&.strip
+  UI.user_error!("Missing build number in #{PUBSPEC_FILE}") if version_code.to_s.empty?
+
+  version_code
+end
 
 platform :android do
   desc "Check that Play Store release prerequisites are available"
@@ -32,16 +45,22 @@ platform :android do
   end
 
   desc "Upload listing metadata, store images, and screenshots"
-  lane :metadata do
+  lane :metadata do |options|
     check_play_store_setup(require_signing: false)
 
-    upload_to_play_store(
+    metadata_upload_options = {
+      version_code: options[:version_code] || current_version_code,
       skip_upload_aab: true,
       skip_upload_apk: true,
       skip_upload_metadata: false,
       skip_upload_images: false,
       skip_upload_screenshots: false,
-    )
+      skip_upload_changelogs: false,
+    }
+    metadata_upload_options[:track] = options[:track] if options[:track]
+    metadata_upload_options[:release_status] = options[:release_status] if options[:release_status]
+
+    upload_to_play_store(**metadata_upload_options)
   end
 
   desc "Upload only Play Store images and screenshots"
@@ -54,6 +73,7 @@ platform :android do
       skip_upload_metadata: true,
       skip_upload_images: false,
       skip_upload_screenshots: false,
+      skip_upload_changelogs: true,
     )
   end
 
@@ -65,6 +85,7 @@ platform :android do
     upload_to_play_store(
       track: options[:track] || "internal",
       release_status: options[:release_status] || "draft",
+      version_code: options[:version_code] || current_version_code,
       aab: options[:aab] || "build/app/outputs/bundle/release/app-release.aab",
       skip_upload_metadata: true,
       skip_upload_images: true,
@@ -80,6 +101,7 @@ platform :android do
     upload_to_play_store(
       track: options[:track] || "internal",
       release_status: options[:release_status] || "draft",
+      version_code: options[:version_code] || current_version_code,
       aab: options[:aab] || "build/app/outputs/bundle/release/app-release.aab",
       skip_upload_metadata: false,
       skip_upload_images: false,
@@ -95,12 +117,28 @@ platform :android do
     upload_to_play_store(
       track: options[:track] || "internal",
       release_status: options[:release_status] || "draft",
+      version_code: options[:version_code] || current_version_code,
       aab: options[:aab] || "build/app/outputs/bundle/release/app-release.aab",
       skip_upload_metadata: false,
       skip_upload_images: false,
       skip_upload_screenshots: false,
       validate_only: true,
     )
+  end
+
+  desc "Build screenshot artifacts and capture Play Store screenshots with Screengrab"
+  lane :generate_screenshots do
+    gradle(
+      project_dir: "android",
+      task: "app:assembleDebug",
+    )
+
+    gradle(
+      project_dir: "android",
+      task: "app:assembleAndroidTest",
+    )
+
+    screengrab
   end
 
   private_lane :build_release_bundle do

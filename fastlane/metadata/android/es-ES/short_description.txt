@@ -1,0 +1,1 @@
+Paperless Go te da acceso movil a tus documentos de paperless-ngx.

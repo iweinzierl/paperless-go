@@ -1,0 +1,2 @@
+- screenshot del Play Store aggiornati
+- metadati di release e localizzazione della scheda migliorati

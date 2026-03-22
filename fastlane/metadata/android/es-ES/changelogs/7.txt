@@ -1,0 +1,2 @@
+- nuevo: escaner
+- nuevo: I18N

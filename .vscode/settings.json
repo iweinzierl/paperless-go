@@ -3,6 +3,10 @@
         "/^ruby -e 'begin; require \"bundler\"; puts Bundler::VERSION; rescue => e; warn e\\.class; warn e\\.message; exit 1; end'$/": {
             "approve": true,
             "matchCommandLine": true
+        },
+        "/^fastlane android generate_screenshots$/": {
+            "approve": true,
+            "matchCommandLine": true
         }
     }
 }

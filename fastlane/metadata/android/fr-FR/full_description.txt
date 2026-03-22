@@ -1,0 +1,10 @@
+Paperless Go est une interface mobile pour votre archive documentaire paperless-ngx.
+
+Les fonctionnalites actuellement disponibles dans le test interne incluent :
+- la connexion a votre serveur paperless-ngx
+- la consultation des imports recents et des documents a traiter
+- la recherche et le filtrage des documents
+- l'affichage des details d'un document
+- la modification des metadonnees des documents, y compris les etiquettes, correspondants et types de documents
+
+Cette fiche Play Store est configuree pour des tests internes. Mettez a jour ce texte, les captures d'ecran et les visuels avant un deploiement plus large.
