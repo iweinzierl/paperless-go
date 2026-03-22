@@ -1,16 +1,15 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:paperless_ngx_app/l10n/generated/app_localizations.dart';
 import 'package:paperless_ngx_app/src/core/theme/app_theme.dart';
 import 'package:paperless_ngx_app/src/features/auth/domain/models/paperless_auth_session.dart';
 import 'package:paperless_ngx_app/src/features/auth/presentation/pages/login_page.dart';
-import 'package:paperless_ngx_app/src/features/documents/data/repositories/documents_repository.dart';
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_document.dart';
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_document_page.dart';
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_filter_option.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/pages/document_detail_page.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/pages/documents_page.dart';
+import 'package:paperless_ngx_app/src/features/documents/data/repositories/documents_repository.dart';
 
 const screenshotScenarioPreferenceKey = 'debug.screenshot_scenario';
 
@@ -36,32 +35,25 @@ class ScreenshotHarnessApp extends StatelessWidget {
       ScreenshotScenario.login => const LoginPage(),
       ScreenshotScenario.documents => const DocumentsPage(),
       ScreenshotScenario.documentDetail => const DocumentDetailPage(
-        documentId: _ScreenshotDocumentsRepository.primaryDocumentId,
+        documentId: ScreenshotDocumentsRepository.primaryDocumentId,
       ),
     };
 
-    return ProviderScope(
-      overrides: [
-        documentsRepositoryProvider.overrideWithValue(
-          _ScreenshotDocumentsRepository(),
-        ),
-      ],
-      child: MaterialApp(
-        debugShowCheckedModeBanner: false,
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        locale: const Locale('en'),
-        theme: buildAppTheme(),
-        darkTheme: buildAppTheme(brightness: Brightness.dark),
-        themeMode: ThemeMode.light,
-        home: child,
-      ),
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      locale: const Locale('en'),
+      theme: buildAppTheme(),
+      darkTheme: buildAppTheme(brightness: Brightness.dark),
+      themeMode: ThemeMode.light,
+      home: child,
     );
   }
 }
 
-class _ScreenshotDocumentsRepository extends DocumentsRepository {
-  _ScreenshotDocumentsRepository() : super(dio: _dio, session: _session);
+class ScreenshotDocumentsRepository extends DocumentsRepository {
+  ScreenshotDocumentsRepository() : super(dio: _dio, session: _session);
 
   static const primaryDocumentId = 101;
 

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:paperless_ngx_app/src/debug/screenshot_harness.dart';
 import 'package:paperless_ngx_app/src/core/providers/shared_preferences_provider.dart';
+import 'package:paperless_ngx_app/src/features/documents/data/repositories/documents_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:paperless_ngx_app/src/app/app.dart';
 
@@ -14,12 +15,17 @@ Future<void> main() async {
   final screenshotScenario = maybeParseScreenshotScenario(
     sharedPreferences.getString(screenshotScenarioPreferenceKey),
   );
+  final overrides = <Override>[
+    sharedPreferencesProvider.overrideWithValue(sharedPreferences),
+    if (screenshotScenario != null)
+      documentsRepositoryProvider.overrideWithValue(
+        ScreenshotDocumentsRepository(),
+      ),
+  ];
 
   runApp(
     ProviderScope(
-      overrides: [
-        sharedPreferencesProvider.overrideWithValue(sharedPreferences),
-      ],
+      overrides: overrides,
       child: screenshotScenario == null
           ? const PaperlessNgxApp()
           : ScreenshotHarnessApp(scenario: screenshotScenario),
