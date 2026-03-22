@@ -1,35 +1,68 @@
 {
-  "version": "2.0.0",
-  "tasks": [
-    {
-      "label": "Android: Generate upload keystore",
-      "type": "shell",
-      "command": "${workspaceFolder}/scripts/android/generate_upload_keystore.sh",
-      "problemMatcher": []
-    },
-    {
-      "label": "Android: Build signed AAB",
-      "type": "shell",
-      "command": "${workspaceFolder}/scripts/android/build_signed_aab.sh",
-      "problemMatcher": []
-    },
-    {
-      "label": "Android: Validate Play setup",
-      "type": "shell",
-      "command": "${workspaceFolder}/scripts/android/run_fastlane.sh check_play_store_setup",
-      "problemMatcher": []
-    },
-    {
-      "label": "Android: Upload Play metadata",
-      "type": "shell",
-      "command": "${workspaceFolder}/scripts/android/run_fastlane.sh metadata",
-      "problemMatcher": []
-    },
-    {
-      "label": "Android: Upload internal test",
-      "type": "shell",
-      "command": "${workspaceFolder}/scripts/android/run_fastlane.sh internal",
-      "problemMatcher": []
-    }
-  ]
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Android: Generate upload keystore",
+			"type": "shell",
+			"command": "${workspaceFolder}/scripts/android/generate_upload_keystore.sh",
+			"problemMatcher": []
+		},
+		{
+			"label": "Android: Build signed AAB",
+			"type": "shell",
+			"command": "${workspaceFolder}/scripts/android/build_signed_aab.sh",
+			"problemMatcher": []
+		},
+		{
+			"label": "Android: Validate Play setup",
+			"type": "shell",
+			"command": "${workspaceFolder}/scripts/android/run_fastlane.sh check_play_store_setup",
+			"problemMatcher": []
+		},
+		{
+			"label": "Android: Upload Play metadata",
+			"type": "shell",
+			"command": "${workspaceFolder}/scripts/android/run_fastlane.sh metadata",
+			"problemMatcher": []
+		},
+		{
+			"label": "Android: Upload internal test",
+			"type": "shell",
+			"command": "${workspaceFolder}/scripts/android/run_fastlane.sh internal",
+			"problemMatcher": []
+		},
+		{
+			"label": "generate screenshots",
+			"type": "shell",
+			"command": "sh",
+			"args": [
+				"./scripts/android/run_fastlane.sh",
+				"generate_screenshots"
+			],
+			"isBackground": false,
+			"group": "build"
+		},
+		{
+			"label": "fastlane screenshots direct",
+			"type": "shell",
+			"command": "fastlane",
+			"args": [
+				"android",
+				"generate_screenshots"
+			],
+			"isBackground": false,
+			"group": "build"
+		},
+		{
+			"label": "capture it-IT screenshots",
+			"type": "shell",
+			"command": "sh",
+			"args": [
+				"-lc",
+				"./android/gradlew -p android app:assembleDebug app:assembleAndroidTest && adb -s emulator-5554 install -t -r build/app/outputs/apk/debug/app-debug.apk && adb -s emulator-5554 install -t -r build/app/outputs/apk/androidTest/debug/app-debug-androidTest.apk && adb -s emulator-5554 shell pm grant com.github.iweinzierl.paperlessgo android.permission.CHANGE_CONFIGURATION && adb -s emulator-5554 shell pm grant com.github.iweinzierl.paperlessgo android.permission.WRITE_EXTERNAL_STORAGE && adb -s emulator-5554 shell pm grant com.github.iweinzierl.paperlessgo android.permission.READ_EXTERNAL_STORAGE && adb -s emulator-5554 shell pm grant com.github.iweinzierl.paperlessgo android.permission.DUMP && adb -s emulator-5554 shell settings put global sysui_demo_allowed 1 && adb -s emulator-5554 shell am force-stop com.github.iweinzierl.paperlessgo.test && adb -s emulator-5554 shell am force-stop com.github.iweinzierl.paperlessgo && adb -s emulator-5554 shell am instrument --no-window-animation -w -e testLocale it-IT --no-hidden-api-checks -e appendTimestamp true -e package com.github.iweinzierl.paperlessgo com.github.iweinzierl.paperlessgo.test/androidx.test.runner.AndroidJUnitRunner && mkdir -p fastlane/metadata/android/it-IT/images/phoneScreenshots && rm -f fastlane/metadata/android/it-IT/images/phoneScreenshots/*.png && adb -s emulator-5554 pull /sdcard/Android/data/com.github.iweinzierl.paperlessgo/files/screengrab/it-IT/images/screenshots/. fastlane/metadata/android/it-IT/images/phoneScreenshots/"
+			],
+			"isBackground": false,
+			"group": "build"
+		}
+	]
 }

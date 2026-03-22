@@ -51,3 +51,6 @@ app.*.map.json
 /android/*.jks
 /android/*.keystore
 /fastlane/play-store-service-account.json
+
+# Fastlane metadata and screenshots
+fastlane/report.xml

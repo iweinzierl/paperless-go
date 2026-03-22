@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:paperless_ngx_app/l10n/generated/app_localizations.dart';
 import 'package:paperless_ngx_app/src/features/app_shell/presentation/providers/app_behavior_providers.dart';
+import 'package:paperless_ngx_app/src/features/app_shell/presentation/pages/settings_page.dart';
 import 'package:paperless_ngx_app/src/core/theme/app_theme.dart';
 import 'package:paperless_ngx_app/src/features/auth/domain/models/paperless_auth_session.dart';
 import 'package:paperless_ngx_app/src/features/auth/presentation/pages/login_page.dart';
@@ -12,16 +13,19 @@ import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless
 import 'package:paperless_ngx_app/src/features/documents/presentation/pages/document_detail_page.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/pages/documents_page.dart';
 import 'package:paperless_ngx_app/src/features/documents/data/repositories/documents_repository.dart';
+import 'package:paperless_ngx_app/src/features/home/presentation/pages/home_page.dart';
 
 const screenshotScenarioPreferenceKey = 'debug.screenshot_scenario';
 
-enum ScreenshotScenario { login, documents, documentDetail }
+enum ScreenshotScenario { login, home, documents, documentDetail, settings }
 
 ScreenshotScenario? maybeParseScreenshotScenario(String? value) {
   return switch (value?.trim()) {
     'login' => ScreenshotScenario.login,
+    'home' => ScreenshotScenario.home,
     'documents' => ScreenshotScenario.documents,
     'document_detail' => ScreenshotScenario.documentDetail,
+    'settings' => ScreenshotScenario.settings,
     _ => null,
   };
 }
@@ -39,10 +43,12 @@ class ScreenshotHarnessApp extends ConsumerWidget {
         .locale;
     final child = switch (scenario) {
       ScreenshotScenario.login => const LoginPage(),
+      ScreenshotScenario.home => const HomePage(),
       ScreenshotScenario.documents => const DocumentsPage(),
       ScreenshotScenario.documentDetail => const DocumentDetailPage(
         documentId: ScreenshotDocumentsRepository.primaryDocumentId,
       ),
+      ScreenshotScenario.settings => const SettingsPage(),
     };
 
     return MaterialApp(

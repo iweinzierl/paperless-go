@@ -51,12 +51,22 @@ class ScreenshotTest {
     }
 
     @Test
+    fun captureHomeScreen() {
+        writeScenario(ScreenshotScenario.HOME, authenticated = true)
+
+        launchMainActivity().use {
+            waitForFlutterToSettle()
+            captureScreenshot("02-home-screen")
+        }
+    }
+
+    @Test
     fun captureDocumentsScreen() {
         writeScenario(ScreenshotScenario.DOCUMENTS, authenticated = true)
 
         launchMainActivity().use {
             waitForFlutterToSettle()
-            captureScreenshot("02-document-list")
+            captureScreenshot("03-document-list")
         }
     }
 
@@ -66,7 +76,17 @@ class ScreenshotTest {
 
         launchMainActivity().use {
             waitForFlutterToSettle()
-            captureScreenshot("03-document-detail")
+            captureScreenshot("04-document-detail")
+        }
+    }
+
+    @Test
+    fun captureSettingsScreen() {
+        writeScenario(ScreenshotScenario.SETTINGS, authenticated = true)
+
+        launchMainActivity().use {
+            waitForFlutterToSettle()
+            captureScreenshot("05-settings-screen")
         }
     }
 
@@ -154,6 +174,8 @@ private class ExternalFileWritingScreenshotCallback(
 
 private enum class ScreenshotScenario(val preferenceValue: String) {
     LOGIN("login"),
+    HOME("home"),
     DOCUMENTS("documents"),
     DOCUMENT_DETAIL("document_detail"),
+    SETTINGS("settings"),
 }
