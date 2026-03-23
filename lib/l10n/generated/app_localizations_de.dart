@@ -18,6 +18,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get navigationDocuments => 'Dokumente';
 
   @override
+  String get navigationReview => 'Prüfen';
+
+  @override
   String get serverUrlLabel => 'Server-URL';
 
   @override

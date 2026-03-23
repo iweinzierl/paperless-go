@@ -18,6 +18,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get navigationDocuments => 'Documents';
 
   @override
+  String get navigationReview => 'Review';
+
+  @override
   String get serverUrlLabel => 'Server URL';
 
   @override

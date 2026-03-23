@@ -6,8 +6,6 @@ import 'package:paperless_ngx_app/src/core/presentation/localization/app_localiz
 import 'package:paperless_ngx_app/src/core/data/local/sync_status_preferences.dart';
 import 'package:paperless_ngx_app/src/core/providers/sync_status_preferences_provider.dart';
 import 'package:paperless_ngx_app/src/core/presentation/widgets/refresh_status_text.dart';
-import 'package:paperless_ngx_app/src/features/app_shell/presentation/pages/settings_page.dart';
-import 'package:paperless_ngx_app/src/features/app_shell/presentation/providers/app_behavior_providers.dart';
 import 'package:paperless_ngx_app/src/features/app_shell/presentation/providers/app_shell_providers.dart';
 import 'package:paperless_ngx_app/src/features/app_shell/presentation/widgets/app_drawer.dart';
 import 'package:paperless_ngx_app/src/features/auth/presentation/controllers/auth_session_controller.dart';
@@ -23,50 +21,32 @@ class HomePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final recentUploads = ref.watch(recentUploadsProvider);
-    final todoDocuments = ref.watch(todoDocumentsProvider);
-    final isRefreshingHome =
-        recentUploads.isRefreshing || todoDocuments.isRefreshing;
     final l10n = context.l10n;
 
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        drawer: const AppDrawer(),
-        appBar: AppBar(
-          title: Text(l10n.appTitle),
-          actions: [
-            IconButton(
-              tooltip: l10n.homeRefreshTooltip,
-              onPressed: isRefreshingHome
-                  ? null
-                  : () => _refreshHome(context, ref),
-              icon: const Icon(Icons.refresh),
-            ),
-            IconButton(
-              tooltip: l10n.logoutTooltip,
-              onPressed: () => ref.read(authSessionProvider.notifier).signOut(),
-              icon: const Icon(Icons.logout),
-            ),
-          ],
-          bottom: TabBar(
-            tabs: [
-              Tab(
-                text: l10n.recentUploadsTab,
-                icon: const Icon(Icons.schedule_outlined),
-              ),
-              Tab(
-                text: l10n.todosTab,
-                icon: const Icon(Icons.fact_check_outlined),
-              ),
-            ],
+    return Scaffold(
+      drawer: const AppDrawer(),
+      appBar: AppBar(
+        title: Text(l10n.appTitle),
+        actions: [
+          IconButton(
+            tooltip: l10n.homeRefreshTooltip,
+            onPressed: recentUploads.isRefreshing
+                ? null
+                : () => _refreshHome(context, ref),
+            icon: const Icon(Icons.refresh),
           ),
-        ),
-        body: const TabBarView(children: [_RecentUploadsTab(), _TodosTab()]),
-        floatingActionButton: FloatingActionButton.extended(
-          onPressed: () => _openScanDocument(context),
-          icon: const Icon(Icons.upload_file_outlined),
-          label: Text(l10n.scanDocumentAction),
-        ),
+          IconButton(
+            tooltip: l10n.logoutTooltip,
+            onPressed: () => ref.read(authSessionProvider.notifier).signOut(),
+            icon: const Icon(Icons.logout),
+          ),
+        ],
+      ),
+      body: const _RecentUploadsTab(),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _openScanDocument(context),
+        icon: const Icon(Icons.upload_file_outlined),
+        label: Text(l10n.scanDocumentAction),
       ),
     );
   }
@@ -90,9 +70,7 @@ class HomePage extends ConsumerWidget {
     scaffoldMessenger.hideCurrentSnackBar();
 
     try {
-      final recentRefresh = ref.refresh(recentUploadsProvider.future);
-      final todoRefresh = ref.refresh(todoDocumentsProvider.future);
-      final _ = await Future.wait([recentRefresh, todoRefresh]);
+      final _ = await ref.refresh(recentUploadsProvider.future);
 
       if (!context.mounted) {
         return;
@@ -282,193 +260,6 @@ class _RecentUploadsTabState extends ConsumerState<_RecentUploadsTab> {
   }
 }
 
-class _TodosTab extends ConsumerStatefulWidget {
-  const _TodosTab();
-
-  @override
-  ConsumerState<_TodosTab> createState() => _TodosTabState();
-}
-
-class _TodosTabState extends ConsumerState<_TodosTab> {
-  DateTime? _lastUpdatedAt;
-  DateTime? _lastRefreshFailedAt;
-
-  @override
-  void initState() {
-    super.initState();
-    _lastUpdatedAt = ref
-        .read(syncStatusPreferencesProvider)
-        .readLastSuccessfulSync(SyncStatusScope.todoDocuments);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    final behaviorSettings = ref.watch(appBehaviorSettingsProvider);
-    ref.listen<AsyncValue<List<PaperlessDocument>>>(todoDocumentsProvider, (
-      previous,
-      next,
-    ) {
-      if (!mounted) {
-        return;
-      }
-
-      if (next.hasValue) {
-        final timestamp = DateTime.now();
-        setState(() {
-          _lastUpdatedAt = timestamp;
-          _lastRefreshFailedAt = null;
-        });
-        unawaited(
-          ref
-              .read(syncStatusPreferencesProvider)
-              .saveLastSuccessfulSync(SyncStatusScope.todoDocuments, timestamp),
-        );
-        return;
-      }
-
-      if (next.hasError) {
-        setState(() {
-          _lastRefreshFailedAt = DateTime.now();
-        });
-      }
-    });
-
-    final todoDocuments = ref.watch(todoDocumentsProvider);
-    final documents = todoDocuments.valueOrNull;
-    final hasConfiguredTodoTags =
-        behaviorSettings.normalizedTodoTagIds.isNotEmpty ||
-        behaviorSettings.normalizedTodoTagNames.isNotEmpty;
-
-    if (documents != null && _lastUpdatedAt == null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted || _lastUpdatedAt != null) {
-          return;
-        }
-
-        setState(() {
-          _lastUpdatedAt = DateTime.now();
-        });
-      });
-    }
-
-    return Stack(
-      children: [
-        RefreshIndicator(
-          onRefresh: () => ref.refresh(todoDocumentsProvider.future),
-          child: documents != null
-              ? ListView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
-                  children: [
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: RefreshStatusText(
-                        lastUpdatedAt: _lastUpdatedAt,
-                        isRefreshing: todoDocuments.isRefreshing,
-                        lastRefreshFailedAt: _lastRefreshFailedAt,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    if (documents.isEmpty)
-                      _EmptyStateCard(
-                        title: hasConfiguredTodoTags
-                            ? l10n.nothingToReviewTitle
-                            : l10n.verificationQueueTitle,
-                        description: hasConfiguredTodoTags
-                            ? l10n.nothingToReviewDescription
-                            : l10n.verificationQueueDescription,
-                        actionLabel: hasConfiguredTodoTags
-                            ? null
-                            : l10n.openTodoTagSettingsAction,
-                        onActionPressed: hasConfiguredTodoTags
-                            ? null
-                            : () => _openTodoSettings(context),
-                      ),
-                    for (final document in documents) ...[
-                      PaperlessDocumentCard(
-                        document: document,
-                        onTap: () =>
-                            _openDocumentDetails(context, ref, document),
-                      ),
-                      const SizedBox(height: 12),
-                    ],
-                  ],
-                )
-              : todoDocuments.when(
-                  data: (_) => const SizedBox.shrink(),
-                  error: (error, stackTrace) {
-                    return ListView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
-                      children: [
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: RefreshStatusText(
-                            lastUpdatedAt: _lastUpdatedAt,
-                            isRefreshing: todoDocuments.isRefreshing,
-                            lastRefreshFailedAt: _lastRefreshFailedAt,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        _EmptyStateCard(
-                          title: l10n.couldNotLoadReviewQueueTitle,
-                          description: l10n.couldNotLoadReviewQueueDescription,
-                        ),
-                      ],
-                    );
-                  },
-                  loading: () {
-                    return ListView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
-                      children: [
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: RefreshStatusText(
-                            lastUpdatedAt: _lastUpdatedAt,
-                            isRefreshing: todoDocuments.isRefreshing,
-                            lastRefreshFailedAt: _lastRefreshFailedAt,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        const _LoadingCard(),
-                      ],
-                    );
-                  },
-                ),
-        ),
-        if (todoDocuments.isRefreshing && documents != null)
-          const Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: LinearProgressIndicator(minHeight: 2),
-          ),
-      ],
-    );
-  }
-
-  void _openDocumentDetails(
-    BuildContext context,
-    WidgetRef ref,
-    PaperlessDocument document,
-  ) {
-    ref.read(recentlyOpenedDocumentsProvider.notifier).record(document);
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (context) => DocumentDetailPage(documentId: document.id),
-      ),
-    );
-  }
-
-  void _openTodoSettings(BuildContext context) {
-    Navigator.of(
-      context,
-    ).push(MaterialPageRoute<void>(builder: (context) => const SettingsPage()));
-  }
-}
-
 class _LoadingCard extends StatelessWidget {
   const _LoadingCard();
 
@@ -493,17 +284,10 @@ class _LoadingCard extends StatelessWidget {
 }
 
 class _EmptyStateCard extends StatelessWidget {
-  const _EmptyStateCard({
-    required this.title,
-    required this.description,
-    this.actionLabel,
-    this.onActionPressed,
-  });
+  const _EmptyStateCard({required this.title, required this.description});
 
   final String title;
   final String description;
-  final String? actionLabel;
-  final VoidCallback? onActionPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -536,14 +320,6 @@ class _EmptyStateCard extends StatelessWidget {
                 color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
-            if (actionLabel != null && onActionPressed != null) ...[
-              const SizedBox(height: 16),
-              FilledButton.tonalIcon(
-                onPressed: onActionPressed,
-                icon: const Icon(Icons.settings_outlined),
-                label: Text(actionLabel!),
-              ),
-            ],
           ],
         ),
       ),

@@ -11,6 +11,12 @@ import 'package:paperless_ngx_app/src/features/documents/presentation/providers/
 
 final appShellTabProvider = StateProvider<int>((ref) => 0);
 
+final reviewQueueCountProvider = Provider<int>((ref) {
+  return ref
+      .watch(todoDocumentsProvider)
+      .maybeWhen(data: (documents) => documents.length, orElse: () => 0);
+});
+
 final recentlyOpenedPreferencesProvider = Provider<RecentlyOpenedPreferences>((
   ref,
 ) {

@@ -122,6 +122,12 @@ abstract class AppLocalizations {
   /// **'Documents'**
   String get navigationDocuments;
 
+  /// No description provided for @navigationReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Review'**
+  String get navigationReview;
+
   /// No description provided for @serverUrlLabel.
   ///
   /// In en, this message translates to:

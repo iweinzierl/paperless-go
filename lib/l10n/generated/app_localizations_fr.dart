@@ -18,6 +18,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get navigationDocuments => 'Documents';
 
   @override
+  String get navigationReview => 'Vérifier';
+
+  @override
   String get serverUrlLabel => 'URL du serveur';
 
   @override

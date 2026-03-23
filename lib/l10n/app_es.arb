@@ -3,6 +3,7 @@
   "appTitle": "Paperless-ngx",
   "navigationHome": "Inicio",
   "navigationDocuments": "Documentos",
+  "navigationReview": "Revisar",
   "serverUrlLabel": "URL del servidor",
   "serverUrlHint": "https://paperless.example.com",
   "usernameLabel": "Nombre de usuario",
