@@ -9,7 +9,7 @@ class AppLocalizationsFr extends AppLocalizations {
   AppLocalizationsFr([String locale = 'fr']) : super(locale);
 
   @override
-  String get appTitle => 'Paperless-ngx';
+  String get appTitle => 'Paperless Go';
 
   @override
   String get navigationHome => 'Accueil';

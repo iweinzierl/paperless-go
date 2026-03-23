@@ -107,7 +107,7 @@ abstract class AppLocalizations {
   /// No description provided for @appTitle.
   ///
   /// In en, this message translates to:
-  /// **'Paperless-ngx'**
+  /// **'Paperless Go'**
   String get appTitle;
 
   /// No description provided for @navigationHome.
