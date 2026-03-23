@@ -1,0 +1,2 @@
+- eigene Verwaltungsseiten fuer Korrespondenten, Dokumenttypen und Tags hinzugefuegt
+- Typen koennen jetzt direkt zum Filtern der Dokumente angetippt sowie ueber das Menue umbenannt und geloescht werden

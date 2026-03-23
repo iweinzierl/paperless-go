@@ -1,0 +1,2 @@
+- aggiunte pagine di gestione dedicate per corrispondenti, tipi di documento e tag
+- ora puoi toccare un tipo per filtrare direttamente i documenti oppure rinominarlo ed eliminarlo dal menu

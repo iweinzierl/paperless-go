@@ -1,0 +1,2 @@
+- ajout de pages de gestion dediees pour les correspondants, les types de document et les tags
+- vous pouvez maintenant toucher un type pour filtrer directement les documents, ou le renommer et le supprimer depuis le menu

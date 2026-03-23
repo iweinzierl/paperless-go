@@ -1,0 +1,2 @@
+- added dedicated management pages for correspondents, document types, and tags
+- you can now tap a type to filter documents directly, or rename and delete it from the menu

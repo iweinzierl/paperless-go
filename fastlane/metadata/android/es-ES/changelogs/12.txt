@@ -1,0 +1,2 @@
+- se anadieron paginas de gestion dedicadas para corresponsales, tipos de documento y etiquetas
+- ahora puedes tocar un tipo para filtrar documentos directamente o renombrarlo y eliminarlo desde el menu
