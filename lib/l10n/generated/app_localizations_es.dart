@@ -57,6 +57,12 @@ class AppLocalizationsEs extends AppLocalizations {
   String get retryAction => 'Reintentar';
 
   @override
+  String get deleteAction => 'Eliminar';
+
+  @override
+  String get renameAction => 'Renombrar';
+
+  @override
   String get saveAction => 'Guardar';
 
   @override
@@ -394,6 +400,50 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get drawerStatisticsUnavailable =>
       'Las estadísticas no están disponibles ahora mismo.';
+
+  @override
+  String get managementOptionsEmpty =>
+      'Todavía no hay elementos. Usa la acción de crear para añadir uno.';
+
+  @override
+  String get managementSearchHint => 'Buscar tipos';
+
+  @override
+  String get noManagementOptionsMatchSearch =>
+      'Ninguna entrada coincide con la búsqueda actual.';
+
+  @override
+  String get renameCorrespondentAction => 'Renombrar corresponsal';
+
+  @override
+  String get renameDocumentTypeAction => 'Renombrar tipo de documento';
+
+  @override
+  String get renameTagAction => 'Renombrar etiqueta';
+
+  @override
+  String get deleteCorrespondentAction => 'Eliminar corresponsal';
+
+  @override
+  String get deleteDocumentTypeAction => 'Eliminar tipo de documento';
+
+  @override
+  String get deleteTagAction => 'Eliminar etiqueta';
+
+  @override
+  String deleteCorrespondentConfirmationMessage(Object name) {
+    return '¿Eliminar \"$name\"? Esta acción no se puede deshacer.';
+  }
+
+  @override
+  String deleteDocumentTypeConfirmationMessage(Object name) {
+    return '¿Eliminar \"$name\"? Esta acción no se puede deshacer.';
+  }
+
+  @override
+  String deleteTagConfirmationMessage(Object name) {
+    return '¿Eliminar \"$name\"? Esta acción no se puede deshacer.';
+  }
 
   @override
   String refreshFailedLabel(Object timestamp) {
@@ -767,10 +817,28 @@ class AppLocalizationsEs extends AppLocalizations {
   String get correspondentCreated => 'Corresponsal creado.';
 
   @override
+  String get correspondentRenamed => 'Corresponsal renombrado.';
+
+  @override
+  String get correspondentDeleted => 'Corresponsal eliminado.';
+
+  @override
   String get documentTypeCreated => 'Tipo de documento creado.';
 
   @override
+  String get documentTypeRenamed => 'Tipo de documento renombrado.';
+
+  @override
+  String get documentTypeDeleted => 'Tipo de documento eliminado.';
+
+  @override
   String get tagCreated => 'Etiqueta creada.';
+
+  @override
+  String get tagRenamed => 'Etiqueta renombrada.';
+
+  @override
+  String get tagDeleted => 'Etiqueta eliminada.';
 
   @override
   String get couldNotLoadDocumentDetails =>

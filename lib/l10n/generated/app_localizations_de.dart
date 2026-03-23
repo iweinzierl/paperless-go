@@ -57,6 +57,12 @@ class AppLocalizationsDe extends AppLocalizations {
   String get retryAction => 'Erneut versuchen';
 
   @override
+  String get deleteAction => 'Löschen';
+
+  @override
+  String get renameAction => 'Umbenennen';
+
+  @override
   String get saveAction => 'Speichern';
 
   @override
@@ -395,6 +401,50 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get drawerStatisticsUnavailable =>
       'Statistiken sind derzeit nicht verfügbar.';
+
+  @override
+  String get managementOptionsEmpty =>
+      'Noch keine Einträge vorhanden. Verwende die Erstellen-Aktion, um einen hinzuzufügen.';
+
+  @override
+  String get managementSearchHint => 'Typen suchen';
+
+  @override
+  String get noManagementOptionsMatchSearch =>
+      'Keine Einträge entsprechen der aktuellen Suche.';
+
+  @override
+  String get renameCorrespondentAction => 'Korrespondent umbenennen';
+
+  @override
+  String get renameDocumentTypeAction => 'Dokumenttyp umbenennen';
+
+  @override
+  String get renameTagAction => 'Tag umbenennen';
+
+  @override
+  String get deleteCorrespondentAction => 'Korrespondent löschen';
+
+  @override
+  String get deleteDocumentTypeAction => 'Dokumenttyp löschen';
+
+  @override
+  String get deleteTagAction => 'Tag löschen';
+
+  @override
+  String deleteCorrespondentConfirmationMessage(Object name) {
+    return '\"$name\" löschen? Diese Aktion kann nicht rückgängig gemacht werden.';
+  }
+
+  @override
+  String deleteDocumentTypeConfirmationMessage(Object name) {
+    return '\"$name\" löschen? Diese Aktion kann nicht rückgängig gemacht werden.';
+  }
+
+  @override
+  String deleteTagConfirmationMessage(Object name) {
+    return '\"$name\" löschen? Diese Aktion kann nicht rückgängig gemacht werden.';
+  }
 
   @override
   String refreshFailedLabel(Object timestamp) {
@@ -764,10 +814,28 @@ class AppLocalizationsDe extends AppLocalizations {
   String get correspondentCreated => 'Korrespondent erstellt.';
 
   @override
+  String get correspondentRenamed => 'Korrespondent umbenannt.';
+
+  @override
+  String get correspondentDeleted => 'Korrespondent gelöscht.';
+
+  @override
   String get documentTypeCreated => 'Dokumenttyp erstellt.';
 
   @override
+  String get documentTypeRenamed => 'Dokumenttyp umbenannt.';
+
+  @override
+  String get documentTypeDeleted => 'Dokumenttyp gelöscht.';
+
+  @override
   String get tagCreated => 'Tag erstellt.';
+
+  @override
+  String get tagRenamed => 'Tag umbenannt.';
+
+  @override
+  String get tagDeleted => 'Tag gelöscht.';
 
   @override
   String get couldNotLoadDocumentDetails =>

@@ -177,12 +177,51 @@ class DocumentsRepository {
     return _createFilterOption(endpoint: 'tags/', name: name);
   }
 
+  Future<PaperlessFilterOption> updateTag({
+    required int tagId,
+    required String name,
+  }) {
+    return _updateFilterOption(endpoint: 'tags/$tagId/', name: name);
+  }
+
+  Future<void> deleteTag({required int tagId}) {
+    return _deleteFilterOption(endpoint: 'tags/$tagId/');
+  }
+
   Future<PaperlessFilterOption> createCorrespondent({required String name}) {
     return _createFilterOption(endpoint: 'correspondents/', name: name);
   }
 
+  Future<PaperlessFilterOption> updateCorrespondent({
+    required int correspondentId,
+    required String name,
+  }) {
+    return _updateFilterOption(
+      endpoint: 'correspondents/$correspondentId/',
+      name: name,
+    );
+  }
+
+  Future<void> deleteCorrespondent({required int correspondentId}) {
+    return _deleteFilterOption(endpoint: 'correspondents/$correspondentId/');
+  }
+
   Future<PaperlessFilterOption> createDocumentType({required String name}) {
     return _createFilterOption(endpoint: 'document_types/', name: name);
+  }
+
+  Future<PaperlessFilterOption> updateDocumentType({
+    required int documentTypeId,
+    required String name,
+  }) {
+    return _updateFilterOption(
+      endpoint: 'document_types/$documentTypeId/',
+      name: name,
+    );
+  }
+
+  Future<void> deleteDocumentType({required int documentTypeId}) {
+    return _deleteFilterOption(endpoint: 'document_types/$documentTypeId/');
   }
 
   Future<String> downloadDocumentToTemporaryFile({
@@ -305,6 +344,34 @@ class DocumentsRepository {
     );
 
     return PaperlessFilterOption.fromJson(_asJsonMap(response.data));
+  }
+
+  Future<PaperlessFilterOption> _updateFilterOption({
+    required String endpoint,
+    required String name,
+  }) async {
+    final token = _requireAuthToken();
+    final apiUri = Uri.parse(_session.serverUrl).resolve('api/$endpoint');
+    final response = await _dio.patchUri(
+      apiUri,
+      data: <String, Object?>{'name': name.trim()},
+      options: Options(
+        headers: <String, Object>{'Authorization': 'Token $token'},
+      ),
+    );
+
+    return PaperlessFilterOption.fromJson(_asJsonMap(response.data));
+  }
+
+  Future<void> _deleteFilterOption({required String endpoint}) async {
+    final token = _requireAuthToken();
+    final apiUri = Uri.parse(_session.serverUrl).resolve('api/$endpoint');
+    await _dio.deleteUri(
+      apiUri,
+      options: Options(
+        headers: <String, Object>{'Authorization': 'Token $token'},
+      ),
+    );
   }
 
   Map<String, dynamic> _asJsonMap(Object? data) {

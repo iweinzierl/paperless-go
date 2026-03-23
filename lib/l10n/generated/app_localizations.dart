@@ -200,6 +200,18 @@ abstract class AppLocalizations {
   /// **'Retry'**
   String get retryAction;
 
+  /// No description provided for @deleteAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get deleteAction;
+
+  /// No description provided for @renameAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename'**
+  String get renameAction;
+
   /// No description provided for @saveAction.
   ///
   /// In en, this message translates to:
@@ -787,6 +799,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Statistics are unavailable right now.'**
   String get drawerStatisticsUnavailable;
+
+  /// No description provided for @managementOptionsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No items available yet. Use the create action to add one.'**
+  String get managementOptionsEmpty;
+
+  /// No description provided for @managementSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search types'**
+  String get managementSearchHint;
+
+  /// No description provided for @noManagementOptionsMatchSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'No entries match the current search.'**
+  String get noManagementOptionsMatchSearch;
+
+  /// No description provided for @renameCorrespondentAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename correspondent'**
+  String get renameCorrespondentAction;
+
+  /// No description provided for @renameDocumentTypeAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename document type'**
+  String get renameDocumentTypeAction;
+
+  /// No description provided for @renameTagAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename tag'**
+  String get renameTagAction;
+
+  /// No description provided for @deleteCorrespondentAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete correspondent'**
+  String get deleteCorrespondentAction;
+
+  /// No description provided for @deleteDocumentTypeAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete document type'**
+  String get deleteDocumentTypeAction;
+
+  /// No description provided for @deleteTagAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete tag'**
+  String get deleteTagAction;
+
+  /// No description provided for @deleteCorrespondentConfirmationMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete \"{name}\"? This action cannot be undone.'**
+  String deleteCorrespondentConfirmationMessage(Object name);
+
+  /// No description provided for @deleteDocumentTypeConfirmationMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete \"{name}\"? This action cannot be undone.'**
+  String deleteDocumentTypeConfirmationMessage(Object name);
+
+  /// No description provided for @deleteTagConfirmationMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete \"{name}\"? This action cannot be undone.'**
+  String deleteTagConfirmationMessage(Object name);
 
   /// No description provided for @refreshFailedLabel.
   ///
@@ -1430,17 +1514,53 @@ abstract class AppLocalizations {
   /// **'Correspondent created.'**
   String get correspondentCreated;
 
+  /// No description provided for @correspondentRenamed.
+  ///
+  /// In en, this message translates to:
+  /// **'Correspondent renamed.'**
+  String get correspondentRenamed;
+
+  /// No description provided for @correspondentDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Correspondent deleted.'**
+  String get correspondentDeleted;
+
   /// No description provided for @documentTypeCreated.
   ///
   /// In en, this message translates to:
   /// **'Document type created.'**
   String get documentTypeCreated;
 
+  /// No description provided for @documentTypeRenamed.
+  ///
+  /// In en, this message translates to:
+  /// **'Document type renamed.'**
+  String get documentTypeRenamed;
+
+  /// No description provided for @documentTypeDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Document type deleted.'**
+  String get documentTypeDeleted;
+
   /// No description provided for @tagCreated.
   ///
   /// In en, this message translates to:
   /// **'Tag created.'**
   String get tagCreated;
+
+  /// No description provided for @tagRenamed.
+  ///
+  /// In en, this message translates to:
+  /// **'Tag renamed.'**
+  String get tagRenamed;
+
+  /// No description provided for @tagDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Tag deleted.'**
+  String get tagDeleted;
 
   /// No description provided for @couldNotLoadDocumentDetails.
   ///
