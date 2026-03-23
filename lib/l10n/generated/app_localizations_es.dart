@@ -584,6 +584,28 @@ class AppLocalizationsEs extends AppLocalizations {
       'Abre el rastreador de incidencias para informar de errores o solicitar mejoras.';
 
   @override
+  String get donateTitle => 'Donar';
+
+  @override
+  String get donateDescription =>
+      'Elige una cantidad y continúa en tu navegador para apoyar el desarrollo.';
+
+  @override
+  String get donateDialogTitle => 'Apoyar el desarrollo';
+
+  @override
+  String get donateAmountLabel => 'Cantidad';
+
+  @override
+  String get donateAmountHint => '5,00';
+
+  @override
+  String get donateContinueAction => 'Continuar con la donación';
+
+  @override
+  String get donateInvalidAmount => 'Introduce una cantidad mayor que 0.';
+
+  @override
   String get copySupportSummaryTitle => 'Copiar resumen de soporte';
 
   @override

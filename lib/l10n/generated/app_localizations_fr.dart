@@ -584,6 +584,28 @@ class AppLocalizationsFr extends AppLocalizations {
       'Ouvre le suivi des tickets amont pour signaler des bugs ou demander des améliorations.';
 
   @override
+  String get donateTitle => 'Faire un don';
+
+  @override
+  String get donateDescription =>
+      'Choisissez un montant et continuez dans votre navigateur pour soutenir le développement.';
+
+  @override
+  String get donateDialogTitle => 'Soutenir le développement';
+
+  @override
+  String get donateAmountLabel => 'Montant';
+
+  @override
+  String get donateAmountHint => '5,00';
+
+  @override
+  String get donateContinueAction => 'Continuer vers le don';
+
+  @override
+  String get donateInvalidAmount => 'Saisissez un montant supérieur à 0.';
+
+  @override
   String get copySupportSummaryTitle => 'Copier le résumé d\'assistance';
 
   @override

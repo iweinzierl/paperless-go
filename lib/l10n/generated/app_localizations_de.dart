@@ -582,6 +582,28 @@ class AppLocalizationsDe extends AppLocalizations {
       'Öffnet den Upstream-Issue-Tracker, um Fehler zu melden oder Verbesserungen vorzuschlagen.';
 
   @override
+  String get donateTitle => 'Spenden';
+
+  @override
+  String get donateDescription =>
+      'Wähle einen Betrag und setze im Browser fort, um die Entwicklung zu unterstützen.';
+
+  @override
+  String get donateDialogTitle => 'Entwicklung unterstützen';
+
+  @override
+  String get donateAmountLabel => 'Betrag';
+
+  @override
+  String get donateAmountHint => '5,00';
+
+  @override
+  String get donateContinueAction => 'Weiter zur Spende';
+
+  @override
+  String get donateInvalidAmount => 'Gib einen Betrag größer als 0 ein.';
+
+  @override
   String get copySupportSummaryTitle => 'Support-Zusammenfassung kopieren';
 
   @override

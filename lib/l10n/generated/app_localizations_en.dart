@@ -572,6 +572,28 @@ class AppLocalizationsEn extends AppLocalizations {
       'Open the upstream issue tracker to report bugs or request improvements.';
 
   @override
+  String get donateTitle => 'Donate';
+
+  @override
+  String get donateDescription =>
+      'Choose an amount and continue in your browser to support development.';
+
+  @override
+  String get donateDialogTitle => 'Support development';
+
+  @override
+  String get donateAmountLabel => 'Amount';
+
+  @override
+  String get donateAmountHint => '5.00';
+
+  @override
+  String get donateContinueAction => 'Continue to donate';
+
+  @override
+  String get donateInvalidAmount => 'Enter an amount greater than 0.';
+
+  @override
   String get copySupportSummaryTitle => 'Copy support summary';
 
   @override

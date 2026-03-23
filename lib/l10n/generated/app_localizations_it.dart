@@ -580,6 +580,28 @@ class AppLocalizationsIt extends AppLocalizations {
       'Apre il tracker upstream per segnalare bug o richiedere miglioramenti.';
 
   @override
+  String get donateTitle => 'Fai una donazione';
+
+  @override
+  String get donateDescription =>
+      'Scegli un importo e continua nel browser per sostenere lo sviluppo.';
+
+  @override
+  String get donateDialogTitle => 'Sostieni lo sviluppo';
+
+  @override
+  String get donateAmountLabel => 'Importo';
+
+  @override
+  String get donateAmountHint => '5,00';
+
+  @override
+  String get donateContinueAction => 'Continua con la donazione';
+
+  @override
+  String get donateInvalidAmount => 'Inserisci un importo maggiore di 0.';
+
+  @override
   String get copySupportSummaryTitle => 'Copia riepilogo supporto';
 
   @override

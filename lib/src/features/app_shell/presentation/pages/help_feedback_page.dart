@@ -128,6 +128,135 @@ class HelpFeedbackPage extends ConsumerWidget {
   }
 }
 
+Future<void> showDonateDialog(
+  BuildContext context,
+  HelpLinkLauncher launcher,
+  DonationConfiguration donationConfiguration,
+) async {
+  final amount = await showDialog<double>(
+    context: context,
+    builder: (dialogContext) =>
+        _DonateDialog(donationConfiguration: donationConfiguration),
+  );
+
+  if (!context.mounted || amount == null) {
+    return;
+  }
+
+  try {
+    await launcher.open(donationConfiguration.buildUri(amount));
+  } catch (error) {
+    if (!context.mounted) {
+      return;
+    }
+
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(error.toString())));
+  }
+}
+
+double? _parseDonationAmount(String value) {
+  final normalized = value.trim().replaceAll(',', '.');
+  return double.tryParse(normalized);
+}
+
+class _DonateDialog extends StatefulWidget {
+  const _DonateDialog({required this.donationConfiguration});
+
+  final DonationConfiguration donationConfiguration;
+
+  @override
+  State<_DonateDialog> createState() => _DonateDialogState();
+}
+
+class _DonateDialogState extends State<_DonateDialog> {
+  late final TextEditingController _controller;
+  String? _errorText;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(
+      text: widget.donationConfiguration.suggestedAmountText,
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    final parsedAmount = _parseDonationAmount(_controller.text);
+    if (parsedAmount == null || parsedAmount <= 0) {
+      setState(() {
+        _errorText = context.l10n.donateInvalidAmount;
+      });
+      return;
+    }
+
+    Navigator.of(context).pop(parsedAmount);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final donationConfiguration = widget.donationConfiguration;
+
+    return AlertDialog(
+      title: Text(context.l10n.donateDialogTitle),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(context.l10n.donateDescription),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _controller,
+              autofocus: true,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
+              ],
+              textInputAction: TextInputAction.done,
+              decoration: InputDecoration(
+                labelText: context.l10n.donateAmountLabel,
+                hintText: context.l10n.donateAmountHint,
+                prefixText: '${donationConfiguration.currencyCode} ',
+                errorText: _errorText,
+              ),
+              onChanged: (_) {
+                if (_errorText == null) {
+                  return;
+                }
+
+                setState(() {
+                  _errorText = null;
+                });
+              },
+              onSubmitted: (_) => _submit(),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(context.l10n.cancelAction),
+        ),
+        FilledButton(
+          onPressed: _submit,
+          child: Text(context.l10n.donateContinueAction),
+        ),
+      ],
+    );
+  }
+}
+
 class _SupportTile extends StatelessWidget {
   const _SupportTile({
     required this.icon,

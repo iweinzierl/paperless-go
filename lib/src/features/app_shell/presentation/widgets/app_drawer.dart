@@ -5,6 +5,7 @@ import 'package:paperless_ngx_app/src/features/app_shell/domain/models/app_drawe
 import 'package:paperless_ngx_app/src/features/app_shell/presentation/pages/help_feedback_page.dart';
 import 'package:paperless_ngx_app/src/features/app_shell/presentation/pages/recently_opened_page.dart';
 import 'package:paperless_ngx_app/src/features/app_shell/presentation/pages/settings_page.dart';
+import 'package:paperless_ngx_app/src/features/app_shell/presentation/providers/help_feedback_providers.dart';
 import 'package:paperless_ngx_app/src/features/app_shell/presentation/providers/app_shell_providers.dart';
 
 class AppDrawer extends ConsumerWidget {
@@ -13,6 +14,7 @@ class AppDrawer extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final stats = ref.watch(appDrawerStatisticsProvider);
+    final donationConfiguration = ref.watch(donationConfigurationProvider);
     final l10n = context.l10n;
 
     return Drawer(
@@ -45,6 +47,12 @@ class AppDrawer extends ConsumerWidget {
               title: l10n.drawerHelpFeedback,
               onTap: () => _openPage(context, const HelpFeedbackPage()),
             ),
+            if (donationConfiguration.isEnabled)
+              _DrawerDestination(
+                icon: Icons.volunteer_activism_outlined,
+                title: l10n.donateTitle,
+                onTap: () => _openDonation(context, ref, donationConfiguration),
+              ),
             const SizedBox(height: 16),
             _StatisticsPanel(stats: stats),
           ],
@@ -58,6 +66,18 @@ class AppDrawer extends ConsumerWidget {
     await Navigator.of(
       context,
     ).push(MaterialPageRoute<void>(builder: (context) => page));
+  }
+
+  Future<void> _openDonation(
+    BuildContext context,
+    WidgetRef ref,
+    DonationConfiguration donationConfiguration,
+  ) async {
+    final rootContext = Navigator.of(context, rootNavigator: true).context;
+    final launcher = ref.read(helpLinkLauncherProvider);
+    Navigator.of(context).pop();
+
+    await showDonateDialog(rootContext, launcher, donationConfiguration);
   }
 }
 

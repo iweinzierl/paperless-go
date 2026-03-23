@@ -1082,6 +1082,48 @@ abstract class AppLocalizations {
   /// **'Open the upstream issue tracker to report bugs or request improvements.'**
   String get reportIssueDescription;
 
+  /// No description provided for @donateTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Donate'**
+  String get donateTitle;
+
+  /// No description provided for @donateDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose an amount and continue in your browser to support development.'**
+  String get donateDescription;
+
+  /// No description provided for @donateDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Support development'**
+  String get donateDialogTitle;
+
+  /// No description provided for @donateAmountLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount'**
+  String get donateAmountLabel;
+
+  /// No description provided for @donateAmountHint.
+  ///
+  /// In en, this message translates to:
+  /// **'5.00'**
+  String get donateAmountHint;
+
+  /// No description provided for @donateContinueAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue to donate'**
+  String get donateContinueAction;
+
+  /// No description provided for @donateInvalidAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter an amount greater than 0.'**
+  String get donateInvalidAmount;
+
   /// No description provided for @copySupportSummaryTitle.
   ///
   /// In en, this message translates to:
