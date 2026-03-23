@@ -1,0 +1,2 @@
+- nuevas capturas de Play Store para inicio y ajustes
+- presentacion de la ficha mejorada en todos los idiomas compatibles

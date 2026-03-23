@@ -1,0 +1,2 @@
+- neue Play-Store-Screenshots fuer Startseite und Einstellungen
+- ueberarbeitete Darstellung des Store-Eintrags in allen verfuegbaren Sprachen
