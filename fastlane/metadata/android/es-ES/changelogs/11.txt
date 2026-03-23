@@ -1,0 +1,2 @@
+- movimos el flujo de revision a una pestana dedicada de Bandeja de entrada
+- alineamos la lista de Bandeja de entrada con las etiquetas inbox de paperless-ngx y localizamos la navegacion inferior

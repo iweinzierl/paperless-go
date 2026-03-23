@@ -125,6 +125,7 @@ class DocumentsRepository {
     String ordering = '-created',
     String titleFilter = '',
     int? tagId,
+    bool? isInInbox,
     int? correspondentId,
     int? documentTypeId,
   }) async {
@@ -144,6 +145,7 @@ class DocumentsRepository {
           if (titleFilter.trim().isNotEmpty)
             'title__icontains': titleFilter.trim(),
           if (tagId != null) 'tags__id__all': tagId.toString(),
+          if (isInInbox != null) 'is_in_inbox': isInInbox.toString(),
           if (correspondentId != null)
             'correspondent__id': correspondentId.toString(),
           if (documentTypeId != null)

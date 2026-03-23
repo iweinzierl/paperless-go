@@ -89,6 +89,7 @@ class ScreenshotDocumentsRepository extends DocumentsRepository {
     String ordering = '-created',
     String titleFilter = '',
     int? tagId,
+    bool? isInInbox,
     int? correspondentId,
     int? documentTypeId,
   }) async {
@@ -98,6 +99,8 @@ class ScreenshotDocumentsRepository extends DocumentsRepository {
           final matchesTitle =
               query.isEmpty || document.title.toLowerCase().contains(query);
           final matchesTag = tagId == null || document.tags.contains(tagId);
+          final hasInboxTag = document.tags.any(_fixture.inboxTagIds.contains);
+          final matchesInbox = isInInbox == null || hasInboxTag == isInInbox;
           final matchesCorrespondent =
               correspondentId == null ||
               document.correspondentId == correspondentId;
@@ -106,6 +109,7 @@ class ScreenshotDocumentsRepository extends DocumentsRepository {
               document.documentTypeId == documentTypeId;
           return matchesTitle &&
               matchesTag &&
+              matchesInbox &&
               matchesCorrespondent &&
               matchesDocumentType;
         })
@@ -392,12 +396,14 @@ class _ScreenshotFixture {
   const _ScreenshotFixture({
     required this.documents,
     required this.tags,
+    required this.inboxTagIds,
     required this.correspondents,
     required this.documentTypes,
   });
 
   final List<PaperlessDocument> documents;
   final List<PaperlessFilterOption> tags;
+  final Set<int> inboxTagIds;
   final List<PaperlessFilterOption> correspondents;
   final List<PaperlessFilterOption> documentTypes;
 
@@ -445,6 +451,7 @@ class _ScreenshotFixture {
       PaperlessFilterOption(id: 1, name: 'Inbox'),
       PaperlessFilterOption(id: 2, name: 'Review'),
     ],
+    inboxTagIds: <int>{1},
     correspondents: <PaperlessFilterOption>[
       PaperlessFilterOption(id: 1, name: 'City Energy'),
       PaperlessFilterOption(id: 2, name: 'North Shield Insurance'),
@@ -489,6 +496,7 @@ class _ScreenshotFixture {
       PaperlessFilterOption(id: 1, name: 'Eingang'),
       PaperlessFilterOption(id: 2, name: 'Pruefen'),
     ],
+    inboxTagIds: <int>{1},
     correspondents: <PaperlessFilterOption>[
       PaperlessFilterOption(id: 1, name: 'Stadtwerke'),
       PaperlessFilterOption(id: 2, name: 'Nordschutz Versicherung'),
@@ -533,6 +541,7 @@ class _ScreenshotFixture {
       PaperlessFilterOption(id: 1, name: 'Entrada'),
       PaperlessFilterOption(id: 2, name: 'Revisar'),
     ],
+    inboxTagIds: <int>{1},
     correspondents: <PaperlessFilterOption>[
       PaperlessFilterOption(id: 1, name: 'Energia Urbana'),
       PaperlessFilterOption(id: 2, name: 'Seguro Escudo Norte'),
@@ -577,6 +586,7 @@ class _ScreenshotFixture {
       PaperlessFilterOption(id: 1, name: 'Boite de reception'),
       PaperlessFilterOption(id: 2, name: 'A verifier'),
     ],
+    inboxTagIds: <int>{1},
     correspondents: <PaperlessFilterOption>[
       PaperlessFilterOption(id: 1, name: 'Energie Urbaine'),
       PaperlessFilterOption(id: 2, name: 'North Shield Assurance'),
@@ -621,6 +631,7 @@ class _ScreenshotFixture {
       PaperlessFilterOption(id: 1, name: 'Posta in arrivo'),
       PaperlessFilterOption(id: 2, name: 'Da rivedere'),
     ],
+    inboxTagIds: <int>{1},
     correspondents: <PaperlessFilterOption>[
       PaperlessFilterOption(id: 1, name: 'Energia Cittadina'),
       PaperlessFilterOption(id: 2, name: 'North Shield Assicurazioni'),

@@ -18,6 +18,12 @@ class AppLocalizationsEs extends AppLocalizations {
   String get navigationDocuments => 'Documentos';
 
   @override
+  String get navigationRecent => 'Recientes';
+
+  @override
+  String get navigationInbox => 'Bandeja de entrada';
+
+  @override
   String get navigationReview => 'Revisar';
 
   @override

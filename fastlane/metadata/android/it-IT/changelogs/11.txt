@@ -1,0 +1,2 @@
+- il flusso di verifica e stato spostato in una scheda Posta in arrivo dedicata
+- la lista Posta in arrivo ora segue i tag inbox di paperless-ngx e la navigazione inferiore e localizzata

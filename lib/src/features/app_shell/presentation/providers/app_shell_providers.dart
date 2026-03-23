@@ -13,7 +13,7 @@ final appShellTabProvider = StateProvider<int>((ref) => 0);
 
 final reviewQueueCountProvider = Provider<int>((ref) {
   return ref
-      .watch(todoDocumentsProvider)
+      .watch(reviewDocumentsProvider)
       .maybeWhen(data: (documents) => documents.length, orElse: () => 0);
 });
 

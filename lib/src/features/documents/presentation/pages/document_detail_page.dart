@@ -867,7 +867,7 @@ class _EditDocumentMetadataPageState
       ref.invalidate(documentDetailProvider(widget.document.id));
       ref.invalidate(documentsPageProvider);
       ref.invalidate(recentUploadsProvider);
-      ref.invalidate(todoDocumentsProvider);
+      ref.invalidate(reviewDocumentsProvider);
       ref
           .read(recentlyOpenedDocumentsProvider.notifier)
           .refreshDocument(updatedDocument);

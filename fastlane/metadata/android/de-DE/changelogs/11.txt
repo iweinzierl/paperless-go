@@ -1,0 +1,2 @@
+- die Pruefansicht in einen eigenen Posteingang-Tab verschoben
+- die Posteingangsliste an die paperless-ngx-Inbox-Tags angepasst und die untere Navigation lokalisiert

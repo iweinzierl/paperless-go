@@ -6,8 +6,6 @@ import 'package:paperless_ngx_app/src/core/data/local/sync_status_preferences.da
 import 'package:paperless_ngx_app/src/core/presentation/localization/app_localizations_x.dart';
 import 'package:paperless_ngx_app/src/core/presentation/widgets/refresh_status_text.dart';
 import 'package:paperless_ngx_app/src/core/providers/sync_status_preferences_provider.dart';
-import 'package:paperless_ngx_app/src/features/app_shell/presentation/pages/settings_page.dart';
-import 'package:paperless_ngx_app/src/features/app_shell/presentation/providers/app_behavior_providers.dart';
 import 'package:paperless_ngx_app/src/features/app_shell/presentation/providers/app_shell_providers.dart';
 import 'package:paperless_ngx_app/src/features/app_shell/presentation/widgets/app_drawer.dart';
 import 'package:paperless_ngx_app/src/features/auth/presentation/controllers/auth_session_controller.dart';
@@ -38,9 +36,8 @@ class _ReviewQueuePageState extends ConsumerState<ReviewQueuePage> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final behaviorSettings = ref.watch(appBehaviorSettingsProvider);
 
-    ref.listen<AsyncValue<List<PaperlessDocument>>>(todoDocumentsProvider, (
+    ref.listen<AsyncValue<List<PaperlessDocument>>>(reviewDocumentsProvider, (
       previous,
       next,
     ) {
@@ -69,11 +66,8 @@ class _ReviewQueuePageState extends ConsumerState<ReviewQueuePage> {
       }
     });
 
-    final todoDocuments = ref.watch(todoDocumentsProvider);
-    final documents = todoDocuments.valueOrNull;
-    final hasConfiguredTodoTags =
-        behaviorSettings.normalizedTodoTagIds.isNotEmpty ||
-        behaviorSettings.normalizedTodoTagNames.isNotEmpty;
+    final reviewDocuments = ref.watch(reviewDocumentsProvider);
+    final documents = reviewDocuments.valueOrNull;
 
     if (documents != null && _lastUpdatedAt == null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -94,7 +88,7 @@ class _ReviewQueuePageState extends ConsumerState<ReviewQueuePage> {
         actions: [
           IconButton(
             tooltip: l10n.homeRefreshTooltip,
-            onPressed: todoDocuments.isRefreshing
+            onPressed: reviewDocuments.isRefreshing
                 ? null
                 : () => _refreshReviewQueue(context),
             icon: const Icon(Icons.refresh),
@@ -109,7 +103,7 @@ class _ReviewQueuePageState extends ConsumerState<ReviewQueuePage> {
       body: Stack(
         children: [
           RefreshIndicator(
-            onRefresh: () => ref.refresh(todoDocumentsProvider.future),
+            onRefresh: () => ref.refresh(reviewDocumentsProvider.future),
             child: documents != null
                 ? ListView(
                     physics: const AlwaysScrollableScrollPhysics(),
@@ -119,25 +113,15 @@ class _ReviewQueuePageState extends ConsumerState<ReviewQueuePage> {
                         alignment: Alignment.centerRight,
                         child: RefreshStatusText(
                           lastUpdatedAt: _lastUpdatedAt,
-                          isRefreshing: todoDocuments.isRefreshing,
+                          isRefreshing: reviewDocuments.isRefreshing,
                           lastRefreshFailedAt: _lastRefreshFailedAt,
                         ),
                       ),
                       const SizedBox(height: 12),
                       if (documents.isEmpty)
                         _ReviewEmptyStateCard(
-                          title: hasConfiguredTodoTags
-                              ? l10n.nothingToReviewTitle
-                              : l10n.verificationQueueTitle,
-                          description: hasConfiguredTodoTags
-                              ? l10n.nothingToReviewDescription
-                              : l10n.verificationQueueDescription,
-                          actionLabel: hasConfiguredTodoTags
-                              ? null
-                              : l10n.openTodoTagSettingsAction,
-                          onActionPressed: hasConfiguredTodoTags
-                              ? null
-                              : () => _openTodoSettings(context),
+                          title: l10n.nothingToReviewTitle,
+                          description: l10n.nothingToReviewDescription,
                         ),
                       for (final document in documents) ...[
                         PaperlessDocumentCard(
@@ -149,7 +133,7 @@ class _ReviewQueuePageState extends ConsumerState<ReviewQueuePage> {
                       ],
                     ],
                   )
-                : todoDocuments.when(
+                : reviewDocuments.when(
                     data: (_) => const SizedBox.shrink(),
                     error: (error, stackTrace) {
                       return ListView(
@@ -160,7 +144,7 @@ class _ReviewQueuePageState extends ConsumerState<ReviewQueuePage> {
                             alignment: Alignment.centerRight,
                             child: RefreshStatusText(
                               lastUpdatedAt: _lastUpdatedAt,
-                              isRefreshing: todoDocuments.isRefreshing,
+                              isRefreshing: reviewDocuments.isRefreshing,
                               lastRefreshFailedAt: _lastRefreshFailedAt,
                             ),
                           ),
@@ -182,7 +166,7 @@ class _ReviewQueuePageState extends ConsumerState<ReviewQueuePage> {
                             alignment: Alignment.centerRight,
                             child: RefreshStatusText(
                               lastUpdatedAt: _lastUpdatedAt,
-                              isRefreshing: todoDocuments.isRefreshing,
+                              isRefreshing: reviewDocuments.isRefreshing,
                               lastRefreshFailedAt: _lastRefreshFailedAt,
                             ),
                           ),
@@ -193,7 +177,7 @@ class _ReviewQueuePageState extends ConsumerState<ReviewQueuePage> {
                     },
                   ),
           ),
-          if (todoDocuments.isRefreshing && documents != null)
+          if (reviewDocuments.isRefreshing && documents != null)
             const Positioned(
               top: 0,
               left: 0,
@@ -210,7 +194,7 @@ class _ReviewQueuePageState extends ConsumerState<ReviewQueuePage> {
     scaffoldMessenger.hideCurrentSnackBar();
 
     try {
-      final _ = await ref.refresh(todoDocumentsProvider.future);
+      final _ = await ref.refresh(reviewDocumentsProvider.future);
 
       if (!context.mounted) {
         return;
@@ -242,12 +226,6 @@ class _ReviewQueuePageState extends ConsumerState<ReviewQueuePage> {
       ),
     );
   }
-
-  void _openTodoSettings(BuildContext context) {
-    Navigator.of(
-      context,
-    ).push(MaterialPageRoute<void>(builder: (context) => const SettingsPage()));
-  }
 }
 
 class _ReviewLoadingCard extends StatelessWidget {
@@ -274,17 +252,10 @@ class _ReviewLoadingCard extends StatelessWidget {
 }
 
 class _ReviewEmptyStateCard extends StatelessWidget {
-  const _ReviewEmptyStateCard({
-    required this.title,
-    required this.description,
-    this.actionLabel,
-    this.onActionPressed,
-  });
+  const _ReviewEmptyStateCard({required this.title, required this.description});
 
   final String title;
   final String description;
-  final String? actionLabel;
-  final VoidCallback? onActionPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -317,14 +288,6 @@ class _ReviewEmptyStateCard extends StatelessWidget {
                 color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
-            if (actionLabel != null && onActionPressed != null) ...[
-              const SizedBox(height: 16),
-              FilledButton.tonalIcon(
-                onPressed: onActionPressed,
-                icon: const Icon(Icons.settings_outlined),
-                label: Text(actionLabel!),
-              ),
-            ],
           ],
         ),
       ),

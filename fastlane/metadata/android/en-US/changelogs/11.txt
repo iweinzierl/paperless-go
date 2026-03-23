@@ -1,0 +1,2 @@
+- moved the review workflow into a dedicated Inbox tab
+- matched the Inbox list to paperless-ngx inbox tagging and localized the bottom navigation

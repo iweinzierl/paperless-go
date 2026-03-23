@@ -122,6 +122,18 @@ abstract class AppLocalizations {
   /// **'Documents'**
   String get navigationDocuments;
 
+  /// No description provided for @navigationRecent.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent'**
+  String get navigationRecent;
+
+  /// No description provided for @navigationInbox.
+  ///
+  /// In en, this message translates to:
+  /// **'Inbox'**
+  String get navigationInbox;
+
   /// No description provided for @navigationReview.
   ///
   /// In en, this message translates to:

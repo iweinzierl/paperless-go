@@ -3,6 +3,8 @@
   "appTitle": "Paperless Go",
   "navigationHome": "Home",
   "navigationDocuments": "Documenti",
+  "navigationRecent": "Recenti",
+  "navigationInbox": "Posta in arrivo",
   "navigationReview": "Verifica",
   "serverUrlLabel": "URL del server",
   "serverUrlHint": "https://paperless.example.com",

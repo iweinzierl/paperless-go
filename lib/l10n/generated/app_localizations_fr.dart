@@ -18,6 +18,12 @@ class AppLocalizationsFr extends AppLocalizations {
   String get navigationDocuments => 'Documents';
 
   @override
+  String get navigationRecent => 'Récents';
+
+  @override
+  String get navigationInbox => 'Boîte de réception';
+
+  @override
   String get navigationReview => 'Vérifier';
 
   @override

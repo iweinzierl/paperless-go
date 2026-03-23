@@ -1,0 +1,2 @@
+- deplacement du flux de verification vers un onglet Boite de reception dedie
+- alignement de la liste Boite de reception sur les etiquettes inbox de paperless-ngx et localisation de la navigation inferieure
