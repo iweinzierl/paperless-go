@@ -1,1 +1,1 @@
-Paperless Go
+Paperless Go und paperless-ngx

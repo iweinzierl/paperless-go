@@ -1,1 +1,1 @@
-Paperless Go
+Paperless Go for paperless-ngx

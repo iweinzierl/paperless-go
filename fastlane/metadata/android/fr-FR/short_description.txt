@@ -1,1 +1,1 @@
-Paperless Go vous donne acces a vos documents paperless-ngx sur mobile.
+Scannez, recherchez et gerez vos documents paperless-ngx sur mobile.

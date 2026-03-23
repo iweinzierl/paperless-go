@@ -1,10 +1,13 @@
-Paperless Go ist ein mobiles Frontend fuer dein paperless-ngx Dokumentenarchiv.
+Paperless Go bringt dein paperless-ngx Archiv auf dein Smartphone.
 
-Der aktuelle interne Test umfasst unter anderem:
-- Anmeldung an deinem paperless-ngx Server
-- Durchsuchen von kuerzlich hochgeladenen und noch offenen Dokumenten
-- Suchen und Filtern von Dokumenten
-- Anzeigen von Dokumentdetails
-- Bearbeiten von Dokument-Metadaten, einschliesslich Tags, Korrespondenten und Dokumenttypen
+Behalte neue Eingänge im Blick, finde wichtige Unterlagen schneller und pflege Metadaten auch unterwegs.
 
-Dieser Play-Store-Eintrag ist fuer interne Tests konfiguriert. Aktualisiere diesen Text, die Screenshots und die Grafiken vor einer breiteren Veroeffentlichung.
+Wichtige Funktionen:
+- Anmeldung an deinem eigenen paperless-ngx Server mittels Benutzername/Passwort
+- Überblick über aktuelle Uploads und Dokumente mit Handlungsbedarf
+- Suche und Filter für Tags, Korrespondenten und Dokumenttypen
+- Anzeigen von Dokumentdetails und Bearbeiten von Metadaten
+- Anzeigen und Download der Originaldokumente
+- Papierdokumente mit der Kamera scannen und als PDF hochladen
+
+Paperless Go richtet sich an alle, die paperless-ngx bereits nutzen und eine fokussierte mobile Begleitung für ihr Archiv suchen.

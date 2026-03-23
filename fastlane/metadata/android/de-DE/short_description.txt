@@ -1,1 +1,1 @@
-Paperless Go bringt deine paperless-ngx Dokumente auf dein Smartphone.
+Dokumente scannen, suchen und in paperless ngx mobil verwalten.
