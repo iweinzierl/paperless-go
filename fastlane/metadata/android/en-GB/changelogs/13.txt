@@ -1,0 +1,2 @@
+- improved metadata and filter selection with faster search for tags, correspondents, and document types
+- Inbox now loads all inbox documents, and the document list has richer cards

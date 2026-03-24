@@ -1,0 +1,2 @@
+- selection amelioree dans les metadonnees et les filtres avec une recherche plus rapide pour les tags, correspondants et types de document
+- la boite de reception charge maintenant tous les documents Inbox, et la liste des documents a des cartes plus riches

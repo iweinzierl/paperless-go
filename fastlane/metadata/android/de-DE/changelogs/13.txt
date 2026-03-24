@@ -1,0 +1,2 @@
+- verbesserte Auswahl in Metadaten und Filtern mit schnellerer Suche fuer Tags, Korrespondenten und Dokumenttypen
+- die Inbox laedt jetzt alle Inbox-Dokumente, und die Dokumentenliste hat ueberarbeitete Karten

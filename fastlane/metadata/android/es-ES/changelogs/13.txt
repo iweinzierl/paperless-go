@@ -1,0 +1,2 @@
+- seleccion mejorada en metadatos y filtros con busqueda mas rapida para etiquetas, corresponsales y tipos de documento
+- la bandeja de entrada ahora carga todos los documentos de Inbox y la lista de documentos tiene tarjetas mas completas
