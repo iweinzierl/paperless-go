@@ -407,6 +407,23 @@ class _EditDocumentMetadataPageState
     final correspondents = ref.watch(correspondentOptionsProvider);
     final documentTypes = ref.watch(documentTypeOptionsProvider);
     final tags = ref.watch(tagOptionsProvider);
+    final selectedCorrespondentLabel = correspondents.maybeWhen(
+      data: (items) => items
+          .where((item) => item.id == _selectedCorrespondentId)
+          .firstOrNull
+          ?.name,
+      orElse: () => _selectedCorrespondentId == null
+          ? null
+          : '#$_selectedCorrespondentId',
+    );
+    final selectedDocumentTypeLabel = documentTypes.maybeWhen(
+      data: (items) => items
+          .where((item) => item.id == _selectedDocumentTypeId)
+          .firstOrNull
+          ?.name,
+      orElse: () =>
+          _selectedDocumentTypeId == null ? null : '#$_selectedDocumentTypeId',
+    );
     final selectedTagLabels = <int, String>{
       for (final tagId in _selectedTagIds) tagId: '#$tagId',
     };
@@ -482,34 +499,40 @@ class _EditDocumentMetadataPageState
               ),
               const SizedBox(height: 8),
               correspondents.when(
-                data: (items) => DropdownButtonFormField<int?>(
-                  isExpanded: true,
-                  value: _selectedCorrespondentId,
-                  decoration: InputDecoration(
-                    hintText: l10n.chooseCorrespondentHint,
-                  ),
-                  items: [
-                    DropdownMenuItem<int?>(
-                      value: null,
-                      child: Text(
-                        l10n.noCorrespondentOption,
-                        overflow: TextOverflow.ellipsis,
+                data: (items) => Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (selectedCorrespondentLabel != null)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: InputChip(
+                          label: Text(selectedCorrespondentLabel),
+                          onDeleted: _isBusy
+                              ? null
+                              : () => setState(() {
+                                  _selectedCorrespondentId = null;
+                                }),
+                          deleteIcon: const Icon(Icons.close),
+                        ),
+                      )
+                    else
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: Text(
+                          l10n.noCorrespondentOption,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
                       ),
-                    ),
-                    ...items.map(
-                      (item) => DropdownMenuItem<int?>(
-                        value: item.id,
-                        child: Text(item.name, overflow: TextOverflow.ellipsis),
-                      ),
+                    FilledButton.tonalIcon(
+                      onPressed: _isBusy
+                          ? null
+                          : () => _openCorrespondentSelection(items),
+                      icon: const Icon(Icons.person_search_outlined),
+                      label: Text(l10n.chooseCorrespondentHint),
                     ),
                   ],
-                  onChanged: _isBusy
-                      ? null
-                      : (value) {
-                          setState(() {
-                            _selectedCorrespondentId = value;
-                          });
-                        },
                 ),
                 error: (error, stackTrace) => Text(
                   l10n.couldNotLoadCorrespondents,
@@ -538,34 +561,40 @@ class _EditDocumentMetadataPageState
               ),
               const SizedBox(height: 8),
               documentTypes.when(
-                data: (items) => DropdownButtonFormField<int?>(
-                  isExpanded: true,
-                  value: _selectedDocumentTypeId,
-                  decoration: InputDecoration(
-                    hintText: l10n.chooseDocumentTypeHint,
-                  ),
-                  items: [
-                    DropdownMenuItem<int?>(
-                      value: null,
-                      child: Text(
-                        l10n.noDocumentTypeOption,
-                        overflow: TextOverflow.ellipsis,
+                data: (items) => Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (selectedDocumentTypeLabel != null)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: InputChip(
+                          label: Text(selectedDocumentTypeLabel),
+                          onDeleted: _isBusy
+                              ? null
+                              : () => setState(() {
+                                  _selectedDocumentTypeId = null;
+                                }),
+                          deleteIcon: const Icon(Icons.close),
+                        ),
+                      )
+                    else
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: Text(
+                          l10n.noDocumentTypeOption,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
                       ),
-                    ),
-                    ...items.map(
-                      (item) => DropdownMenuItem<int?>(
-                        value: item.id,
-                        child: Text(item.name, overflow: TextOverflow.ellipsis),
-                      ),
+                    FilledButton.tonalIcon(
+                      onPressed: _isBusy
+                          ? null
+                          : () => _openDocumentTypeSelection(items),
+                      icon: const Icon(Icons.find_in_page_outlined),
+                      label: Text(l10n.chooseDocumentTypeHint),
                     ),
                   ],
-                  onChanged: _isBusy
-                      ? null
-                      : (value) {
-                          setState(() {
-                            _selectedDocumentTypeId = value;
-                          });
-                        },
                 ),
                 error: (error, stackTrace) => Text(
                   l10n.couldNotLoadDocumentTypes,
@@ -673,6 +702,58 @@ class _EditDocumentMetadataPageState
 
     setState(() {
       _selectedTagIds = result;
+    });
+  }
+
+  Future<void> _openCorrespondentSelection(
+    List<PaperlessFilterOption> correspondents,
+  ) async {
+    final result = await showModalBottomSheet<int?>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (dialogContext) => _SingleOptionSelectionSheet(
+        title: dialogContext.l10n.selectCorrespondentDialogTitle,
+        searchHint: dialogContext.l10n.searchCorrespondentsHint,
+        emptyOptionLabel: dialogContext.l10n.noCorrespondentOption,
+        noResultsMessage: dialogContext.l10n.noCorrespondentsMatchSearch,
+        options: correspondents,
+        selectedId: _selectedCorrespondentId,
+      ),
+    );
+
+    if (!mounted || result == _selectedCorrespondentId) {
+      return;
+    }
+
+    setState(() {
+      _selectedCorrespondentId = result;
+    });
+  }
+
+  Future<void> _openDocumentTypeSelection(
+    List<PaperlessFilterOption> documentTypes,
+  ) async {
+    final result = await showModalBottomSheet<int?>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (dialogContext) => _SingleOptionSelectionSheet(
+        title: dialogContext.l10n.selectDocumentTypeDialogTitle,
+        searchHint: dialogContext.l10n.searchDocumentTypesHint,
+        emptyOptionLabel: dialogContext.l10n.noDocumentTypeOption,
+        noResultsMessage: dialogContext.l10n.noDocumentTypesMatchSearch,
+        options: documentTypes,
+        selectedId: _selectedDocumentTypeId,
+      ),
+    );
+
+    if (!mounted || result == _selectedDocumentTypeId) {
+      return;
+    }
+
+    setState(() {
+      _selectedDocumentTypeId = result;
     });
   }
 
@@ -1050,6 +1131,179 @@ class _TagSelectionSheet extends StatefulWidget {
 
   @override
   State<_TagSelectionSheet> createState() => _TagSelectionSheetState();
+}
+
+class _SingleOptionSelectionSheet extends StatefulWidget {
+  const _SingleOptionSelectionSheet({
+    required this.title,
+    required this.searchHint,
+    required this.emptyOptionLabel,
+    required this.noResultsMessage,
+    required this.options,
+    required this.selectedId,
+  });
+
+  final String title;
+  final String searchHint;
+  final String emptyOptionLabel;
+  final String noResultsMessage;
+  final List<PaperlessFilterOption> options;
+  final int? selectedId;
+
+  @override
+  State<_SingleOptionSelectionSheet> createState() =>
+      _SingleOptionSelectionSheetState();
+}
+
+class _SingleOptionSelectionSheetState
+    extends State<_SingleOptionSelectionSheet> {
+  late final TextEditingController _searchController;
+  String _query = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController = TextEditingController();
+    _searchController.addListener(_handleSearchChanged);
+  }
+
+  @override
+  void dispose() {
+    _searchController
+      ..removeListener(_handleSearchChanged)
+      ..dispose();
+    super.dispose();
+  }
+
+  List<PaperlessFilterOption> get _visibleOptions {
+    final normalizedQuery = _query.trim().toLowerCase();
+    final filtered = widget.options.where((option) {
+      if (normalizedQuery.isEmpty) {
+        return true;
+      }
+
+      return option.name.toLowerCase().contains(normalizedQuery);
+    }).toList();
+
+    filtered.sort((left, right) {
+      final leftSelected = left.id == widget.selectedId;
+      final rightSelected = right.id == widget.selectedId;
+      if (leftSelected != rightSelected) {
+        return leftSelected ? -1 : 1;
+      }
+
+      return left.name.toLowerCase().compareTo(right.name.toLowerCase());
+    });
+
+    return filtered;
+  }
+
+  void _handleSearchChanged() {
+    setState(() {
+      _query = _searchController.text;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final visibleOptions = _visibleOptions;
+    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
+
+    return SafeArea(
+      top: false,
+      child: AnimatedPadding(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOut,
+        padding: EdgeInsets.only(bottom: bottomInset),
+        child: SizedBox(
+          height: MediaQuery.sizeOf(context).height * 0.82,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  widget.title,
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: _searchController,
+                  autofocus: true,
+                  decoration: InputDecoration(
+                    hintText: widget.searchHint,
+                    prefixIcon: const Icon(Icons.search),
+                    suffixIcon: _query.trim().isEmpty
+                        ? null
+                        : IconButton(
+                            onPressed: _searchController.clear,
+                            icon: const Icon(Icons.close),
+                            tooltip: context.l10n.clearSearchTooltip,
+                          ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Icon(
+                    widget.selectedId == null
+                        ? Icons.radio_button_checked
+                        : Icons.radio_button_off,
+                  ),
+                  title: Text(widget.emptyOptionLabel),
+                  onTap: () => Navigator.of(context).pop<int?>(null),
+                ),
+                const SizedBox(height: 8),
+                Expanded(
+                  child: visibleOptions.isEmpty
+                      ? Center(
+                          child: Text(
+                            widget.noResultsMessage,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        )
+                      : ListView.builder(
+                          itemCount: visibleOptions.length,
+                          itemBuilder: (context, index) {
+                            final option = visibleOptions[index];
+                            final isSelected = option.id == widget.selectedId;
+
+                            return ListTile(
+                              contentPadding: EdgeInsets.zero,
+                              leading: Icon(
+                                isSelected
+                                    ? Icons.radio_button_checked
+                                    : Icons.radio_button_off,
+                              ),
+                              title: Text(option.name),
+                              onTap: () =>
+                                  Navigator.of(context).pop<int?>(option.id),
+                            );
+                          },
+                        ),
+                ),
+                const SizedBox(height: 12),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton(
+                    onPressed: () =>
+                        Navigator.of(context).pop(widget.selectedId),
+                    child: Text(context.l10n.cancelAction),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _TagSelectionSheetState extends State<_TagSelectionSheet> {

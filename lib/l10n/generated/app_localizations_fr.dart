@@ -769,6 +769,16 @@ class AppLocalizationsFr extends AppLocalizations {
       'Impossible de charger les correspondants.';
 
   @override
+  String get selectCorrespondentDialogTitle => 'Sélectionner un correspondant';
+
+  @override
+  String get searchCorrespondentsHint => 'Rechercher des correspondants';
+
+  @override
+  String get noCorrespondentsMatchSearch =>
+      'Aucun correspondant ne correspond à la recherche actuelle.';
+
+  @override
   String get newDocumentTypeAction => 'Nouveau type de document';
 
   @override
@@ -783,6 +793,17 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get couldNotLoadDocumentTypes =>
       'Impossible de charger les types de document.';
+
+  @override
+  String get selectDocumentTypeDialogTitle =>
+      'Sélectionner un type de document';
+
+  @override
+  String get searchDocumentTypesHint => 'Rechercher des types de document';
+
+  @override
+  String get noDocumentTypesMatchSearch =>
+      'Aucun type de document ne correspond à la recherche actuelle.';
 
   @override
   String get newTagAction => 'Nouveau tag';

@@ -766,6 +766,16 @@ class AppLocalizationsDe extends AppLocalizations {
       'Korrespondenten konnten nicht geladen werden.';
 
   @override
+  String get selectCorrespondentDialogTitle => 'Korrespondenten auswählen';
+
+  @override
+  String get searchCorrespondentsHint => 'Korrespondenten suchen';
+
+  @override
+  String get noCorrespondentsMatchSearch =>
+      'Keine Korrespondenten entsprechen der aktuellen Suche.';
+
+  @override
   String get newDocumentTypeAction => 'Neuen Dokumenttyp';
 
   @override
@@ -780,6 +790,16 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get couldNotLoadDocumentTypes =>
       'Dokumenttypen konnten nicht geladen werden.';
+
+  @override
+  String get selectDocumentTypeDialogTitle => 'Dokumenttyp auswählen';
+
+  @override
+  String get searchDocumentTypesHint => 'Dokumenttypen suchen';
+
+  @override
+  String get noDocumentTypesMatchSearch =>
+      'Keine Dokumenttypen entsprechen der aktuellen Suche.';
 
   @override
   String get newTagAction => 'Neues Tag';

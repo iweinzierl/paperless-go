@@ -1424,6 +1424,24 @@ abstract class AppLocalizations {
   /// **'Could not load correspondents.'**
   String get couldNotLoadCorrespondents;
 
+  /// No description provided for @selectCorrespondentDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Select correspondent'**
+  String get selectCorrespondentDialogTitle;
+
+  /// No description provided for @searchCorrespondentsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search correspondents'**
+  String get searchCorrespondentsHint;
+
+  /// No description provided for @noCorrespondentsMatchSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'No correspondents match the current search.'**
+  String get noCorrespondentsMatchSearch;
+
   /// No description provided for @newDocumentTypeAction.
   ///
   /// In en, this message translates to:
@@ -1453,6 +1471,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not load document types.'**
   String get couldNotLoadDocumentTypes;
+
+  /// No description provided for @selectDocumentTypeDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Select document type'**
+  String get selectDocumentTypeDialogTitle;
+
+  /// No description provided for @searchDocumentTypesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search document types'**
+  String get searchDocumentTypesHint;
+
+  /// No description provided for @noDocumentTypesMatchSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'No document types match the current search.'**
+  String get noDocumentTypesMatchSearch;
 
   /// No description provided for @newTagAction.
   ///

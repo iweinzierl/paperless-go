@@ -769,6 +769,16 @@ class AppLocalizationsEs extends AppLocalizations {
       'No se pudieron cargar los corresponsales.';
 
   @override
+  String get selectCorrespondentDialogTitle => 'Seleccionar corresponsal';
+
+  @override
+  String get searchCorrespondentsHint => 'Buscar corresponsales';
+
+  @override
+  String get noCorrespondentsMatchSearch =>
+      'Ningún corresponsal coincide con la búsqueda actual.';
+
+  @override
   String get newDocumentTypeAction => 'Nuevo tipo de documento';
 
   @override
@@ -783,6 +793,16 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get couldNotLoadDocumentTypes =>
       'No se pudieron cargar los tipos de documento.';
+
+  @override
+  String get selectDocumentTypeDialogTitle => 'Seleccionar tipo de documento';
+
+  @override
+  String get searchDocumentTypesHint => 'Buscar tipos de documento';
+
+  @override
+  String get noDocumentTypesMatchSearch =>
+      'Ningún tipo de documento coincide con la búsqueda actual.';
 
   @override
   String get newTagAction => 'Nueva etiqueta';

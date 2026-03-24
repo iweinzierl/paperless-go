@@ -755,6 +755,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get couldNotLoadCorrespondents => 'Could not load correspondents.';
 
   @override
+  String get selectCorrespondentDialogTitle => 'Select correspondent';
+
+  @override
+  String get searchCorrespondentsHint => 'Search correspondents';
+
+  @override
+  String get noCorrespondentsMatchSearch =>
+      'No correspondents match the current search.';
+
+  @override
   String get newDocumentTypeAction => 'New document type';
 
   @override
@@ -768,6 +778,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get couldNotLoadDocumentTypes => 'Could not load document types.';
+
+  @override
+  String get selectDocumentTypeDialogTitle => 'Select document type';
+
+  @override
+  String get searchDocumentTypesHint => 'Search document types';
+
+  @override
+  String get noDocumentTypesMatchSearch =>
+      'No document types match the current search.';
 
   @override
   String get newTagAction => 'New tag';
