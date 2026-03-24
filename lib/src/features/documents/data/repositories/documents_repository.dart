@@ -161,6 +161,38 @@ class DocumentsRepository {
     return PaperlessDocumentPage.fromJson(payload);
   }
 
+  Future<List<PaperlessDocument>> fetchAllDocuments({
+    int pageSize = 100,
+    String ordering = '-created',
+    String titleFilter = '',
+    int? tagId,
+    bool? isInInbox,
+    int? correspondentId,
+    int? documentTypeId,
+  }) async {
+    final documents = <PaperlessDocument>[];
+    var page = 1;
+    var totalCount = 0;
+
+    do {
+      final currentPage = await fetchDocuments(
+        page: page,
+        pageSize: pageSize,
+        ordering: ordering,
+        titleFilter: titleFilter,
+        tagId: tagId,
+        isInInbox: isInInbox,
+        correspondentId: correspondentId,
+        documentTypeId: documentTypeId,
+      );
+      totalCount = currentPage.count;
+      documents.addAll(currentPage.results);
+      page += 1;
+    } while (documents.length < totalCount);
+
+    return documents.toList(growable: false);
+  }
+
   Future<List<PaperlessFilterOption>> fetchTagOptions() {
     return _fetchFilterOptions(endpoint: 'tags/');
   }

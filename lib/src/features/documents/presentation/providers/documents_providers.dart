@@ -17,11 +17,11 @@ final reviewDocumentsProvider = FutureProvider<List<PaperlessDocument>>((
   ref,
 ) async {
   final repository = ref.watch(documentsRepositoryProvider);
-  final page = await repository.fetchDocuments(
+  final documents = await repository.fetchAllDocuments(
     ordering: '-added',
     isInInbox: true,
   );
-  final documents = page.results.toList(growable: false)
+  final sortedDocuments = documents.toList(growable: false)
     ..sort((left, right) {
       final leftAdded =
           DateTime.tryParse(left.added ?? '') ??
@@ -32,7 +32,7 @@ final reviewDocumentsProvider = FutureProvider<List<PaperlessDocument>>((
       return rightAdded.compareTo(leftAdded);
     });
 
-  return documents;
+  return sortedDocuments;
 });
 
 final documentsSearchQueryProvider = StateProvider<String>((ref) => '');
