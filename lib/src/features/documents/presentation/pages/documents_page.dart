@@ -21,13 +21,16 @@ import 'package:paperless_ngx_app/src/features/documents/presentation/providers/
 import 'package:paperless_ngx_app/src/features/documents/presentation/widgets/paperless_document_card.dart';
 
 class DocumentsPage extends ConsumerStatefulWidget {
-  const DocumentsPage({super.key});
+  const DocumentsPage({this.openDrawerOnLoad = false, super.key});
+
+  final bool openDrawerOnLoad;
 
   @override
   ConsumerState<DocumentsPage> createState() => _DocumentsPageState();
 }
 
 class _DocumentsPageState extends ConsumerState<DocumentsPage> {
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
   late final TextEditingController _searchController;
   DateTime? _lastUpdatedAt;
   DateTime? _lastRefreshFailedAt;
@@ -39,6 +42,15 @@ class _DocumentsPageState extends ConsumerState<DocumentsPage> {
     _lastUpdatedAt = ref
         .read(syncStatusPreferencesProvider)
         .readLastSuccessfulSync(SyncStatusScope.documents);
+    if (widget.openDrawerOnLoad) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) {
+          return;
+        }
+
+        _scaffoldKey.currentState?.openDrawer();
+      });
+    }
   }
 
   @override
@@ -90,6 +102,7 @@ class _DocumentsPageState extends ConsumerState<DocumentsPage> {
     _syncController(query);
 
     return Scaffold(
+      key: _scaffoldKey,
       drawer: const AppDrawer(),
       appBar: AppBar(
         title: Text(l10n.documentsTitle),

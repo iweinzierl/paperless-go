@@ -71,12 +71,22 @@ class ScreenshotTest {
     }
 
     @Test
+    fun captureDocumentsDrawerScreen() {
+        writeScenario(ScreenshotScenario.DOCUMENTS_DRAWER, authenticated = true)
+
+        launchMainActivity().use {
+            waitForFlutterToSettle()
+            captureScreenshot("04-documents-drawer")
+        }
+    }
+
+    @Test
     fun captureDocumentDetailScreen() {
         writeScenario(ScreenshotScenario.DOCUMENT_DETAIL, authenticated = true)
 
         launchMainActivity().use {
             waitForFlutterToSettle()
-            captureScreenshot("04-document-detail")
+            captureScreenshot("05-document-detail")
         }
     }
 
@@ -86,7 +96,7 @@ class ScreenshotTest {
 
         launchMainActivity().use {
             waitForFlutterToSettle()
-            captureScreenshot("05-settings-screen")
+            captureScreenshot("06-settings-screen")
         }
     }
 
@@ -176,6 +186,7 @@ private enum class ScreenshotScenario(val preferenceValue: String) {
     LOGIN("login"),
     HOME("home"),
     DOCUMENTS("documents"),
+    DOCUMENTS_DRAWER("documents_drawer"),
     DOCUMENT_DETAIL("document_detail"),
     SETTINGS("settings"),
 }

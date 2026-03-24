@@ -17,13 +17,21 @@ import 'package:paperless_ngx_app/src/features/home/presentation/pages/home_page
 
 const screenshotScenarioPreferenceKey = 'debug.screenshot_scenario';
 
-enum ScreenshotScenario { login, home, documents, documentDetail, settings }
+enum ScreenshotScenario {
+  login,
+  home,
+  documents,
+  documentsDrawer,
+  documentDetail,
+  settings,
+}
 
 ScreenshotScenario? maybeParseScreenshotScenario(String? value) {
   return switch (value?.trim()) {
     'login' => ScreenshotScenario.login,
     'home' => ScreenshotScenario.home,
     'documents' => ScreenshotScenario.documents,
+    'documents_drawer' => ScreenshotScenario.documentsDrawer,
     'document_detail' => ScreenshotScenario.documentDetail,
     'settings' => ScreenshotScenario.settings,
     _ => null,
@@ -45,6 +53,9 @@ class ScreenshotHarnessApp extends ConsumerWidget {
       ScreenshotScenario.login => const LoginPage(),
       ScreenshotScenario.home => const HomePage(),
       ScreenshotScenario.documents => const DocumentsPage(),
+      ScreenshotScenario.documentsDrawer => const DocumentsPage(
+        openDrawerOnLoad: true,
+      ),
       ScreenshotScenario.documentDetail => const DocumentDetailPage(
         documentId: ScreenshotDocumentsRepository.primaryDocumentId,
       ),
