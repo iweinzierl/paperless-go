@@ -808,6 +808,24 @@ class AppLocalizationsEs extends AppLocalizations {
   String get selectTagsDialogTitle => 'Seleccionar etiquetas';
 
   @override
+  String get searchTagsHint => 'Buscar etiquetas';
+
+  @override
+  String get selectedTagsSectionTitle => 'Etiquetas seleccionadas';
+
+  @override
+  String get availableTagsSectionTitle => 'Todas las etiquetas';
+
+  @override
+  String get noTagsMatchSearch =>
+      'Ninguna etiqueta coincide con la búsqueda actual.';
+
+  @override
+  String createTagConfirmationMessage(Object name) {
+    return '¿Crear \"$name\" y añadirla a este documento?';
+  }
+
+  @override
   String get enterNameValidation => 'Introduce un nombre.';
 
   @override

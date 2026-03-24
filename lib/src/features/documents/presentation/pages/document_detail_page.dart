@@ -344,10 +344,9 @@ class _EditDocumentMetadataPageState
   bool _isSaving = false;
   bool _isCreatingCorrespondent = false;
   bool _isCreatingDocumentType = false;
-  bool _isCreatingTag = false;
 
   bool get _isMutatingOptions =>
-      _isCreatingCorrespondent || _isCreatingDocumentType || _isCreatingTag;
+      _isCreatingCorrespondent || _isCreatingDocumentType;
 
   bool get _isBusy => _isSaving || _isMutatingOptions;
 
@@ -408,13 +407,24 @@ class _EditDocumentMetadataPageState
     final correspondents = ref.watch(correspondentOptionsProvider);
     final documentTypes = ref.watch(documentTypeOptionsProvider);
     final tags = ref.watch(tagOptionsProvider);
-    final selectedTagNames = tags.maybeWhen(
-      data: (items) => items
-          .where((item) => _selectedTagIds.contains(item.id))
-          .map((item) => item.name)
-          .toList(growable: false),
-      orElse: () => widget.document.tags.map((tagId) => '#$tagId').toList(),
+    final selectedTagLabels = <int, String>{
+      for (final tagId in _selectedTagIds) tagId: '#$tagId',
+    };
+    tags.maybeWhen(
+      data: (items) {
+        for (final item in items) {
+          if (_selectedTagIds.contains(item.id)) {
+            selectedTagLabels[item.id] = item.name;
+          }
+        }
+      },
+      orElse: () {},
     );
+    final selectedTags = selectedTagLabels.entries.toList()
+      ..sort(
+        (left, right) =>
+            left.value.toLowerCase().compareTo(right.value.toLowerCase()),
+      );
 
     return Scaffold(
       appBar: AppBar(
@@ -566,22 +576,14 @@ class _EditDocumentMetadataPageState
                 loading: () => const LinearProgressIndicator(),
               ),
               const SizedBox(height: 20),
-              _FieldActionHeader(
-                title: l10n.tagsLabel,
-                actionLabel: _isCreatingTag
-                    ? l10n.addingAction
-                    : l10n.newTagAction,
-                actionIcon: _isCreatingTag
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.add_circle_outline),
-                onActionPressed: _isBusy || _isCreatingTag ? null : _createTag,
+              Text(
+                l10n.tagsLabel,
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               const SizedBox(height: 8),
-              if (selectedTagNames.isEmpty)
+              if (selectedTags.isEmpty)
                 Text(
                   l10n.noTagsSelected,
                   style: theme.textTheme.bodyMedium?.copyWith(
@@ -593,8 +595,14 @@ class _EditDocumentMetadataPageState
                   spacing: 8,
                   runSpacing: 8,
                   children: [
-                    for (final tagName in selectedTagNames)
-                      Chip(label: Text(tagName)),
+                    for (final tag in selectedTags)
+                      InputChip(
+                        label: Text(tag.value),
+                        onDeleted: _isBusy
+                            ? null
+                            : () => _removeSelectedTag(tag.key),
+                        deleteIcon: const Icon(Icons.close),
+                      ),
                   ],
                 ),
               const SizedBox(height: 12),
@@ -641,61 +649,25 @@ class _EditDocumentMetadataPageState
     });
   }
 
-  Future<void> _openTagSelection(List<PaperlessFilterOption> tags) async {
-    final result = await showDialog<Set<int>>(
-      context: context,
-      builder: (dialogContext) {
-        final localSelection = <int>{..._selectedTagIds};
+  void _removeSelectedTag(int tagId) {
+    setState(() {
+      _selectedTagIds = <int>{..._selectedTagIds}..remove(tagId);
+    });
+  }
 
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: Text(context.l10n.selectTagsDialogTitle),
-              content: SizedBox(
-                width: double.maxFinite,
-                child: ListView(
-                  shrinkWrap: true,
-                  children: [
-                    for (final tag in tags)
-                      CheckboxListTile(
-                        value: localSelection.contains(tag.id),
-                        title: Text(tag.name),
-                        controlAffinity: ListTileControlAffinity.leading,
-                        onChanged: (checked) {
-                          setState(() {
-                            if (checked == true) {
-                              localSelection.add(tag.id);
-                            } else {
-                              localSelection.remove(tag.id);
-                            }
-                          });
-                        },
-                      ),
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(dialogContext).pop(),
-                  child: Text(context.l10n.cancelAction),
-                ),
-                TextButton(
-                  onPressed: () => Navigator.of(dialogContext).pop(<int>{}),
-                  child: Text(context.l10n.clearAction),
-                ),
-                FilledButton(
-                  onPressed: () =>
-                      Navigator.of(dialogContext).pop(localSelection),
-                  child: Text(context.l10n.applyAction),
-                ),
-              ],
-            );
-          },
-        );
-      },
+  Future<void> _openTagSelection(List<PaperlessFilterOption> tags) async {
+    final result = await showModalBottomSheet<Set<int>>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (dialogContext) => _TagSelectionSheet(
+        tags: tags,
+        initialSelection: _selectedTagIds,
+        onCreateTag: _createTag,
+      ),
     );
 
-    if (result == null) {
+    if (!mounted || result == null) {
       return;
     }
 
@@ -780,42 +752,46 @@ class _EditDocumentMetadataPageState
     }
   }
 
-  Future<void> _createTag() async {
+  Future<PaperlessFilterOption?> _createTag() async {
     final name = await _promptForNewOption(
       title: context.l10n.newTagAction,
       fieldLabel: context.l10n.tagNameLabel,
     );
     if (name == null) {
-      return;
+      return null;
     }
 
-    setState(() {
-      _isCreatingTag = true;
-    });
-
-    try {
-      final created = await ref
-          .read(documentsRepositoryProvider)
-          .createTag(name: name);
-      final _ = await ref.refresh(tagOptionsProvider.future);
-
-      if (!mounted) {
-        return;
-      }
-
-      setState(() {
-        _selectedTagIds = <int>{..._selectedTagIds, created.id};
-      });
-      _showStatusMessage(context.l10n.tagCreated);
-    } catch (error) {
-      _showStatusMessage(error.toString());
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isCreatingTag = false;
-        });
-      }
+    if (!mounted) {
+      return null;
     }
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(dialogContext.l10n.newTagAction),
+        content: Text(dialogContext.l10n.createTagConfirmationMessage(name)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(dialogContext.l10n.cancelAction),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(dialogContext.l10n.createAction),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) {
+      return null;
+    }
+
+    final created = await ref
+        .read(documentsRepositoryProvider)
+        .createTag(name: name);
+    final _ = await ref.refresh(tagOptionsProvider.future);
+    return created;
   }
 
   Future<String?> _promptForNewOption({
@@ -1057,6 +1033,308 @@ class _CreateOptionDialogState extends State<_CreateOptionDialog> {
           child: Text(context.l10n.createAction),
         ),
       ],
+    );
+  }
+}
+
+class _TagSelectionSheet extends StatefulWidget {
+  const _TagSelectionSheet({
+    required this.tags,
+    required this.initialSelection,
+    required this.onCreateTag,
+  });
+
+  final List<PaperlessFilterOption> tags;
+  final Set<int> initialSelection;
+  final Future<PaperlessFilterOption?> Function() onCreateTag;
+
+  @override
+  State<_TagSelectionSheet> createState() => _TagSelectionSheetState();
+}
+
+class _TagSelectionSheetState extends State<_TagSelectionSheet> {
+  late final TextEditingController _searchController;
+  late List<PaperlessFilterOption> _tags;
+  late Set<int> _selection;
+  String _query = '';
+  bool _isCreatingTag = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController = TextEditingController();
+    _tags = List<PaperlessFilterOption>.of(widget.tags);
+    _selection = <int>{...widget.initialSelection};
+    _searchController.addListener(_handleSearchChanged);
+  }
+
+  @override
+  void dispose() {
+    _searchController
+      ..removeListener(_handleSearchChanged)
+      ..dispose();
+    super.dispose();
+  }
+
+  List<PaperlessFilterOption> get _selectedTags {
+    final selected = _tags.where((tag) => _selection.contains(tag.id)).toList();
+    selected.sort(
+      (left, right) =>
+          left.name.toLowerCase().compareTo(right.name.toLowerCase()),
+    );
+    return selected;
+  }
+
+  List<PaperlessFilterOption> get _visibleTags {
+    final normalizedQuery = _query.trim().toLowerCase();
+    final filtered = _tags.where((tag) {
+      if (normalizedQuery.isEmpty) {
+        return true;
+      }
+
+      return tag.name.toLowerCase().contains(normalizedQuery);
+    }).toList();
+
+    filtered.sort((left, right) {
+      final leftSelected = _selection.contains(left.id);
+      final rightSelected = _selection.contains(right.id);
+      if (leftSelected != rightSelected) {
+        return leftSelected ? -1 : 1;
+      }
+
+      return left.name.toLowerCase().compareTo(right.name.toLowerCase());
+    });
+
+    return filtered;
+  }
+
+  void _handleSearchChanged() {
+    setState(() {
+      _query = _searchController.text;
+    });
+  }
+
+  void _toggleTag(int tagId, bool selected) {
+    setState(() {
+      final nextSelection = <int>{..._selection};
+      if (selected) {
+        nextSelection.add(tagId);
+      } else {
+        nextSelection.remove(tagId);
+      }
+      _selection = nextSelection;
+    });
+  }
+
+  void _clearSelection() {
+    setState(() {
+      _selection = <int>{};
+    });
+  }
+
+  Future<void> _createTag() async {
+    setState(() {
+      _isCreatingTag = true;
+    });
+
+    try {
+      final created = await widget.onCreateTag();
+      if (!mounted || created == null) {
+        return;
+      }
+
+      setState(() {
+        final nextTags = <PaperlessFilterOption>[
+          for (final tag in _tags)
+            if (tag.id != created.id) tag,
+          created,
+        ];
+        nextTags.sort(
+          (left, right) =>
+              left.name.toLowerCase().compareTo(right.name.toLowerCase()),
+        );
+        _tags = nextTags;
+        _selection = <int>{..._selection, created.id};
+      });
+
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(context.l10n.tagCreated)));
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(error.toString())));
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isCreatingTag = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final theme = Theme.of(context);
+    final selectedTags = _selectedTags;
+    final visibleTags = _visibleTags;
+    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
+
+    return SafeArea(
+      top: false,
+      child: AnimatedPadding(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOut,
+        padding: EdgeInsets.only(bottom: bottomInset),
+        child: SizedBox(
+          height: MediaQuery.sizeOf(context).height * 0.88,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l10n.selectTagsDialogTitle,
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    onPressed: _isCreatingTag ? null : _createTag,
+                    icon: _isCreatingTag
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.add_circle_outline),
+                    label: Text(
+                      _isCreatingTag ? l10n.addingAction : l10n.newTagAction,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: _searchController,
+                  autofocus: true,
+                  decoration: InputDecoration(
+                    hintText: l10n.searchTagsHint,
+                    prefixIcon: const Icon(Icons.search),
+                    suffixIcon: _query.trim().isEmpty
+                        ? null
+                        : IconButton(
+                            onPressed: _searchController.clear,
+                            icon: const Icon(Icons.close),
+                            tooltip: l10n.clearSearchTooltip,
+                          ),
+                  ),
+                ),
+                if (selectedTags.isNotEmpty) ...[
+                  const SizedBox(height: 20),
+                  Text(
+                    l10n.selectedTagsSectionTitle,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      for (final tag in selectedTags)
+                        InputChip(
+                          label: Text(tag.name),
+                          onDeleted: () => _toggleTag(tag.id, false),
+                          deleteIcon: const Icon(Icons.close),
+                        ),
+                    ],
+                  ),
+                ],
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        l10n.availableTagsSectionTitle,
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    if (_selection.isNotEmpty)
+                      TextButton(
+                        onPressed: _clearSelection,
+                        child: Text(l10n.clearAction),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Expanded(
+                  child: _tags.isEmpty
+                      ? Center(
+                          child: Text(
+                            l10n.noTagsAvailableOnServer,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        )
+                      : visibleTags.isEmpty
+                      ? Center(
+                          child: Text(
+                            l10n.noTagsMatchSearch,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        )
+                      : ListView.builder(
+                          itemCount: visibleTags.length,
+                          itemBuilder: (context, index) {
+                            final tag = visibleTags[index];
+                            final isSelected = _selection.contains(tag.id);
+
+                            return CheckboxListTile(
+                              value: isSelected,
+                              title: Text(tag.name),
+                              controlAffinity: ListTileControlAffinity.leading,
+                              contentPadding: EdgeInsets.zero,
+                              onChanged: (checked) =>
+                                  _toggleTag(tag.id, checked == true),
+                            );
+                          },
+                        ),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: Text(l10n.cancelAction),
+                    ),
+                    const Spacer(),
+                    FilledButton(
+                      onPressed: () => Navigator.of(context).pop(_selection),
+                      child: Text(l10n.applyAction),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

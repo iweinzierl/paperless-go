@@ -804,6 +804,23 @@ class AppLocalizationsDe extends AppLocalizations {
   String get selectTagsDialogTitle => 'Tags auswählen';
 
   @override
+  String get searchTagsHint => 'Tags suchen';
+
+  @override
+  String get selectedTagsSectionTitle => 'Ausgewählte Tags';
+
+  @override
+  String get availableTagsSectionTitle => 'Alle Tags';
+
+  @override
+  String get noTagsMatchSearch => 'Keine Tags entsprechen der aktuellen Suche.';
+
+  @override
+  String createTagConfirmationMessage(Object name) {
+    return '\"$name\" erstellen und zu diesem Dokument hinzufügen?';
+  }
+
+  @override
   String get enterNameValidation => 'Gib einen Namen ein.';
 
   @override

@@ -1496,6 +1496,36 @@ abstract class AppLocalizations {
   /// **'Select tags'**
   String get selectTagsDialogTitle;
 
+  /// No description provided for @searchTagsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search tags'**
+  String get searchTagsHint;
+
+  /// No description provided for @selectedTagsSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected tags'**
+  String get selectedTagsSectionTitle;
+
+  /// No description provided for @availableTagsSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'All tags'**
+  String get availableTagsSectionTitle;
+
+  /// No description provided for @noTagsMatchSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'No tags match the current search.'**
+  String get noTagsMatchSearch;
+
+  /// No description provided for @createTagConfirmationMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Create \"{name}\" and add it to this document?'**
+  String createTagConfirmationMessage(Object name);
+
   /// No description provided for @enterNameValidation.
   ///
   /// In en, this message translates to:
