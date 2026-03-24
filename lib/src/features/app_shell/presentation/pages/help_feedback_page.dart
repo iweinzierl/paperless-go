@@ -30,7 +30,7 @@ class HelpFeedbackPage extends ConsumerWidget {
             onTap: () => _openLink(
               context,
               ref,
-              Uri.parse('https://docs.paperless-ngx.com/'),
+              Uri.parse('https://github.com/iweinzierl/paperless-go/wiki'),
             ),
           ),
           const SizedBox(height: 12),
@@ -111,7 +111,7 @@ class HelpFeedbackPage extends ConsumerWidget {
 
     return Uri.https(
       'github.com',
-      '/paperless-ngx/paperless-ngx/issues/new',
+      '/iweinzierl/paperless-go/issues',
       <String, String>{
         'title': 'Flutter app feedback',
         'body': body.toString(),
