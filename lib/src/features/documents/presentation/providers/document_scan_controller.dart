@@ -16,7 +16,7 @@ final documentScanComposerProvider = Provider<DocumentScanComposer>(
 );
 
 final documentScanControllerProvider =
-    NotifierProvider<DocumentScanController, DocumentScanState>(
+    AutoDisposeNotifierProvider<DocumentScanController, DocumentScanState>(
       DocumentScanController.new,
     );
 
@@ -75,12 +75,26 @@ class PdfDocumentScanComposer implements DocumentScanComposer {
   }
 }
 
-class DocumentScanController extends Notifier<DocumentScanState> {
+class DocumentScanController extends AutoDisposeNotifier<DocumentScanState> {
   @override
   DocumentScanState build() => const DocumentScanState();
 
   void updateTitle(String value) {
     state = state.copyWith(title: value);
+  }
+
+  void importPdf(String filePath) {
+    final normalizedPath = filePath.trim();
+    if (normalizedPath.isEmpty || state.isBusy) {
+      return;
+    }
+
+    state = state.copyWith(
+      pagePaths: const <String>[],
+      importedDocumentPath: normalizedPath,
+      title: _defaultTitleFromPath(normalizedPath),
+      clearUploadStatus: true,
+    );
   }
 
   void removePageAt(int index) {
@@ -90,6 +104,17 @@ class DocumentScanController extends Notifier<DocumentScanState> {
 
     final nextPages = [...state.pagePaths]..removeAt(index);
     state = state.copyWith(pagePaths: nextPages);
+  }
+
+  void removeImportedDocument() {
+    if (!state.hasImportedDocument || state.isBusy) {
+      return;
+    }
+
+    state = state.copyWith(
+      clearImportedDocument: true,
+      clearUploadStatus: true,
+    );
   }
 
   Future<void> scanPages({bool replaceExisting = false}) async {
@@ -108,7 +133,10 @@ class DocumentScanController extends Notifier<DocumentScanState> {
       state = state.copyWith(
         pagePaths: replaceExisting
             ? scannedPages
+            : state.hasImportedDocument
+            ? scannedPages
             : [...state.pagePaths, ...scannedPages],
+        clearImportedDocument: true,
       );
     } finally {
       state = state.copyWith(isScanning: false);
@@ -116,16 +144,18 @@ class DocumentScanController extends Notifier<DocumentScanState> {
   }
 
   Future<String> upload() async {
-    if (state.pagePaths.isEmpty) {
+    if (!state.hasContent) {
       throw const DocumentsFailure('No scanned pages available.');
     }
 
     state = state.copyWith(uploadStatus: const AsyncLoading<String>());
 
     final result = await AsyncValue.guard<String>(() async {
-      final filePath = await ref
-          .read(documentScanComposerProvider)
-          .composeDocument(state.pagePaths);
+      final filePath =
+          state.importedDocumentPath ??
+          await ref
+              .read(documentScanComposerProvider)
+              .composeDocument(state.pagePaths);
       return ref
           .read(documentsRepositoryProvider)
           .uploadDocument(filePath: filePath, title: state.title);
@@ -141,34 +171,58 @@ class DocumentScanController extends Notifier<DocumentScanState> {
 
     throw result.error!;
   }
+
+  String _defaultTitleFromPath(String filePath) {
+    final fileName = Uri.file(filePath).pathSegments.last;
+    if (fileName.isEmpty) {
+      return '';
+    }
+
+    const extension = '.pdf';
+    if (fileName.toLowerCase().endsWith(extension)) {
+      return fileName.substring(0, fileName.length - extension.length);
+    }
+
+    return fileName;
+  }
 }
 
 class DocumentScanState {
   const DocumentScanState({
     this.pagePaths = const <String>[],
+    this.importedDocumentPath,
     this.title = '',
     this.isScanning = false,
     this.uploadStatus = const AsyncData<String>(''),
   });
 
   final List<String> pagePaths;
+  final String? importedDocumentPath;
   final String title;
   final bool isScanning;
   final AsyncValue<String> uploadStatus;
 
   bool get hasPages => pagePaths.isNotEmpty;
+  bool get hasImportedDocument =>
+      importedDocumentPath != null && importedDocumentPath!.isNotEmpty;
+  bool get hasContent => hasPages || hasImportedDocument;
   bool get isUploading => uploadStatus.isLoading;
   bool get isBusy => isScanning || isUploading;
 
   DocumentScanState copyWith({
     List<String>? pagePaths,
+    String? importedDocumentPath,
     String? title,
     bool? isScanning,
     AsyncValue<String>? uploadStatus,
     bool clearUploadStatus = false,
+    bool clearImportedDocument = false,
   }) {
     return DocumentScanState(
       pagePaths: pagePaths ?? this.pagePaths,
+      importedDocumentPath: clearImportedDocument
+          ? null
+          : importedDocumentPath ?? this.importedDocumentPath,
       title: title ?? this.title,
       isScanning: isScanning ?? this.isScanning,
       uploadStatus: clearUploadStatus

@@ -6,14 +6,59 @@ import 'package:paperless_ngx_app/src/core/presentation/localization/app_localiz
 import 'package:paperless_ngx_app/src/features/documents/data/repositories/documents_repository.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/providers/document_scan_controller.dart';
 
-class ScanDocumentPage extends ConsumerWidget {
-  const ScanDocumentPage({super.key});
+class ScanDocumentPage extends ConsumerStatefulWidget {
+  const ScanDocumentPage({super.key, this.initialImportedDocumentPath});
+
+  final String? initialImportedDocumentPath;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ScanDocumentPage> createState() => _ScanDocumentPageState();
+}
+
+class _ScanDocumentPageState extends ConsumerState<ScanDocumentPage> {
+  late final TextEditingController _titleController;
+
+  @override
+  void initState() {
+    super.initState();
+    _titleController = TextEditingController();
+
+    final initialImportedDocumentPath = widget.initialImportedDocumentPath;
+    if (initialImportedDocumentPath == null ||
+        initialImportedDocumentPath.trim().isEmpty) {
+      return;
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+
+      ref
+          .read(documentScanControllerProvider.notifier)
+          .importPdf(initialImportedDocumentPath);
+    });
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ref = this.ref;
     final state = ref.watch(documentScanControllerProvider);
     final controller = ref.read(documentScanControllerProvider.notifier);
     final l10n = context.l10n;
+
+    if (_titleController.text != state.title) {
+      _titleController.value = TextEditingValue(
+        text: state.title,
+        selection: TextSelection.collapsed(offset: state.title.length),
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.scanDocumentTitle)),
@@ -27,9 +72,10 @@ class ScanDocumentPage extends ConsumerWidget {
               const SizedBox(height: 16),
               if (state.isBusy) const LinearProgressIndicator(),
               if (state.isBusy) const SizedBox(height: 16),
-              if (state.hasPages) ...[
+              if (state.hasContent) ...[
                 TextField(
                   enabled: !state.isBusy,
+                  controller: _titleController,
                   onChanged: controller.updateTitle,
                   decoration: InputDecoration(
                     border: const OutlineInputBorder(),
@@ -38,27 +84,42 @@ class ScanDocumentPage extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(height: 16),
-                Text(
-                  l10n.scanDocumentPages(state.pagePaths.length),
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 12),
-                Expanded(
-                  child: ListView.separated(
-                    itemCount: state.pagePaths.length,
-                    separatorBuilder: (context, index) =>
-                        const SizedBox(height: 12),
-                    itemBuilder: (context, index) {
-                      return _ScannedPageCard(
-                        index: index,
-                        path: state.pagePaths[index],
-                        onRemove: state.isBusy
-                            ? null
-                            : () => controller.removePageAt(index),
-                      );
-                    },
+                if (state.hasImportedDocument)
+                  Expanded(
+                    child: ListView(
+                      children: [
+                        _ImportedPdfCard(
+                          path: state.importedDocumentPath!,
+                          onRemove: state.isBusy
+                              ? null
+                              : controller.removeImportedDocument,
+                        ),
+                      ],
+                    ),
+                  )
+                else ...[
+                  Text(
+                    l10n.scanDocumentPages(state.pagePaths.length),
+                    style: Theme.of(context).textTheme.titleMedium,
                   ),
-                ),
+                  const SizedBox(height: 12),
+                  Expanded(
+                    child: ListView.separated(
+                      itemCount: state.pagePaths.length,
+                      separatorBuilder: (context, index) =>
+                          const SizedBox(height: 12),
+                      itemBuilder: (context, index) {
+                        return _ScannedPageCard(
+                          index: index,
+                          path: state.pagePaths[index],
+                          onRemove: state.isBusy
+                              ? null
+                              : () => controller.removePageAt(index),
+                        );
+                      },
+                    ),
+                  ),
+                ],
               ] else ...[
                 Expanded(
                   child: Center(
@@ -91,27 +152,9 @@ class ScanDocumentPage extends ConsumerWidget {
                 ),
               ],
               const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: state.isBusy
-                          ? null
-                          : () => _scanPages(
-                              context,
-                              ref,
-                              replaceExisting: false,
-                            ),
-                      icon: const Icon(Icons.document_scanner_outlined),
-                      label: Text(
-                        state.hasPages
-                            ? l10n.scanDocumentAddPagesAction
-                            : l10n.scanDocumentAction,
-                      ),
-                    ),
-                  ),
-                  if (state.hasPages) ...[
-                    const SizedBox(width: 12),
+              if (!state.hasImportedDocument)
+                Row(
+                  children: [
                     Expanded(
                       child: OutlinedButton.icon(
                         onPressed: state.isBusy
@@ -119,16 +162,35 @@ class ScanDocumentPage extends ConsumerWidget {
                             : () => _scanPages(
                                 context,
                                 ref,
-                                replaceExisting: true,
+                                replaceExisting: false,
                               ),
-                        icon: const Icon(Icons.restart_alt),
-                        label: Text(l10n.scanDocumentReplacePagesAction),
+                        icon: const Icon(Icons.document_scanner_outlined),
+                        label: Text(
+                          state.hasPages
+                              ? l10n.scanDocumentAddPagesAction
+                              : l10n.scanDocumentAction,
+                        ),
                       ),
                     ),
+                    if (state.hasPages) ...[
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: state.isBusy
+                              ? null
+                              : () => _scanPages(
+                                  context,
+                                  ref,
+                                  replaceExisting: true,
+                                ),
+                          icon: const Icon(Icons.restart_alt),
+                          label: Text(l10n.scanDocumentReplacePagesAction),
+                        ),
+                      ),
+                    ],
                   ],
-                ],
-              ),
-              if (state.hasPages) ...[
+                ),
+              if (state.hasContent) ...[
                 const SizedBox(height: 12),
                 SizedBox(
                   width: double.infinity,
@@ -197,6 +259,33 @@ class ScanDocumentPage extends ConsumerWidget {
         ..hideCurrentSnackBar()
         ..showSnackBar(SnackBar(content: Text(message)));
     }
+  }
+}
+
+class _ImportedPdfCard extends StatelessWidget {
+  const _ImportedPdfCard({required this.path, required this.onRemove});
+
+  final String path;
+  final VoidCallback? onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: ListTile(
+        leading: const Icon(Icons.picture_as_pdf_outlined, size: 32),
+        title: Text(
+          Uri.file(path).pathSegments.last,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        subtitle: const Text('PDF'),
+        trailing: IconButton(
+          tooltip: context.l10n.deleteAction,
+          onPressed: onRemove,
+          icon: const Icon(Icons.delete_outline),
+        ),
+      ),
+    );
   }
 }
 

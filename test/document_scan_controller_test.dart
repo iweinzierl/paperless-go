@@ -35,6 +35,40 @@ void main() {
     expect(taskId, 'task-123');
   });
 
+  test(
+    'scan controller uploads an imported pdf without composing pages',
+    () async {
+      final repository = _FakeDocumentsRepository();
+      final composer = _FakeDocumentScanComposer();
+      final container = ProviderContainer(
+        overrides: [
+          documentsRepositoryProvider.overrideWithValue(repository),
+          documentScannerProvider.overrideWithValue(_FakeDocumentScanner()),
+          documentScanComposerProvider.overrideWithValue(composer),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final notifier = container.read(documentScanControllerProvider.notifier);
+
+      notifier.importPdf('/tmp/annual-report.pdf');
+      final taskId = await notifier.upload();
+
+      expect(
+        container.read(documentScanControllerProvider).importedDocumentPath,
+        '/tmp/annual-report.pdf',
+      );
+      expect(
+        container.read(documentScanControllerProvider).title,
+        'annual-report',
+      );
+      expect(composer.composedPaths, isEmpty);
+      expect(repository.uploadedFilePath, '/tmp/annual-report.pdf');
+      expect(repository.uploadedTitle, 'annual-report');
+      expect(taskId, 'task-123');
+    },
+  );
+
   test('scan controller clears a removed page', () async {
     final container = ProviderContainer(
       overrides: [
@@ -93,7 +127,7 @@ class _FakeDocumentScanner implements DocumentScanner {
 }
 
 class _FakeDocumentScanComposer implements DocumentScanComposer {
-  List<String> composedPaths = const <String>[];
+  List<String> composedPaths = <String>[];
 
   @override
   Future<String> composeDocument(List<String> pagePaths) async {
