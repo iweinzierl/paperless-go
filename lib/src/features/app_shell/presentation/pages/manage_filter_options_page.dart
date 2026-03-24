@@ -305,7 +305,7 @@ class _ManageFilterOptionsPageState
     return switch (widget.type) {
       ManageFilterOptionType.correspondents => filterState.correspondentId,
       ManageFilterOptionType.documentTypes => filterState.documentTypeId,
-      ManageFilterOptionType.tags => filterState.tagId,
+      ManageFilterOptionType.tags => filterState.tagIds.firstOrNull,
     };
   }
 
@@ -318,7 +318,9 @@ class _ManageFilterOptionsPageState
       ManageFilterOptionType.documentTypes => currentState.copyWith(
         documentTypeId: option.id,
       ),
-      ManageFilterOptionType.tags => currentState.copyWith(tagId: option.id),
+      ManageFilterOptionType.tags => currentState.copyWith(
+        tagIds: <int>[option.id],
+      ),
     };
 
     ref.read(documentsFilterStateProvider.notifier).state = nextState;
@@ -535,8 +537,14 @@ class _ManageFilterOptionsPageState
       ManageFilterOptionType.documentTypes
           when currentState.documentTypeId == deletedOptionId =>
         currentState.copyWith(clearDocumentType: true),
-      ManageFilterOptionType.tags when currentState.tagId == deletedOptionId =>
-        currentState.copyWith(clearTag: true),
+      ManageFilterOptionType.tags
+          when currentState.tagIds.contains(deletedOptionId) =>
+        currentState.copyWith(
+          tagIds: currentState.tagIds
+              .where((tagId) => tagId != deletedOptionId)
+              .toList(growable: false),
+          clearTag: currentState.tagIds.length == 1,
+        ),
       _ => currentState,
     };
 

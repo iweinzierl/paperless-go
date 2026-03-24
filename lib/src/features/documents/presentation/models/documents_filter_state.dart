@@ -1,19 +1,19 @@
 class DocumentsFilterState {
   const DocumentsFilterState({
-    this.tagId,
+    this.tagIds = const <int>[],
     this.correspondentId,
     this.documentTypeId,
   });
 
-  final int? tagId;
+  final List<int> tagIds;
   final int? correspondentId;
   final int? documentTypeId;
 
   bool get hasActiveFilters =>
-      tagId != null || correspondentId != null || documentTypeId != null;
+      tagIds.isNotEmpty || correspondentId != null || documentTypeId != null;
 
   DocumentsFilterState copyWith({
-    int? tagId,
+    List<int>? tagIds,
     int? correspondentId,
     int? documentTypeId,
     bool clearTag = false,
@@ -21,7 +21,7 @@ class DocumentsFilterState {
     bool clearDocumentType = false,
   }) {
     return DocumentsFilterState(
-      tagId: clearTag ? null : (tagId ?? this.tagId),
+      tagIds: clearTag ? const <int>[] : (tagIds ?? this.tagIds),
       correspondentId: clearCorrespondent
           ? null
           : (correspondentId ?? this.correspondentId),

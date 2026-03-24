@@ -77,7 +77,7 @@ final documentsPageProvider = FutureProvider<PaperlessDocumentPage>((
     page: page,
     ordering: ordering,
     titleFilter: query,
-    tagId: filters.tagId,
+    tagIds: filters.tagIds,
     correspondentId: filters.correspondentId,
     documentTypeId: filters.documentTypeId,
   );

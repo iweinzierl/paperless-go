@@ -99,7 +99,7 @@ class ScreenshotDocumentsRepository extends DocumentsRepository {
     int pageSize = 20,
     String ordering = '-created',
     String titleFilter = '',
-    int? tagId,
+    List<int> tagIds = const <int>[],
     bool? isInInbox,
     int? correspondentId,
     int? documentTypeId,
@@ -109,7 +109,8 @@ class ScreenshotDocumentsRepository extends DocumentsRepository {
         .where((document) {
           final matchesTitle =
               query.isEmpty || document.title.toLowerCase().contains(query);
-          final matchesTag = tagId == null || document.tags.contains(tagId);
+          final matchesTag =
+              tagIds.isEmpty || tagIds.every(document.tags.contains);
           final hasInboxTag = document.tags.any(_fixture.inboxTagIds.contains);
           final matchesInbox = isInInbox == null || hasInboxTag == isInInbox;
           final matchesCorrespondent =

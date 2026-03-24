@@ -165,10 +165,14 @@ class _DocumentsPageState extends ConsumerState<DocumentsPage> {
                 _ActiveDocumentsControls(
                   filterState: filterState,
                   ordering: ordering,
-                  onClearTag: filterState.tagId != null
-                      ? () =>
-                            _updateFilters(filterState.copyWith(clearTag: true))
-                      : null,
+                  onRemoveTag: (tagId) => _updateFilters(
+                    filterState.copyWith(
+                      tagIds: filterState.tagIds
+                          .where((currentTagId) => currentTagId != tagId)
+                          .toList(growable: false),
+                      clearTag: filterState.tagIds.length == 1,
+                    ),
+                  ),
                   onClearCorrespondent: filterState.correspondentId != null
                       ? () => _updateFilters(
                           filterState.copyWith(clearCorrespondent: true),
@@ -337,7 +341,7 @@ class _DocumentsPageState extends ConsumerState<DocumentsPage> {
 
   int _activeFilterCount(DocumentsFilterState filterState, String ordering) {
     var count = 0;
-    if (filterState.tagId != null) {
+    if (filterState.tagIds.isNotEmpty) {
       count += 1;
     }
     if (filterState.correspondentId != null) {
@@ -358,7 +362,7 @@ class _ActiveDocumentsControls extends ConsumerWidget {
   const _ActiveDocumentsControls({
     required this.filterState,
     required this.ordering,
-    required this.onClearTag,
+    required this.onRemoveTag,
     required this.onClearCorrespondent,
     required this.onClearDocumentType,
     required this.onResetOrdering,
@@ -366,7 +370,7 @@ class _ActiveDocumentsControls extends ConsumerWidget {
 
   final DocumentsFilterState filterState;
   final String ordering;
-  final VoidCallback? onClearTag;
+  final void Function(int tagId) onRemoveTag;
   final VoidCallback? onClearCorrespondent;
   final VoidCallback? onClearDocumentType;
   final VoidCallback? onResetOrdering;
@@ -395,13 +399,15 @@ class _ActiveDocumentsControls extends ConsumerWidget {
       }
     }
 
-    _addFilterChip(
-      chips: chips,
-      optionId: filterState.tagId,
-      options: tagOptions,
-      fallbackPrefix: l10n.filterTagLabel,
-      onDeleted: onClearTag,
-    );
+    for (final tagId in filterState.tagIds) {
+      _addFilterChip(
+        chips: chips,
+        optionId: tagId,
+        options: tagOptions,
+        fallbackPrefix: l10n.filterTagLabel,
+        onDeleted: () => onRemoveTag(tagId),
+      );
+    }
     _addFilterChip(
       chips: chips,
       optionId: filterState.correspondentId,
