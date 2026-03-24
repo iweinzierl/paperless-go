@@ -507,12 +507,18 @@ class _DocumentsList extends ConsumerWidget {
               runSpacing: 8,
               alignment: WrapAlignment.end,
               children: [
-                OutlinedButton.icon(
+                TextButton.icon(
                   onPressed: () => _openDetails(context, ref, document),
                   icon: const Icon(Icons.info_outline),
                   label: Text(l10n.detailsAction),
                 ),
                 FilledButton.tonalIcon(
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 10,
+                    ),
+                  ),
                   onPressed: openingIds.contains(document.id)
                       ? null
                       : () => _openDocument(context, ref, document),
