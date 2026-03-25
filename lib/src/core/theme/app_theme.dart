@@ -23,6 +23,12 @@ ThemeData buildAppTheme({Brightness brightness = Brightness.light}) {
           shadow: Colors.black,
         )
       : baseScheme;
+  final cardShape = RoundedRectangleBorder(
+    borderRadius: BorderRadius.circular(20),
+  );
+  final fieldShape = RoundedRectangleBorder(
+    borderRadius: BorderRadius.circular(16),
+  );
 
   return ThemeData(
     colorScheme: colorScheme,
@@ -30,23 +36,82 @@ ThemeData buildAppTheme({Brightness brightness = Brightness.light}) {
         ? const Color(0xFF0F171A)
         : const Color(0xFFF4F7F8),
     useMaterial3: true,
-    cardTheme: CardThemeData(
-      color: isDark ? colorScheme.surfaceContainerLow : Colors.white,
-      shadowColor: isDark ? Colors.black.withValues(alpha: 0.22) : null,
+    appBarTheme: AppBarTheme(
+      backgroundColor: colorScheme.surface,
+      foregroundColor: colorScheme.onSurface,
+      elevation: 0,
+      scrolledUnderElevation: 0,
       surfaceTintColor: Colors.transparent,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+    ),
+    cardTheme: CardThemeData(
+      color: colorScheme.surfaceContainerLow,
+      shadowColor: isDark ? Colors.black.withValues(alpha: 0.22) : null,
+      surfaceTintColor: colorScheme.surfaceTint,
+      shape: cardShape,
+    ),
+    dividerTheme: DividerThemeData(
+      color: isDark
+          ? colorScheme.outline.withValues(alpha: 0.45)
+          : colorScheme.outlineVariant,
+      thickness: 1,
+      space: 1,
     ),
     dividerColor: isDark
         ? colorScheme.outline.withValues(alpha: 0.45)
         : colorScheme.outlineVariant,
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: isDark ? colorScheme.surfaceContainerHighest : Colors.white,
+      fillColor: colorScheme.surfaceContainerHighest,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
         borderSide: BorderSide.none,
       ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide.none,
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: colorScheme.primary, width: 1.5),
+      ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+    ),
+    filledButtonTheme: FilledButtonThemeData(
+      style: FilledButton.styleFrom(
+        minimumSize: const Size(0, 48),
+        shape: fieldShape,
+      ),
+    ),
+    floatingActionButtonTheme: FloatingActionButtonThemeData(
+      backgroundColor: colorScheme.primaryContainer,
+      foregroundColor: colorScheme.onPrimaryContainer,
+      extendedTextStyle: TextStyle(
+        color: colorScheme.onPrimaryContainer,
+        fontWeight: FontWeight.w600,
+      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+    ),
+    navigationBarTheme: NavigationBarThemeData(
+      backgroundColor: colorScheme.surface,
+      elevation: 0,
+      indicatorColor: colorScheme.secondaryContainer,
+      labelTextStyle: WidgetStateProperty.resolveWith((states) {
+        final isSelected = states.contains(WidgetState.selected);
+        return TextStyle(
+          color: isSelected
+              ? colorScheme.onSurface
+              : colorScheme.onSurfaceVariant,
+          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+        );
+      }),
+    ),
+    navigationDrawerTheme: NavigationDrawerThemeData(
+      backgroundColor: colorScheme.surface,
+      indicatorColor: colorScheme.secondaryContainer,
+      indicatorShape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(28),
+      ),
+      tileHeight: 56,
     ),
     chipTheme: ChipThemeData(
       backgroundColor: isDark
@@ -56,6 +121,12 @@ ThemeData buildAppTheme({Brightness brightness = Brightness.light}) {
       side: BorderSide.none,
       labelStyle: TextStyle(color: colorScheme.onSurface),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+    ),
+    snackBarTheme: SnackBarThemeData(
+      behavior: SnackBarBehavior.floating,
+      backgroundColor: colorScheme.inverseSurface,
+      contentTextStyle: TextStyle(color: colorScheme.onInverseSurface),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
     ),
   );
 }

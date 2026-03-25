@@ -24,7 +24,6 @@ class PaperlessDocumentCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
     final l10n = context.l10n;
     final repository = ref.watch(documentsRepositoryProvider);
     final thumbnailWidget = repository.buildDocumentThumbnailWidget(document);
@@ -70,159 +69,144 @@ class PaperlessDocumentCard extends ConsumerWidget {
         ),
     ];
 
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerLow,
+    return Card(
+      margin: EdgeInsets.zero,
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: theme.colorScheme.outline.withValues(
-            alpha: isDark ? 0.35 : 0.12,
-          ),
+        side: BorderSide(
+          color: theme.colorScheme.outline.withValues(alpha: 0.12),
         ),
-        boxShadow: [
-          BoxShadow(
-            color: isDark
-                ? Colors.black.withValues(alpha: 0.16)
-                : const Color(0x0D0F172A),
-            blurRadius: isDark ? 10 : 14,
-            offset: const Offset(0, 8),
-          ),
-        ],
       ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(20),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(18),
-                      child: SizedBox(
-                        width: 88,
-                        height: 116,
-                        child:
-                            thumbnailWidget ??
-                            (thumbnailImageProvider != null
-                                ? Image(
-                                    image: thumbnailImageProvider,
-                                    fit: BoxFit.cover,
-                                  )
-                                : Image.network(
-                                    repository
-                                        .buildDocumentThumbnailUri(document.id)
-                                        .toString(),
-                                    headers: repository
-                                        .buildAuthenticatedHeaders(),
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return _ThumbnailFallback(
-                                        document: document,
-                                      );
-                                    },
-                                    loadingBuilder:
-                                        (context, child, loadingProgress) {
-                                          if (loadingProgress == null) {
-                                            return child;
-                                          }
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(18),
+                    child: SizedBox(
+                      width: 88,
+                      height: 116,
+                      child:
+                          thumbnailWidget ??
+                          (thumbnailImageProvider != null
+                              ? Image(
+                                  image: thumbnailImageProvider,
+                                  fit: BoxFit.cover,
+                                )
+                              : Image.network(
+                                  repository
+                                      .buildDocumentThumbnailUri(document.id)
+                                      .toString(),
+                                  headers: repository
+                                      .buildAuthenticatedHeaders(),
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return _ThumbnailFallback(
+                                      document: document,
+                                    );
+                                  },
+                                  loadingBuilder:
+                                      (context, child, loadingProgress) {
+                                        if (loadingProgress == null) {
+                                          return child;
+                                        }
 
-                                          return ColoredBox(
-                                            color: theme
-                                                .colorScheme
-                                                .surfaceContainerHigh,
-                                            child: Center(
-                                              child:
-                                                  CircularProgressIndicator(),
-                                            ),
-                                          );
-                                        },
-                                  )),
-                      ),
+                                        return ColoredBox(
+                                          color: theme
+                                              .colorScheme
+                                              .surfaceContainerHigh,
+                                          child: const Center(
+                                            child: CircularProgressIndicator(),
+                                          ),
+                                        );
+                                      },
+                                )),
                     ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  document.title,
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: theme.textTheme.titleMedium?.copyWith(
-                                    fontWeight: FontWeight.w700,
-                                    color: theme.colorScheme.onSurface,
-                                    height: 1.2,
-                                  ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                document.title,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  color: theme.colorScheme.onSurface,
+                                  height: 1.2,
                                 ),
                               ),
-                              if (trailingLabel != null) ...[
-                                const SizedBox(width: 12),
-                                _StatusChip(label: trailingLabel!),
-                              ],
+                            ),
+                            if (trailingLabel != null) ...[
+                              const SizedBox(width: 12),
+                              _StatusChip(label: trailingLabel!),
                             ],
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            if (correspondentName != null)
+                              _EntityChip(
+                                icon: Icons.person_outline,
+                                label: correspondentName,
+                              ),
+                            if (documentTypeName != null)
+                              _EntityChip(
+                                icon: Icons.category_outlined,
+                                label: documentTypeName,
+                              ),
+                          ],
+                        ),
+                        if (metadataLabels.isNotEmpty) ...[
+                          const SizedBox(height: 10),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: metadataLabels,
                           ),
+                        ],
+                        if (tagNames.isNotEmpty) ...[
                           const SizedBox(height: 10),
                           Wrap(
                             spacing: 8,
                             runSpacing: 8,
                             children: [
-                              if (correspondentName != null)
-                                _EntityChip(
-                                  icon: Icons.person_outline,
-                                  label: correspondentName,
-                                ),
-                              if (documentTypeName != null)
-                                _EntityChip(
-                                  icon: Icons.category_outlined,
-                                  label: documentTypeName,
+                              for (final tagName in tagNames.take(3))
+                                _TagChip(label: tagName),
+                              if (tagNames.length > 3)
+                                _TagChip(
+                                  label:
+                                      '+${tagNames.length - 3} ${l10n.tagsLabel.toLowerCase()}',
                                 ),
                             ],
                           ),
-                          if (metadataLabels.isNotEmpty) ...[
-                            const SizedBox(height: 10),
-                            Wrap(
-                              spacing: 8,
-                              runSpacing: 8,
-                              children: metadataLabels,
-                            ),
-                          ],
-                          if (tagNames.isNotEmpty) ...[
-                            const SizedBox(height: 10),
-                            Wrap(
-                              spacing: 8,
-                              runSpacing: 8,
-                              children: [
-                                for (final tagName in tagNames.take(3))
-                                  _TagChip(label: tagName),
-                                if (tagNames.length > 3)
-                                  _TagChip(
-                                    label:
-                                        '+${tagNames.length - 3} ${l10n.tagsLabel.toLowerCase()}',
-                                  ),
-                              ],
-                            ),
-                          ],
                         ],
-                      ),
+                      ],
                     ),
-                  ],
-                ),
-                if (footer != null) ...[
-                  const SizedBox(height: 14),
-                  Align(alignment: Alignment.centerRight, child: footer),
+                  ),
                 ],
+              ),
+              if (footer != null) ...[
+                const SizedBox(height: 14),
+                Align(alignment: Alignment.centerRight, child: footer),
               ],
-            ),
+            ],
           ),
         ),
       ),
@@ -355,20 +339,15 @@ class _StatusChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: theme.colorScheme.primaryContainer,
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        child: Text(
-          label,
-          style: theme.textTheme.labelMedium?.copyWith(
-            color: theme.colorScheme.onPrimaryContainer,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
+    return Chip(
+      label: Text(label),
+      side: BorderSide.none,
+      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      visualDensity: VisualDensity.compact,
+      backgroundColor: theme.colorScheme.primaryContainer,
+      labelStyle: theme.textTheme.labelMedium?.copyWith(
+        color: theme.colorScheme.onPrimaryContainer,
+        fontWeight: FontWeight.w700,
       ),
     );
   }
@@ -383,30 +362,18 @@ class _EntityChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(999),
+    return Chip(
+      avatar: Icon(icon, size: 16, color: theme.colorScheme.onSurfaceVariant),
+      label: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 180),
+        child: Text(label, overflow: TextOverflow.ellipsis),
       ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 16, color: theme.colorScheme.onSurfaceVariant),
-            const SizedBox(width: 6),
-            ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 180),
-              child: Text(
-                label,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.labelLarge?.copyWith(
-                  color: theme.colorScheme.onSurface,
-                ),
-              ),
-            ),
-          ],
-        ),
+      side: BorderSide.none,
+      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      visualDensity: VisualDensity.compact,
+      backgroundColor: theme.colorScheme.surfaceContainerHighest,
+      labelStyle: theme.textTheme.labelLarge?.copyWith(
+        color: theme.colorScheme.onSurface,
       ),
     );
   }
@@ -425,33 +392,20 @@ class _MetadataPill extends StatelessWidget {
     final text = value == null ? label : '$label: $value';
     return Tooltip(
       message: text,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          border: Border.all(
-            color: theme.colorScheme.outline.withValues(alpha: 0.16),
-          ),
-          borderRadius: BorderRadius.circular(999),
+      child: Chip(
+        avatar: Icon(icon, size: 16, color: theme.colorScheme.onSurfaceVariant),
+        label: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 150),
+          child: Text(text, maxLines: 1, overflow: TextOverflow.ellipsis),
         ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: 16, color: theme.colorScheme.onSurfaceVariant),
-              const SizedBox(width: 6),
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 150),
-                child: Text(
-                  text,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ),
-            ],
-          ),
+        side: BorderSide(
+          color: theme.colorScheme.outline.withValues(alpha: 0.16),
+        ),
+        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        visualDensity: VisualDensity.compact,
+        backgroundColor: Colors.transparent,
+        labelStyle: theme.textTheme.labelMedium?.copyWith(
+          color: theme.colorScheme.onSurfaceVariant,
         ),
       ),
     );
@@ -466,19 +420,16 @@ class _TagChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: theme.colorScheme.secondaryContainer.withValues(alpha: 0.6),
-        borderRadius: BorderRadius.circular(999),
+    return Chip(
+      label: Text(label),
+      side: BorderSide.none,
+      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      visualDensity: VisualDensity.compact,
+      backgroundColor: theme.colorScheme.secondaryContainer.withValues(
+        alpha: 0.7,
       ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        child: Text(
-          label,
-          style: theme.textTheme.labelMedium?.copyWith(
-            color: theme.colorScheme.onSecondaryContainer,
-          ),
-        ),
+      labelStyle: theme.textTheme.labelMedium?.copyWith(
+        color: theme.colorScheme.onSecondaryContainer,
       ),
     );
   }

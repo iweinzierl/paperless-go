@@ -178,30 +178,25 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 icon: Icons.language_outlined,
                 title: l10n.appLanguageTitle,
                 subtitle: l10n.appLanguageSubtitle,
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<AppLanguage>(
-                      value: behaviorSettings.appLanguage,
-                      onChanged: (value) {
-                        if (value == null) {
-                          return;
-                        }
+                child: _SettingsDropdownField<AppLanguage>(
+                  value: behaviorSettings.appLanguage,
+                  entries: AppLanguage.values
+                      .map(
+                        (value) => DropdownMenuEntry<AppLanguage>(
+                          value: value,
+                          label: _appLanguageLabel(context, value),
+                        ),
+                      )
+                      .toList(growable: false),
+                  onSelected: (value) {
+                    if (value == null) {
+                      return;
+                    }
 
-                        ref
-                            .read(appBehaviorSettingsProvider.notifier)
-                            .setAppLanguage(value);
-                      },
-                      items: AppLanguage.values
-                          .map(
-                            (value) => DropdownMenuItem<AppLanguage>(
-                              value: value,
-                              child: Text(_appLanguageLabel(context, value)),
-                            ),
-                          )
-                          .toList(growable: false),
-                    ),
-                  ),
+                    ref
+                        .read(appBehaviorSettingsProvider.notifier)
+                        .setAppLanguage(value);
+                  },
                 ),
               ),
               const _SettingsDivider(),
@@ -209,32 +204,27 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 icon: Icons.dark_mode_outlined,
                 title: l10n.themeModeTitle,
                 subtitle: l10n.themeModeSubtitle,
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<AppThemeMode>(
-                      value: behaviorSettings.themeMode,
-                      onChanged: (value) {
-                        if (value == null) {
-                          return;
-                        }
-
-                        ref
-                            .read(appBehaviorSettingsProvider.notifier)
-                            .setThemeMode(value);
-                      },
-                      items: [
-                        DropdownMenuItem(
-                          value: AppThemeMode.light,
-                          child: Text(l10n.themeModeLight),
-                        ),
-                        DropdownMenuItem(
-                          value: AppThemeMode.dark,
-                          child: Text(l10n.themeModeDark),
-                        ),
-                      ],
+                child: _SettingsDropdownField<AppThemeMode>(
+                  value: behaviorSettings.themeMode,
+                  entries: [
+                    DropdownMenuEntry(
+                      value: AppThemeMode.light,
+                      label: l10n.themeModeLight,
                     ),
-                  ),
+                    DropdownMenuEntry(
+                      value: AppThemeMode.dark,
+                      label: l10n.themeModeDark,
+                    ),
+                  ],
+                  onSelected: (value) {
+                    if (value == null) {
+                      return;
+                    }
+
+                    ref
+                        .read(appBehaviorSettingsProvider.notifier)
+                        .setThemeMode(value);
+                  },
                 ),
               ),
               const _SettingsDivider(),
@@ -267,32 +257,25 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   icon: Icons.timer_outlined,
                   title: l10n.appLockTimeoutTitle,
                   subtitle: l10n.appLockTimeoutSubtitle,
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<AppLockTimeout>(
-                        value: behaviorSettings.appLockTimeout,
-                        onChanged: (value) {
-                          if (value == null) {
-                            return;
-                          }
+                  child: _SettingsDropdownField<AppLockTimeout>(
+                    value: behaviorSettings.appLockTimeout,
+                    entries: AppLockTimeout.values
+                        .map(
+                          (value) => DropdownMenuEntry<AppLockTimeout>(
+                            value: value,
+                            label: _appLockTimeoutLabel(context, value),
+                          ),
+                        )
+                        .toList(growable: false),
+                    onSelected: (value) {
+                      if (value == null) {
+                        return;
+                      }
 
-                          ref
-                              .read(appBehaviorSettingsProvider.notifier)
-                              .setAppLockTimeout(value);
-                        },
-                        items: AppLockTimeout.values
-                            .map(
-                              (value) => DropdownMenuItem<AppLockTimeout>(
-                                value: value,
-                                child: Text(
-                                  _appLockTimeoutLabel(context, value),
-                                ),
-                              ),
-                            )
-                            .toList(growable: false),
-                      ),
-                    ),
+                      ref
+                          .read(appBehaviorSettingsProvider.notifier)
+                          .setAppLockTimeout(value);
+                    },
                   ),
                 ),
               ],
@@ -565,6 +548,33 @@ class _SettingsTile extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _SettingsDropdownField<T> extends StatelessWidget {
+  const _SettingsDropdownField({
+    required this.value,
+    required this.entries,
+    required this.onSelected,
+  });
+
+  final T value;
+  final List<DropdownMenuEntry<T>> entries;
+  final ValueChanged<T?> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return DropdownMenu<T>(
+          key: ValueKey<T>(value),
+          width: constraints.maxWidth,
+          initialSelection: value,
+          onSelected: onSelected,
+          dropdownMenuEntries: entries,
+        );
+      },
     );
   }
 }

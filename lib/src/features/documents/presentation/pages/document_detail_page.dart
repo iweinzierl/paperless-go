@@ -1135,14 +1135,16 @@ class _FieldActionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Row(
+    return Wrap(
+      alignment: WrapAlignment.spaceBetween,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      spacing: 12,
+      runSpacing: 8,
       children: [
-        Expanded(
-          child: Text(
-            title,
-            style: theme.textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
+        Text(
+          title,
+          style: theme.textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.w700,
           ),
         ),
         TextButton.icon(
@@ -1350,11 +1352,23 @@ class _SingleOptionSelectionSheetState
                 ),
                 const SizedBox(height: 16),
                 ListTile(
-                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  tileColor: widget.selectedId == null
+                      ? theme.colorScheme.secondaryContainer.withValues(
+                          alpha: 0.45,
+                        )
+                      : null,
                   leading: Icon(
                     widget.selectedId == null
                         ? Icons.radio_button_checked
                         : Icons.radio_button_off,
+                    color: widget.selectedId == null
+                        ? theme.colorScheme.primary
+                        : theme.colorScheme.onSurfaceVariant,
                   ),
                   title: Text(widget.emptyOptionLabel),
                   onTap: () => Navigator.of(context).pop<int?>(null),
@@ -1378,11 +1392,24 @@ class _SingleOptionSelectionSheetState
                             final isSelected = option.id == widget.selectedId;
 
                             return ListTile(
-                              contentPadding: EdgeInsets.zero,
+                              dense: true,
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              tileColor: isSelected
+                                  ? theme.colorScheme.secondaryContainer
+                                        .withValues(alpha: 0.45)
+                                  : null,
                               leading: Icon(
                                 isSelected
                                     ? Icons.radio_button_checked
                                     : Icons.radio_button_off,
+                                color: isSelected
+                                    ? theme.colorScheme.primary
+                                    : theme.colorScheme.onSurfaceVariant,
                               ),
                               title: Text(option.name),
                               onTap: () =>
@@ -1665,8 +1692,18 @@ class _TagSelectionSheetState extends State<_TagSelectionSheet> {
                             return CheckboxListTile(
                               value: isSelected,
                               title: Text(tag.name),
+                              dense: true,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              tileColor: isSelected
+                                  ? theme.colorScheme.secondaryContainer
+                                        .withValues(alpha: 0.45)
+                                  : null,
                               controlAffinity: ListTileControlAffinity.leading,
-                              contentPadding: EdgeInsets.zero,
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                              ),
                               onChanged: (checked) =>
                                   _toggleTag(tag.id, checked == true),
                             );
@@ -1742,18 +1779,10 @@ class _DetailSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x0D0F172A),
-            blurRadius: 14,
-            offset: Offset(0, 8),
-          ),
-        ],
-      ),
+    final theme = Theme.of(context);
+
+    return Card(
+      margin: EdgeInsets.zero,
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -1761,9 +1790,9 @@ class _DetailSection extends StatelessWidget {
           children: [
             Text(
               title,
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
             ),
             const SizedBox(height: 16),
             ...children,
@@ -1843,17 +1872,32 @@ class _DocumentDetailError extends StatelessWidget {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(context.l10n.couldNotLoadDocumentDetails),
-            const SizedBox(height: 12),
-            FilledButton.icon(
-              onPressed: onRetry,
-              icon: const Icon(Icons.refresh),
-              label: Text(context.l10n.retryAction),
+        child: Card(
+          margin: EdgeInsets.zero,
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.error_outline,
+                  size: 32,
+                  color: Theme.of(context).colorScheme.error,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  context.l10n.couldNotLoadDocumentDetails,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                FilledButton.icon(
+                  onPressed: onRetry,
+                  icon: const Icon(Icons.refresh),
+                  label: Text(context.l10n.retryAction),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );

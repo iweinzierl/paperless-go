@@ -57,77 +57,98 @@ class _DocumentsFiltersPageState extends ConsumerState<DocumentsFiltersPage> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          _SortSelector(
-            selectedOrdering: _ordering,
-            onChanged: (value) {
-              if (value == null) {
-                return;
-              }
+          _FiltersSection(
+            title: l10n.sortByLabel,
+            icon: Icons.sort,
+            child: _SortSelector(
+              selectedOrdering: _ordering,
+              onChanged: (value) {
+                if (value == null) {
+                  return;
+                }
 
-              setState(() {
-                _ordering = value;
-              });
-            },
+                setState(() {
+                  _ordering = value;
+                });
+              },
+            ),
           ),
           const SizedBox(height: 16),
-          _TagFilterSection(
-            label: l10n.filterTagLabel,
-            selectedIds: _filterState.tagIds,
-            options: tagOptions,
-            searchHint: l10n.searchTagsHint,
-            dialogTitle: l10n.selectTagsDialogTitle,
-            noResultsMessage: l10n.noTagsMatchSearch,
-            onChanged: (value) {
-              setState(() {
-                _filterState = _filterState.copyWith(
-                  tagIds: value,
-                  clearTag: value.isEmpty,
-                );
-              });
-            },
+          _FiltersSection(
+            title: l10n.filterTagLabel,
+            icon: Icons.label_outline,
+            child: _TagFilterSection(
+              label: l10n.filterTagLabel,
+              selectedIds: _filterState.tagIds,
+              options: tagOptions,
+              searchHint: l10n.searchTagsHint,
+              dialogTitle: l10n.selectTagsDialogTitle,
+              noResultsMessage: l10n.noTagsMatchSearch,
+              onChanged: (value) {
+                setState(() {
+                  _filterState = _filterState.copyWith(
+                    tagIds: value,
+                    clearTag: value.isEmpty,
+                  );
+                });
+              },
+            ),
           ),
           const SizedBox(height: 16),
-          _FilterDropdown(
-            label: l10n.filterCorrespondentLabel,
-            selectedId: _filterState.correspondentId,
-            options: correspondentOptions,
-            searchHint: l10n.searchCorrespondentsHint,
-            dialogTitle: l10n.selectCorrespondentDialogTitle,
-            noResultsMessage: l10n.noCorrespondentsMatchSearch,
-            onChanged: (value) {
-              setState(() {
-                _filterState = _filterState.copyWith(
-                  correspondentId: value,
-                  clearCorrespondent: value == null,
-                );
-              });
-            },
+          _FiltersSection(
+            title: l10n.filterCorrespondentLabel,
+            icon: Icons.person_outline,
+            child: _FilterDropdown(
+              label: l10n.filterCorrespondentLabel,
+              selectedId: _filterState.correspondentId,
+              options: correspondentOptions,
+              searchHint: l10n.searchCorrespondentsHint,
+              dialogTitle: l10n.selectCorrespondentDialogTitle,
+              noResultsMessage: l10n.noCorrespondentsMatchSearch,
+              onChanged: (value) {
+                setState(() {
+                  _filterState = _filterState.copyWith(
+                    correspondentId: value,
+                    clearCorrespondent: value == null,
+                  );
+                });
+              },
+            ),
           ),
           const SizedBox(height: 16),
-          _FilterDropdown(
-            label: l10n.filterDocumentTypeLabel,
-            selectedId: _filterState.documentTypeId,
-            options: documentTypeOptions,
-            searchHint: l10n.searchDocumentTypesHint,
-            dialogTitle: l10n.selectDocumentTypeDialogTitle,
-            noResultsMessage: l10n.noDocumentTypesMatchSearch,
-            onChanged: (value) {
-              setState(() {
-                _filterState = _filterState.copyWith(
-                  documentTypeId: value,
-                  clearDocumentType: value == null,
-                );
-              });
-            },
+          _FiltersSection(
+            title: l10n.filterDocumentTypeLabel,
+            icon: Icons.description_outlined,
+            child: _FilterDropdown(
+              label: l10n.filterDocumentTypeLabel,
+              selectedId: _filterState.documentTypeId,
+              options: documentTypeOptions,
+              searchHint: l10n.searchDocumentTypesHint,
+              dialogTitle: l10n.selectDocumentTypeDialogTitle,
+              noResultsMessage: l10n.noDocumentTypesMatchSearch,
+              onChanged: (value) {
+                setState(() {
+                  _filterState = _filterState.copyWith(
+                    documentTypeId: value,
+                    clearDocumentType: value == null,
+                  );
+                });
+              },
+            ),
           ),
         ],
       ),
       bottomNavigationBar: SafeArea(
-        minimum: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-        child: FilledButton.icon(
-          onPressed: _apply,
-          icon: const Icon(Icons.check),
-          label: Text(l10n.applyFiltersAction),
+        child: ColoredBox(
+          color: Theme.of(context).colorScheme.surface,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+            child: FilledButton.icon(
+              onPressed: _apply,
+              icon: const Icon(Icons.check),
+              label: Text(l10n.applyFiltersAction),
+            ),
+          ),
         ),
       ),
     );
@@ -143,6 +164,51 @@ class _DocumentsFiltersPageState extends ConsumerState<DocumentsFiltersPage> {
   void _apply() {
     Navigator.of(context).pop(
       DocumentsFiltersResult(filterState: _filterState, ordering: _ordering),
+    );
+  }
+}
+
+class _FiltersSection extends StatelessWidget {
+  const _FiltersSection({
+    required this.title,
+    required this.icon,
+    required this.child,
+  });
+
+  final String title;
+  final IconData icon;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Card(
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(icon, color: theme.colorScheme.primary),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            child,
+          ],
+        ),
+      ),
     );
   }
 }
@@ -167,13 +233,6 @@ class _SortSelector extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          l10n.sortByLabel,
-          style: theme.textTheme.titleSmall?.copyWith(
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        const SizedBox(height: 8),
         if (selectedOption == null)
           Text(
             documentSortOptionLabel(l10n, documentsSortOptions.first.ordering),
@@ -310,13 +369,6 @@ class _FilterDropdown extends StatelessWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              label,
-              style: theme.textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: 8),
             if (selectedLabel == null)
               Text(
                 context.l10n.anyOption,
@@ -426,13 +478,6 @@ class _TagFilterSection extends StatelessWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              label,
-              style: theme.textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: 8),
             if (selectedOptions.isEmpty)
               Text(
                 context.l10n.anyOption,
@@ -630,11 +675,23 @@ class _SingleFilterOptionSheetState extends State<_SingleFilterOptionSheet> {
                 ),
                 const SizedBox(height: 16),
                 ListTile(
-                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  tileColor: widget.selectedId == null
+                      ? theme.colorScheme.secondaryContainer.withValues(
+                          alpha: 0.45,
+                        )
+                      : null,
                   leading: Icon(
                     widget.selectedId == null
                         ? Icons.radio_button_checked
                         : Icons.radio_button_off,
+                    color: widget.selectedId == null
+                        ? theme.colorScheme.primary
+                        : theme.colorScheme.onSurfaceVariant,
                   ),
                   title: Text(widget.anyLabel),
                   onTap: () => Navigator.of(context).pop<int?>(null),
@@ -658,11 +715,24 @@ class _SingleFilterOptionSheetState extends State<_SingleFilterOptionSheet> {
                             final isSelected = option.id == widget.selectedId;
 
                             return ListTile(
-                              contentPadding: EdgeInsets.zero,
+                              dense: true,
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              tileColor: isSelected
+                                  ? theme.colorScheme.secondaryContainer
+                                        .withValues(alpha: 0.45)
+                                  : null,
                               leading: Icon(
                                 isSelected
                                     ? Icons.radio_button_checked
                                     : Icons.radio_button_off,
+                                color: isSelected
+                                    ? theme.colorScheme.primary
+                                    : theme.colorScheme.onSurfaceVariant,
                               ),
                               title: Text(option.name),
                               onTap: () =>
@@ -887,8 +957,18 @@ class _MultiFilterOptionSheetState extends State<_MultiFilterOptionSheet> {
                             return CheckboxListTile(
                               value: isSelected,
                               title: Text(option.name),
+                              dense: true,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              tileColor: isSelected
+                                  ? theme.colorScheme.secondaryContainer
+                                        .withValues(alpha: 0.45)
+                                  : null,
                               controlAffinity: ListTileControlAffinity.leading,
-                              contentPadding: EdgeInsets.zero,
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                              ),
                               onChanged: (checked) =>
                                   _toggleOption(option.id, checked == true),
                             );

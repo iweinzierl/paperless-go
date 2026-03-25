@@ -17,51 +17,53 @@ class AppDrawer extends ConsumerWidget {
     final stats = ref.watch(appDrawerStatisticsProvider);
     final donationConfiguration = ref.watch(donationConfigurationProvider);
     final l10n = context.l10n;
-
-    return Drawer(
-      child: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12, 8, 12, 16),
-              child: Text(
-                l10n.appTitle,
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-            _DrawerDestination(
-              icon: Icons.history,
-              title: l10n.drawerRecentlyOpened,
-              onTap: () => _openPage(context, const RecentlyOpenedPage()),
-            ),
-            _DrawerDestination(
-              icon: Icons.settings_outlined,
-              title: l10n.drawerSettings,
-              onTap: () => _openPage(context, const SettingsPage()),
-            ),
-            _DrawerDestination(
-              icon: Icons.help_outline,
-              title: l10n.drawerHelpFeedback,
-              onTap: () => _openPage(context, const HelpFeedbackPage()),
-            ),
-            if (donationConfiguration.isEnabled)
-              _DrawerDestination(
-                icon: Icons.volunteer_activism_outlined,
-                title: l10n.donateTitle,
-                onTap: () => _openDonation(context, ref, donationConfiguration),
-              ),
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 12),
-              child: Divider(),
-            ),
-            _ManagementSection(stats: stats),
-          ],
-        ),
+    final primaryDestinations = <_DrawerAction>[
+      _DrawerAction(
+        icon: Icons.history,
+        title: l10n.drawerRecentlyOpened,
+        onTap: () => _openPage(context, const RecentlyOpenedPage()),
       ),
+      _DrawerAction(
+        icon: Icons.settings_outlined,
+        title: l10n.drawerSettings,
+        onTap: () => _openPage(context, const SettingsPage()),
+      ),
+      _DrawerAction(
+        icon: Icons.help_outline,
+        title: l10n.drawerHelpFeedback,
+        onTap: () => _openPage(context, const HelpFeedbackPage()),
+      ),
+      if (donationConfiguration.isEnabled)
+        _DrawerAction(
+          icon: Icons.volunteer_activism_outlined,
+          title: l10n.donateTitle,
+          onTap: () => _openDonation(context, ref, donationConfiguration),
+        ),
+    ];
+
+    return NavigationDrawer(
+      onDestinationSelected: (index) => primaryDestinations[index].onTap(),
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(28, 20, 28, 8),
+          child: Text(
+            l10n.appTitle,
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+          ),
+        ),
+        for (final destination in primaryDestinations)
+          NavigationDrawerDestination(
+            icon: Icon(destination.icon),
+            label: Text(destination.title),
+          ),
+        const Padding(
+          padding: EdgeInsets.fromLTRB(28, 12, 28, 8),
+          child: Divider(),
+        ),
+        _ManagementSection(stats: stats),
+      ],
     );
   }
 
@@ -85,8 +87,8 @@ class AppDrawer extends ConsumerWidget {
   }
 }
 
-class _DrawerDestination extends StatelessWidget {
-  const _DrawerDestination({
+class _DrawerAction {
+  const _DrawerAction({
     required this.icon,
     required this.title,
     required this.onTap,
@@ -95,16 +97,6 @@ class _DrawerDestination extends StatelessWidget {
   final IconData icon;
   final String title;
   final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      leading: Icon(icon),
-      title: Text(title),
-      onTap: onTap,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-    );
-  }
 }
 
 class _ManagementSection extends StatelessWidget {
@@ -128,40 +120,43 @@ class _ManagementSection extends StatelessWidget {
       orElse: () => null,
     );
 
-    return Column(
-      children: [
-        _ManagementDestination(
-          icon: Icons.people_outline,
-          title: l10n.drawerCorrespondents,
-          count: correspondentsCount,
-          onTap: () => _openDrawerPage(
-            context,
-            const ManageFilterOptionsPage(
-              type: ManageFilterOptionType.correspondents,
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 0, 12, 16),
+      child: Column(
+        children: [
+          _ManagementDestination(
+            icon: Icons.people_outline,
+            title: l10n.drawerCorrespondents,
+            count: correspondentsCount,
+            onTap: () => _openDrawerPage(
+              context,
+              const ManageFilterOptionsPage(
+                type: ManageFilterOptionType.correspondents,
+              ),
             ),
           ),
-        ),
-        _ManagementDestination(
-          icon: Icons.description_outlined,
-          title: l10n.drawerDocumentTypes,
-          count: documentTypesCount,
-          onTap: () => _openDrawerPage(
-            context,
-            const ManageFilterOptionsPage(
-              type: ManageFilterOptionType.documentTypes,
+          _ManagementDestination(
+            icon: Icons.description_outlined,
+            title: l10n.drawerDocumentTypes,
+            count: documentTypesCount,
+            onTap: () => _openDrawerPage(
+              context,
+              const ManageFilterOptionsPage(
+                type: ManageFilterOptionType.documentTypes,
+              ),
             ),
           ),
-        ),
-        _ManagementDestination(
-          icon: Icons.label_outline,
-          title: l10n.drawerTags,
-          count: tagsCount,
-          onTap: () => _openDrawerPage(
-            context,
-            const ManageFilterOptionsPage(type: ManageFilterOptionType.tags),
+          _ManagementDestination(
+            icon: Icons.label_outline,
+            title: l10n.drawerTags,
+            count: tagsCount,
+            onTap: () => _openDrawerPage(
+              context,
+              const ManageFilterOptionsPage(type: ManageFilterOptionType.tags),
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -183,7 +178,7 @@ class _ManagementDestination extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListTile(
       leading: Icon(icon),
-      title: Align(alignment: Alignment.centerLeft, child: Text(title)),
+      title: Text(title),
       trailing: Text(
         count?.toString() ?? '...',
         style: Theme.of(
@@ -191,8 +186,7 @@ class _ManagementDestination extends StatelessWidget {
         ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
       ),
       onTap: onTap,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16),
     );
   }
 }
