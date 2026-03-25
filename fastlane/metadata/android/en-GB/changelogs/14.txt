@@ -1,0 +1,2 @@
+- Material 3 design polish across navigation, settings, filters, and document details
+- improved document cards and selection sheets for better readability and cleaner interactions

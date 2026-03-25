@@ -1,0 +1,2 @@
+- design Material 3 migliorato in navigazione, impostazioni, filtri e dettagli dei documenti
+- schede documento e pannelli di selezione migliorati per una leggibilita migliore e interazioni piu pulite

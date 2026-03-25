@@ -1,0 +1,2 @@
+- design Material 3 ameliore dans la navigation, les parametres, les filtres et les details des documents
+- cartes de documents et feuilles de selection ameliorees pour une meilleure lisibilite et des interactions plus nettes
