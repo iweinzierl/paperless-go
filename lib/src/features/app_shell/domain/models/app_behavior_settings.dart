@@ -38,31 +38,60 @@ enum AppLanguage {
   }
 }
 
+enum AppLockTimeout {
+  immediate('immediate', Duration.zero),
+  after30Seconds('30_seconds', Duration(seconds: 30)),
+  after1Minute('1_minute', Duration(minutes: 1)),
+  after5Minutes('5_minutes', Duration(minutes: 5));
+
+  const AppLockTimeout(this.storageValue, this.duration);
+
+  final String storageValue;
+  final Duration duration;
+
+  static AppLockTimeout fromStorageValue(String? value) {
+    return AppLockTimeout.values.firstWhere(
+      (timeout) => timeout.storageValue == value,
+      orElse: () => AppLockTimeout.after30Seconds,
+    );
+  }
+}
+
 class AppBehaviorSettings {
   const AppBehaviorSettings({
     required this.cachePreviewsEnabled,
     required this.appLanguage,
     required this.themeMode,
+    required this.biometricLockEnabled,
+    required this.appLockTimeout,
   });
 
   const AppBehaviorSettings.defaults()
     : cachePreviewsEnabled = true,
       appLanguage = AppLanguage.system,
-      themeMode = AppThemeMode.light;
+      themeMode = AppThemeMode.light,
+      biometricLockEnabled = false,
+      appLockTimeout = AppLockTimeout.after30Seconds;
 
   final bool cachePreviewsEnabled;
   final AppLanguage appLanguage;
   final AppThemeMode themeMode;
+  final bool biometricLockEnabled;
+  final AppLockTimeout appLockTimeout;
 
   AppBehaviorSettings copyWith({
     bool? cachePreviewsEnabled,
     AppLanguage? appLanguage,
     AppThemeMode? themeMode,
+    bool? biometricLockEnabled,
+    AppLockTimeout? appLockTimeout,
   }) {
     return AppBehaviorSettings(
       cachePreviewsEnabled: cachePreviewsEnabled ?? this.cachePreviewsEnabled,
       appLanguage: appLanguage ?? this.appLanguage,
       themeMode: themeMode ?? this.themeMode,
+      biometricLockEnabled: biometricLockEnabled ?? this.biometricLockEnabled,
+      appLockTimeout: appLockTimeout ?? this.appLockTimeout,
     );
   }
 }

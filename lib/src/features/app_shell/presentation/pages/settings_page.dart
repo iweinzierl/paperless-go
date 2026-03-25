@@ -4,6 +4,7 @@ import 'package:paperless_ngx_app/src/core/presentation/localization/app_localiz
 import 'package:paperless_ngx_app/src/features/app_shell/domain/models/app_behavior_settings.dart';
 import 'package:paperless_ngx_app/src/features/app_shell/presentation/controllers/settings_controller.dart';
 import 'package:paperless_ngx_app/src/features/app_shell/presentation/providers/app_behavior_providers.dart';
+import 'package:paperless_ngx_app/src/features/app_shell/presentation/providers/app_security_providers.dart';
 import 'package:paperless_ngx_app/src/features/auth/presentation/formatters/auth_text.dart';
 
 class SettingsPage extends ConsumerStatefulWidget {
@@ -248,6 +249,55 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               ),
             ],
           ),
+          const SizedBox(height: 20),
+          _SectionHeader(label: l10n.settingsSecuritySection),
+          _SettingsGroup(
+            children: [
+              _SettingsToggleTile(
+                icon: Icons.fingerprint,
+                title: l10n.biometricLockTitle,
+                subtitle: l10n.biometricLockSubtitle,
+                value: behaviorSettings.biometricLockEnabled,
+                onChanged: (value) =>
+                    _handleBiometricLockToggle(context, value),
+              ),
+              if (behaviorSettings.biometricLockEnabled) ...[
+                const _SettingsDivider(),
+                _SettingsTile(
+                  icon: Icons.timer_outlined,
+                  title: l10n.appLockTimeoutTitle,
+                  subtitle: l10n.appLockTimeoutSubtitle,
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<AppLockTimeout>(
+                        value: behaviorSettings.appLockTimeout,
+                        onChanged: (value) {
+                          if (value == null) {
+                            return;
+                          }
+
+                          ref
+                              .read(appBehaviorSettingsProvider.notifier)
+                              .setAppLockTimeout(value);
+                        },
+                        items: AppLockTimeout.values
+                            .map(
+                              (value) => DropdownMenuItem<AppLockTimeout>(
+                                value: value,
+                                child: Text(
+                                  _appLockTimeoutLabel(context, value),
+                                ),
+                              ),
+                            )
+                            .toList(growable: false),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
         ],
       ),
     );
@@ -270,6 +320,64 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       case AppLanguage.spanish:
         return l10n.appLanguageSpanish;
     }
+  }
+
+  String _appLockTimeoutLabel(BuildContext context, AppLockTimeout value) {
+    final l10n = context.l10n;
+
+    switch (value) {
+      case AppLockTimeout.immediate:
+        return l10n.appLockTimeoutImmediate;
+      case AppLockTimeout.after30Seconds:
+        return l10n.appLockTimeout30Seconds;
+      case AppLockTimeout.after1Minute:
+        return l10n.appLockTimeout1Minute;
+      case AppLockTimeout.after5Minutes:
+        return l10n.appLockTimeout5Minutes;
+    }
+  }
+
+  Future<void> _handleBiometricLockToggle(
+    BuildContext context,
+    bool value,
+  ) async {
+    final l10n = context.l10n;
+    final messenger = ScaffoldMessenger.of(context)..hideCurrentSnackBar();
+    final notifier = ref.read(appBehaviorSettingsProvider.notifier);
+
+    if (!value) {
+      notifier.setBiometricLockEnabled(false);
+      return;
+    }
+
+    final biometricAuthService = ref.read(biometricAuthServiceProvider);
+    final isAvailable = await biometricAuthService.isAvailable();
+    if (!mounted) {
+      return;
+    }
+
+    if (!isAvailable) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.biometricLockUnavailable)),
+      );
+      return;
+    }
+
+    final didAuthenticate = await biometricAuthService.authenticate(
+      localizedReason: l10n.biometricEnableReason,
+    );
+    if (!mounted) {
+      return;
+    }
+
+    if (!didAuthenticate) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.biometricLockEnableFailed)),
+      );
+      return;
+    }
+
+    notifier.setBiometricLockEnabled(true);
   }
 
   void _syncControllers(SettingsFormState state) {

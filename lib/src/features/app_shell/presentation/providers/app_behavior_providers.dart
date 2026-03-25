@@ -35,4 +35,14 @@ class AppBehaviorSettingsController extends Notifier<AppBehaviorSettings> {
     state = state.copyWith(themeMode: value);
     unawaited(_preferences.saveSettings(state));
   }
+
+  void setBiometricLockEnabled(bool value) {
+    state = state.copyWith(biometricLockEnabled: value);
+    unawaited(_preferences.saveSettings(state));
+  }
+
+  void setAppLockTimeout(AppLockTimeout value) {
+    state = state.copyWith(appLockTimeout: value);
+    unawaited(_preferences.saveSettings(state));
+  }
 }

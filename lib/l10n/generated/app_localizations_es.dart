@@ -151,6 +151,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get settingsAppearanceBehaviorSection => 'Apariencia y comportamiento';
 
   @override
+  String get settingsSecuritySection => 'Seguridad';
+
+  @override
   String get settingsServerUrlSubtitle =>
       'Punto de acceso de paperless-ngx usado para iniciar sesión, sincronizar y descargar.';
 
@@ -217,6 +220,81 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get cachePreviewsSubtitle =>
       'Mantiene la preferencia para una navegación más rápida a medida que crece la caché local.';
+
+  @override
+  String get biometricLockTitle => 'Usar Face ID o huella';
+
+  @override
+  String get biometricLockSubtitle =>
+      'Solicita verificación biométrica o credenciales del dispositivo al volver a la app después de estar en segundo plano.';
+
+  @override
+  String get appLockTimeoutTitle => 'Bloquear al volver a abrir después de';
+
+  @override
+  String get appLockTimeoutSubtitle =>
+      'Elige cuánto tiempo puede permanecer la app en segundo plano antes de volver a pedir desbloqueo.';
+
+  @override
+  String get appLockTimeoutImmediate => 'Inmediatamente';
+
+  @override
+  String get appLockTimeout30Seconds => '30 segundos';
+
+  @override
+  String get appLockTimeout1Minute => '1 minuto';
+
+  @override
+  String get appLockTimeout5Minutes => '5 minutos';
+
+  @override
+  String get biometricLockUnavailable =>
+      'La autenticación biométrica no está disponible en este dispositivo ahora mismo.';
+
+  @override
+  String get biometricLockEnableFailed =>
+      'La autenticación biométrica no se confirmó, así que el bloqueo de la app sigue desactivado.';
+
+  @override
+  String get biometricEnableReason =>
+      'Confirma tu identidad para activar el bloqueo de Paperless Go.';
+
+  @override
+  String get biometricPromptTitle => '¿Proteger Paperless Go?';
+
+  @override
+  String get biometricPromptMessage =>
+      'Activa ahora Face ID o la huella para proteger tus documentos al volver a la aplicación.';
+
+  @override
+  String get biometricPromptNotNowAction => 'Ahora no';
+
+  @override
+  String get biometricPromptEnableAction => 'Activar ahora';
+
+  @override
+  String get biometricUnlockTitle => 'Desbloquear Paperless Go';
+
+  @override
+  String get biometricUnlockSubtitle =>
+      'Usa Face ID, Touch ID o las credenciales del dispositivo para continuar.';
+
+  @override
+  String get biometricUnlockAction => 'Desbloquear';
+
+  @override
+  String get biometricUnlockingStatus => 'Desbloqueando...';
+
+  @override
+  String get biometricUnlockReason =>
+      'Confirma tu identidad para desbloquear Paperless Go.';
+
+  @override
+  String get biometricUnlockFailed =>
+      'La autenticación se canceló o falló. Inténtalo de nuevo para continuar.';
+
+  @override
+  String get signOutAction => 'Cerrar sesión';
 
   @override
   String get retryTagLoadingAction => 'Reintentar carga de etiquetas';

@@ -18,6 +18,8 @@ void main() {
     expect(settings.cachePreviewsEnabled, isFalse);
     expect(settings.appLanguage, equals(AppLanguage.system));
     expect(settings.themeMode, equals(AppThemeMode.dark));
+    expect(settings.biometricLockEnabled, isFalse);
+    expect(settings.appLockTimeout, equals(AppLockTimeout.after30Seconds));
   });
 
   test(
@@ -35,6 +37,8 @@ void main() {
           cachePreviewsEnabled: true,
           appLanguage: AppLanguage.german,
           themeMode: AppThemeMode.dark,
+          biometricLockEnabled: true,
+          appLockTimeout: AppLockTimeout.after1Minute,
         ),
       );
 
@@ -45,6 +49,14 @@ void main() {
       expect(
         sharedPreferences.getString('app_behavior.theme_mode'),
         equals('dark'),
+      );
+      expect(
+        sharedPreferences.getBool('app_behavior.biometric_lock_enabled'),
+        isTrue,
+      );
+      expect(
+        sharedPreferences.getString('app_behavior.app_lock_timeout'),
+        equals('1_minute'),
       );
       expect(
         sharedPreferences.getStringList('app_behavior.todo_tag_ids'),
@@ -68,6 +80,7 @@ void main() {
 
     expect(settings.appLanguage, equals(AppLanguage.system));
     expect(settings.themeMode, equals(AppThemeMode.light));
+    expect(settings.appLockTimeout, equals(AppLockTimeout.after30Seconds));
   });
 
   test('reads saved app language override', () async {
@@ -80,5 +93,31 @@ void main() {
     final settings = preferences.readSettings();
 
     expect(settings.appLanguage, equals(AppLanguage.french));
+  });
+
+  test('reads saved biometric app lock settings', () async {
+    SharedPreferences.setMockInitialValues(const <String, Object>{
+      'app_behavior.biometric_lock_enabled': true,
+      'app_behavior.app_lock_timeout': '5_minutes',
+    });
+    final sharedPreferences = await SharedPreferences.getInstance();
+    final preferences = AppBehaviorPreferences(sharedPreferences);
+
+    final settings = preferences.readSettings();
+
+    expect(settings.biometricLockEnabled, isTrue);
+    expect(settings.appLockTimeout, equals(AppLockTimeout.after5Minutes));
+  });
+
+  test('marks biometric prompt as shown', () async {
+    SharedPreferences.setMockInitialValues(const <String, Object>{});
+    final sharedPreferences = await SharedPreferences.getInstance();
+    final preferences = AppBehaviorPreferences(sharedPreferences);
+
+    expect(preferences.hasShownBiometricPrompt(), isFalse);
+
+    await preferences.markBiometricPromptShown();
+
+    expect(preferences.hasShownBiometricPrompt(), isTrue);
   });
 }

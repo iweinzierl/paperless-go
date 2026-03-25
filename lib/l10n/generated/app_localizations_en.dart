@@ -149,6 +149,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsAppearanceBehaviorSection => 'Appearance & Behavior';
 
   @override
+  String get settingsSecuritySection => 'Security';
+
+  @override
   String get settingsServerUrlSubtitle =>
       'Paperless-ngx endpoint used for login, sync, and downloads.';
 
@@ -214,6 +217,81 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get cachePreviewsSubtitle =>
       'Persist the preference for faster browsing as local caching expands.';
+
+  @override
+  String get biometricLockTitle => 'Use Face ID or fingerprint';
+
+  @override
+  String get biometricLockSubtitle =>
+      'Require biometric or device credential verification when returning to the app after it has been in the background.';
+
+  @override
+  String get appLockTimeoutTitle => 'Lock when reopening after';
+
+  @override
+  String get appLockTimeoutSubtitle =>
+      'Choose how long the app can stay in the background before it asks to unlock again.';
+
+  @override
+  String get appLockTimeoutImmediate => 'Immediately';
+
+  @override
+  String get appLockTimeout30Seconds => '30 seconds';
+
+  @override
+  String get appLockTimeout1Minute => '1 minute';
+
+  @override
+  String get appLockTimeout5Minutes => '5 minutes';
+
+  @override
+  String get biometricLockUnavailable =>
+      'Biometric authentication is not available on this device right now.';
+
+  @override
+  String get biometricLockEnableFailed =>
+      'Biometric authentication was not confirmed, so app lock stays disabled.';
+
+  @override
+  String get biometricEnableReason =>
+      'Confirm your identity to enable app lock for Paperless Go.';
+
+  @override
+  String get biometricPromptTitle => 'Protect Paperless Go?';
+
+  @override
+  String get biometricPromptMessage =>
+      'Enable Face ID or fingerprint now to protect your documents when returning to the app.';
+
+  @override
+  String get biometricPromptNotNowAction => 'Not now';
+
+  @override
+  String get biometricPromptEnableAction => 'Enable now';
+
+  @override
+  String get biometricUnlockTitle => 'Unlock Paperless Go';
+
+  @override
+  String get biometricUnlockSubtitle =>
+      'Use Face ID, Touch ID, or your device credentials to continue.';
+
+  @override
+  String get biometricUnlockAction => 'Unlock';
+
+  @override
+  String get biometricUnlockingStatus => 'Unlocking...';
+
+  @override
+  String get biometricUnlockReason =>
+      'Confirm your identity to unlock Paperless Go.';
+
+  @override
+  String get biometricUnlockFailed =>
+      'Authentication was canceled or failed. Try again to continue.';
+
+  @override
+  String get signOutAction => 'Sign out';
 
   @override
   String get retryTagLoadingAction => 'Retry tag loading';

@@ -362,6 +362,12 @@ abstract class AppLocalizations {
   /// **'Appearance & Behavior'**
   String get settingsAppearanceBehaviorSection;
 
+  /// No description provided for @settingsSecuritySection.
+  ///
+  /// In en, this message translates to:
+  /// **'Security'**
+  String get settingsSecuritySection;
+
   /// No description provided for @settingsServerUrlSubtitle.
   ///
   /// In en, this message translates to:
@@ -481,6 +487,138 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Persist the preference for faster browsing as local caching expands.'**
   String get cachePreviewsSubtitle;
+
+  /// No description provided for @biometricLockTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Use Face ID or fingerprint'**
+  String get biometricLockTitle;
+
+  /// No description provided for @biometricLockSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Require biometric or device credential verification when returning to the app after it has been in the background.'**
+  String get biometricLockSubtitle;
+
+  /// No description provided for @appLockTimeoutTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Lock when reopening after'**
+  String get appLockTimeoutTitle;
+
+  /// No description provided for @appLockTimeoutSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose how long the app can stay in the background before it asks to unlock again.'**
+  String get appLockTimeoutSubtitle;
+
+  /// No description provided for @appLockTimeoutImmediate.
+  ///
+  /// In en, this message translates to:
+  /// **'Immediately'**
+  String get appLockTimeoutImmediate;
+
+  /// No description provided for @appLockTimeout30Seconds.
+  ///
+  /// In en, this message translates to:
+  /// **'30 seconds'**
+  String get appLockTimeout30Seconds;
+
+  /// No description provided for @appLockTimeout1Minute.
+  ///
+  /// In en, this message translates to:
+  /// **'1 minute'**
+  String get appLockTimeout1Minute;
+
+  /// No description provided for @appLockTimeout5Minutes.
+  ///
+  /// In en, this message translates to:
+  /// **'5 minutes'**
+  String get appLockTimeout5Minutes;
+
+  /// No description provided for @biometricLockUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Biometric authentication is not available on this device right now.'**
+  String get biometricLockUnavailable;
+
+  /// No description provided for @biometricLockEnableFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Biometric authentication was not confirmed, so app lock stays disabled.'**
+  String get biometricLockEnableFailed;
+
+  /// No description provided for @biometricEnableReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm your identity to enable app lock for Paperless Go.'**
+  String get biometricEnableReason;
+
+  /// No description provided for @biometricPromptTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Protect Paperless Go?'**
+  String get biometricPromptTitle;
+
+  /// No description provided for @biometricPromptMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable Face ID or fingerprint now to protect your documents when returning to the app.'**
+  String get biometricPromptMessage;
+
+  /// No description provided for @biometricPromptNotNowAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Not now'**
+  String get biometricPromptNotNowAction;
+
+  /// No description provided for @biometricPromptEnableAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable now'**
+  String get biometricPromptEnableAction;
+
+  /// No description provided for @biometricUnlockTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock Paperless Go'**
+  String get biometricUnlockTitle;
+
+  /// No description provided for @biometricUnlockSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Use Face ID, Touch ID, or your device credentials to continue.'**
+  String get biometricUnlockSubtitle;
+
+  /// No description provided for @biometricUnlockAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock'**
+  String get biometricUnlockAction;
+
+  /// No description provided for @biometricUnlockingStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlocking...'**
+  String get biometricUnlockingStatus;
+
+  /// No description provided for @biometricUnlockReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm your identity to unlock Paperless Go.'**
+  String get biometricUnlockReason;
+
+  /// No description provided for @biometricUnlockFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Authentication was canceled or failed. Try again to continue.'**
+  String get biometricUnlockFailed;
+
+  /// No description provided for @signOutAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out'**
+  String get signOutAction;
 
   /// No description provided for @retryTagLoadingAction.
   ///

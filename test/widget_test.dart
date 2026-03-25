@@ -19,10 +19,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:paperless_ngx_app/src/app/app.dart';
 import 'package:paperless_ngx_app/src/features/auth/domain/models/paperless_auth_session.dart';
 import 'package:paperless_ngx_app/src/features/auth/domain/models/paperless_user_capabilities.dart';
+import 'package:paperless_ngx_app/src/features/auth/data/repositories/auth_repository.dart';
+import 'package:paperless_ngx_app/src/features/app_shell/data/device/biometric_auth_service.dart';
 import 'package:paperless_ngx_app/src/features/app_shell/domain/models/recently_opened_document.dart';
 import 'package:paperless_ngx_app/src/features/app_shell/domain/models/app_drawer_statistics.dart';
 import 'package:paperless_ngx_app/src/features/app_shell/presentation/providers/help_feedback_providers.dart';
 import 'package:paperless_ngx_app/src/features/app_shell/presentation/providers/app_shell_providers.dart';
+import 'package:paperless_ngx_app/src/features/app_shell/presentation/providers/app_security_providers.dart';
 import 'package:paperless_ngx_app/src/core/providers/shared_preferences_provider.dart';
 import 'package:paperless_ngx_app/src/features/documents/data/repositories/documents_repository.dart';
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_document.dart';
@@ -103,6 +106,14 @@ void main() {
     documentTypes: 7,
   );
 
+  const fakeSession = PaperlessAuthSession(
+    serverUrl: 'https://example.com/paperless/',
+    username: 'jane.doe',
+    password: 'secret',
+    authToken: 'token-123',
+    displayName: 'Jane Doe',
+  );
+
   final fakeRecentlyOpenedDocument = RecentlyOpenedDocument(
     id: 99,
     title: 'Rent contract.pdf',
@@ -138,6 +149,9 @@ void main() {
           ),
           appDrawerStatisticsProvider.overrideWith(
             (ref) async => fakeDrawerStatistics,
+          ),
+          biometricAuthServiceProvider.overrideWithValue(
+            _FakeBiometricAuthService(),
           ),
           ...overrides,
         ],
@@ -236,6 +250,55 @@ void main() {
     expect(materialApp.themeMode, equals(ThemeMode.dark));
   });
 
+  testWidgets('shows app lock overlay after resuming past the timeout', (
+    WidgetTester tester,
+  ) async {
+    final biometricAuthService = _FakeBiometricAuthService(
+      authenticationResults: <bool>[true, false],
+    );
+
+    await pumpApp(
+      tester,
+      initialValues: const <String, Object>{
+        'auth.server_url': 'https://example.com/paperless/',
+        'auth.username': 'jane.doe',
+        'auth.password': 'secret',
+        'auth.token': 'token-123',
+        'auth.display_name': 'Jane Doe',
+        'app_behavior.biometric_lock_enabled': true,
+        'app_behavior.app_lock_timeout': 'immediate',
+      },
+      overrides: [
+        biometricAuthServiceProvider.overrideWithValue(biometricAuthService),
+        recentUploadsProvider.overrideWith((ref) async => [fakeRecentDocument]),
+        reviewDocumentsProvider.overrideWith((ref) async => [fakeTodoDocument]),
+        documentsPageProvider.overrideWith((ref) async => fakeDocumentsPage),
+        tagOptionsProvider.overrideWith((ref) async => fakeFilterOptions),
+        correspondentOptionsProvider.overrideWith(
+          (ref) async => fakeFilterOptions,
+        ),
+        documentTypeOptionsProvider.overrideWith(
+          (ref) async => fakeFilterOptions,
+        ),
+      ],
+    );
+    await tester.pumpAndSettle();
+
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    await tester.pump();
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Unlock Paperless Go'), findsOneWidget);
+    expect(find.text('Unlock'), findsOneWidget);
+    expect(
+      find.text(
+        'Authentication was canceled or failed. Try again to continue.',
+      ),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('uses saved app language override on startup', (
     WidgetTester tester,
   ) async {
@@ -248,6 +311,112 @@ void main() {
     final materialApp = tester.widget<MaterialApp>(find.byType(MaterialApp));
 
     expect(materialApp.locale, equals(const Locale('fr')));
+  });
+
+  testWidgets('prompts to enable biometric lock after first successful login', (
+    WidgetTester tester,
+  ) async {
+    final biometricAuthService = _FakeBiometricAuthService(
+      authenticationResults: <bool>[true],
+    );
+
+    await pumpApp(
+      tester,
+      overrides: [
+        authRepositoryProvider.overrideWithValue(
+          _FakeAuthRepository(fakeSession),
+        ),
+        biometricAuthServiceProvider.overrideWithValue(biometricAuthService),
+      ],
+    );
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.byType(TextFormField).at(0),
+      'https://example.com/paperless/',
+    );
+    await tester.enterText(find.byType(TextFormField).at(1), 'jane.doe');
+    await tester.enterText(find.byType(TextFormField).at(2), 'secret');
+    await tester.ensureVisible(find.widgetWithText(FilledButton, 'Login'));
+    await tester.tap(find.widgetWithText(FilledButton, 'Login'));
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(find.text('Protect Paperless Go?'), findsOneWidget);
+    expect(
+      find.text(
+        'Enable Face ID or fingerprint now to protect your documents when returning to the app.',
+      ),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.text('Enable now'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Documents'), findsWidgets);
+    expect(biometricAuthService.authenticateCallCount, equals(1));
+  });
+
+  testWidgets('shows the biometric prompt only once after first login', (
+    WidgetTester tester,
+  ) async {
+    await pumpApp(
+      tester,
+      initialValues: const <String, Object>{
+        'app_behavior.biometric_prompt_shown': true,
+      },
+      overrides: [
+        authRepositoryProvider.overrideWithValue(
+          _FakeAuthRepository(fakeSession),
+        ),
+      ],
+    );
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.byType(TextFormField).at(0),
+      'https://example.com/paperless/',
+    );
+    await tester.enterText(find.byType(TextFormField).at(1), 'jane.doe');
+    await tester.enterText(find.byType(TextFormField).at(2), 'secret');
+    await tester.ensureVisible(find.widgetWithText(FilledButton, 'Login'));
+    await tester.tap(find.widgetWithText(FilledButton, 'Login'));
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(find.text('Protect Paperless Go?'), findsNothing);
+    expect(find.text('Documents'), findsWidgets);
+  });
+
+  testWidgets('does not prompt after login when biometrics are unavailable', (
+    WidgetTester tester,
+  ) async {
+    await pumpApp(
+      tester,
+      overrides: [
+        authRepositoryProvider.overrideWithValue(
+          _FakeAuthRepository(fakeSession),
+        ),
+        biometricAuthServiceProvider.overrideWithValue(
+          _FakeBiometricAuthService(isAvailableResult: false),
+        ),
+      ],
+    );
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.byType(TextFormField).at(0),
+      'https://example.com/paperless/',
+    );
+    await tester.enterText(find.byType(TextFormField).at(1), 'jane.doe');
+    await tester.enterText(find.byType(TextFormField).at(2), 'secret');
+    await tester.ensureVisible(find.widgetWithText(FilledButton, 'Login'));
+    await tester.tap(find.widgetWithText(FilledButton, 'Login'));
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(find.text('Protect Paperless Go?'), findsNothing);
+    expect(find.text('Documents'), findsWidgets);
   });
 
   testWidgets('updates theme mode from settings', (WidgetTester tester) async {
@@ -1149,6 +1318,46 @@ void main() {
       null,
     );
   });
+}
+
+class _FakeBiometricAuthService implements BiometricAuthService {
+  _FakeBiometricAuthService({
+    this.isAvailableResult = true,
+    List<bool> authenticationResults = const <bool>[true],
+  }) : _authenticationResults = authenticationResults.toList(growable: true);
+
+  final bool isAvailableResult;
+  final List<bool> _authenticationResults;
+  int authenticateCallCount = 0;
+
+  @override
+  Future<bool> isAvailable() async => isAvailableResult;
+
+  @override
+  Future<bool> authenticate({required String localizedReason}) async {
+    authenticateCallCount += 1;
+
+    if (_authenticationResults.isEmpty) {
+      return true;
+    }
+
+    return _authenticationResults.removeAt(0);
+  }
+}
+
+class _FakeAuthRepository extends AuthRepository {
+  _FakeAuthRepository(this.session) : super(Dio());
+
+  final PaperlessAuthSession session;
+
+  @override
+  Future<PaperlessAuthSession> signIn({
+    required String serverUrl,
+    required String username,
+    required String password,
+  }) async {
+    return session;
+  }
 }
 
 class _FakeHelpLinkLauncher implements HelpLinkLauncher {

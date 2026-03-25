@@ -7,6 +7,9 @@ class AppBehaviorPreferences {
   static const _cachePreviewsKey = 'app_behavior.cache_previews_enabled';
   static const _appLanguageKey = 'app_behavior.app_language';
   static const _themeModeKey = 'app_behavior.theme_mode';
+  static const _biometricLockEnabledKey = 'app_behavior.biometric_lock_enabled';
+  static const _appLockTimeoutKey = 'app_behavior.app_lock_timeout';
+  static const _biometricPromptShownKey = 'app_behavior.biometric_prompt_shown';
   static const _todoTagIdsKey = 'app_behavior.todo_tag_ids';
   static const _todoTagsKey = 'app_behavior.todo_tag_names';
 
@@ -21,6 +24,11 @@ class AppBehaviorPreferences {
       ),
       themeMode: AppThemeMode.fromStorageValue(
         _sharedPreferences.getString(_themeModeKey),
+      ),
+      biometricLockEnabled:
+          _sharedPreferences.getBool(_biometricLockEnabledKey) ?? false,
+      appLockTimeout: AppLockTimeout.fromStorageValue(
+        _sharedPreferences.getString(_appLockTimeoutKey),
       ),
     );
   }
@@ -38,7 +46,23 @@ class AppBehaviorPreferences {
       _themeModeKey,
       settings.themeMode.storageValue,
     );
+    await _sharedPreferences.setBool(
+      _biometricLockEnabledKey,
+      settings.biometricLockEnabled,
+    );
+    await _sharedPreferences.setString(
+      _appLockTimeoutKey,
+      settings.appLockTimeout.storageValue,
+    );
     await _sharedPreferences.remove(_todoTagIdsKey);
     await _sharedPreferences.remove(_todoTagsKey);
+  }
+
+  bool hasShownBiometricPrompt() {
+    return _sharedPreferences.getBool(_biometricPromptShownKey) ?? false;
+  }
+
+  Future<void> markBiometricPromptShown() async {
+    await _sharedPreferences.setBool(_biometricPromptShownKey, true);
   }
 }
