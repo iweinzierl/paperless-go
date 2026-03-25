@@ -43,48 +43,26 @@ class AppBehaviorSettings {
     required this.cachePreviewsEnabled,
     required this.appLanguage,
     required this.themeMode,
-    required this.todoTagIds,
-    required this.todoTagNames,
   });
 
   const AppBehaviorSettings.defaults()
     : cachePreviewsEnabled = true,
       appLanguage = AppLanguage.system,
-      themeMode = AppThemeMode.light,
-      todoTagIds = const <int>[],
-      todoTagNames = const <String>['Prüfen'];
+      themeMode = AppThemeMode.light;
 
   final bool cachePreviewsEnabled;
   final AppLanguage appLanguage;
   final AppThemeMode themeMode;
-  final List<int> todoTagIds;
-  final List<String> todoTagNames;
-
-  List<int> get normalizedTodoTagIds {
-    return todoTagIds.where((id) => id > 0).toSet().toList(growable: false);
-  }
-
-  List<String> get normalizedTodoTagNames {
-    return todoTagNames
-        .map((name) => name.trim())
-        .where((name) => name.isNotEmpty)
-        .toSet()
-        .toList(growable: false);
-  }
 
   AppBehaviorSettings copyWith({
     bool? cachePreviewsEnabled,
     AppLanguage? appLanguage,
     AppThemeMode? themeMode,
-    List<int>? todoTagIds,
-    List<String>? todoTagNames,
   }) {
     return AppBehaviorSettings(
       cachePreviewsEnabled: cachePreviewsEnabled ?? this.cachePreviewsEnabled,
       appLanguage: appLanguage ?? this.appLanguage,
       themeMode: themeMode ?? this.themeMode,
-      todoTagIds: todoTagIds ?? this.todoTagIds,
-      todoTagNames: todoTagNames ?? this.todoTagNames,
     );
   }
 }

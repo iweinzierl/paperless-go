@@ -150,9 +150,6 @@ class AppLocalizationsDe extends AppLocalizations {
   String get settingsAppearanceBehaviorSection => 'Darstellung und Verhalten';
 
   @override
-  String get settingsTodosSection => 'Todos';
-
-  @override
   String get settingsServerUrlSubtitle =>
       'Paperless-ngx-Endpunkt für Anmeldung, Synchronisierung und Downloads.';
 
@@ -221,27 +218,7 @@ class AppLocalizationsDe extends AppLocalizations {
       'Speichert die Einstellung dauerhaft, während die lokale Zwischenspeicherung erweitert wird.';
 
   @override
-  String get todoTagsTitle => 'TODO-Tags';
-
-  @override
-  String get todoTagsSubtitle =>
-      'Wähle, welche Server-Tags den Todos-Tab füllen sollen.';
-
-  @override
-  String get selectTodoTagsAction => 'TODO-Tags auswählen';
-
-  @override
-  String get couldNotLoadAvailableTags =>
-      'Verfügbare Tags konnten nicht geladen werden.';
-
-  @override
   String get retryTagLoadingAction => 'Tags erneut laden';
-
-  @override
-  String get loadingAvailableTags => 'Verfügbare Tags werden geladen...';
-
-  @override
-  String get selectTodoTagsDialogTitle => 'TODO-Tags auswählen';
 
   @override
   String get noTagsAvailableOnServer =>
@@ -354,17 +331,14 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get nothingToReviewDescription =>
-      'Dokumente mit deinen konfigurierten TODO-Tags erscheinen hier, sobald sie manuelle Aufmerksamkeit benötigen.';
+      'Dokumente, die sich aktuell im Inbox befinden, erscheinen hier zur manuellen Prüfung.';
 
   @override
   String get verificationQueueTitle => 'Prüfwarteschlange';
 
   @override
   String get verificationQueueDescription =>
-      'Dokumente mit deinen konfigurierten TODO-Tags werden hier zur manuellen Prüfung angezeigt. Wähle in den Einstellungen ein oder mehrere TODO-Tags aus, damit Dokumente in der Prüfwarteschlange erscheinen können.';
-
-  @override
-  String get openTodoTagSettingsAction => 'TODO-Tag-Einstellungen öffnen';
+      'Dokumente, die sich aktuell im Inbox befinden, werden hier zur manuellen Prüfung angezeigt.';
 
   @override
   String get couldNotLoadReviewQueueTitle =>
@@ -372,7 +346,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get couldNotLoadReviewQueueDescription =>
-      'Die App konnte Dokumente mit deinen konfigurierten TODO-Tags gerade nicht laden.';
+      'Die App konnte Inbox-Dokumente zur manuellen Prüfung gerade nicht laden.';
 
   @override
   String get drawerRecentlyOpened => 'Zuletzt geöffnet';
@@ -817,13 +791,6 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get noTagsSelected => 'Keine Tags ausgewählt.';
-
-  @override
-  String get noTodoTagsSelectedYet => 'Noch keine TODO-Tags ausgewählt.';
-
-  @override
-  String get noTodoTagsSelectedDescription =>
-      'Verwende unten TODO-Tags auswählen, um festzulegen, welche Dokumente im Todos-Tab erscheinen.';
 
   @override
   String get editTagsAction => 'Tags bearbeiten';

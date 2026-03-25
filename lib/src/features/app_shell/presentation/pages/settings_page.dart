@@ -5,8 +5,6 @@ import 'package:paperless_ngx_app/src/features/app_shell/domain/models/app_behav
 import 'package:paperless_ngx_app/src/features/app_shell/presentation/controllers/settings_controller.dart';
 import 'package:paperless_ngx_app/src/features/app_shell/presentation/providers/app_behavior_providers.dart';
 import 'package:paperless_ngx_app/src/features/auth/presentation/formatters/auth_text.dart';
-import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_filter_option.dart';
-import 'package:paperless_ngx_app/src/features/documents/presentation/providers/documents_providers.dart';
 
 class SettingsPage extends ConsumerStatefulWidget {
   const SettingsPage({super.key});
@@ -72,11 +70,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
     final state = ref.watch(settingsControllerProvider);
     final behaviorSettings = ref.watch(appBehaviorSettingsProvider);
-    final tagOptions = ref.watch(tagOptionsProvider);
-    final selectedTodoTagNames = _resolveSelectedTodoTagNames(
-      tagOptions.valueOrNull ?? const <PaperlessFilterOption>[],
-      behaviorSettings,
-    );
     _syncControllers(state);
 
     return Scaffold(
@@ -255,105 +248,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               ),
             ],
           ),
-          const SizedBox(height: 20),
-          _SectionHeader(label: l10n.settingsTodosSection),
-          _SettingsGroup(
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.only(top: 2),
-                      child: Icon(
-                        Icons.sell_outlined,
-                        size: 24,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            l10n.todoTagsTitle,
-                            style: Theme.of(context).textTheme.titleMedium
-                                ?.copyWith(fontWeight: FontWeight.w600),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            l10n.todoTagsSubtitle,
-                            style: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.onSurfaceVariant,
-                                ),
-                          ),
-                          const SizedBox(height: 14),
-                          _SelectedTodoTags(tagNames: selectedTodoTagNames),
-                          const SizedBox(height: 14),
-                          tagOptions.when(
-                            data: (tags) {
-                              return FilledButton.tonalIcon(
-                                onPressed: () => _openTodoTagSelection(
-                                  context,
-                                  tags,
-                                  _resolveSelectedTodoTagIds(
-                                    tags,
-                                    behaviorSettings,
-                                  ),
-                                ),
-                                icon: const Icon(Icons.tune_outlined),
-                                label: Text(l10n.selectTodoTagsAction),
-                              );
-                            },
-                            error: (error, stackTrace) {
-                              return Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    l10n.couldNotLoadAvailableTags,
-                                    style: TextStyle(
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.error,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  OutlinedButton.icon(
-                                    onPressed: () =>
-                                        ref.invalidate(tagOptionsProvider),
-                                    icon: const Icon(Icons.refresh),
-                                    label: Text(l10n.retryTagLoadingAction),
-                                  ),
-                                ],
-                              );
-                            },
-                            loading: () => Row(
-                              children: [
-                                const SizedBox(
-                                  width: 18,
-                                  height: 18,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Text(l10n.loadingAvailableTags),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
         ],
       ),
     );
@@ -398,138 +292,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       );
     }
   }
-
-  Future<void> _openTodoTagSelection(
-    BuildContext context,
-    List<PaperlessFilterOption> tags,
-    List<int> selectedTagIds,
-  ) async {
-    final selectedIds = selectedTagIds.toSet();
-
-    final result = await showDialog<_TodoTagSelectionResult>(
-      context: context,
-      builder: (dialogContext) {
-        final localSelection = <int>{...selectedIds};
-
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: Text(context.l10n.selectTodoTagsDialogTitle),
-              content: SizedBox(
-                width: double.maxFinite,
-                child: tags.isEmpty
-                    ? Text(context.l10n.noTagsAvailableOnServer)
-                    : ListView(
-                        shrinkWrap: true,
-                        children: [
-                          for (final tag in tags)
-                            CheckboxListTile(
-                              value: localSelection.contains(tag.id),
-                              title: Text(tag.name),
-                              controlAffinity: ListTileControlAffinity.leading,
-                              onChanged: (checked) {
-                                setState(() {
-                                  if (checked == true) {
-                                    localSelection.add(tag.id);
-                                  } else {
-                                    localSelection.remove(tag.id);
-                                  }
-                                });
-                              },
-                            ),
-                        ],
-                      ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(dialogContext).pop(),
-                  child: Text(context.l10n.cancelAction),
-                ),
-                TextButton(
-                  onPressed: () => Navigator.of(dialogContext).pop(
-                    const _TodoTagSelectionResult(
-                      tagIds: <int>[],
-                      tagNames: <String>[],
-                    ),
-                  ),
-                  child: Text(context.l10n.clearAction),
-                ),
-                FilledButton(
-                  onPressed: () => Navigator.of(dialogContext).pop(
-                    _TodoTagSelectionResult(
-                      tagIds: tags
-                          .where((tag) => localSelection.contains(tag.id))
-                          .map((tag) => tag.id)
-                          .toList(growable: false),
-                      tagNames: tags
-                          .where((tag) => localSelection.contains(tag.id))
-                          .map((tag) => tag.name)
-                          .toList(growable: false),
-                    ),
-                  ),
-                  child: Text(context.l10n.applyAction),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-
-    if (result == null) {
-      return;
-    }
-
-    ref
-        .read(appBehaviorSettingsProvider.notifier)
-        .setTodoTagSelection(tagIds: result.tagIds, tagNames: result.tagNames);
-  }
-
-  List<int> _resolveSelectedTodoTagIds(
-    List<PaperlessFilterOption> tags,
-    AppBehaviorSettings settings,
-  ) {
-    final selectedIds = settings.normalizedTodoTagIds;
-    if (selectedIds.isNotEmpty) {
-      return selectedIds;
-    }
-
-    final selectedNames = settings.normalizedTodoTagNames
-        .map((name) => name.toLowerCase())
-        .toSet();
-
-    return tags
-        .where((tag) => selectedNames.contains(tag.name.trim().toLowerCase()))
-        .map((tag) => tag.id)
-        .toList(growable: false);
-  }
-
-  List<String> _resolveSelectedTodoTagNames(
-    List<PaperlessFilterOption> tags,
-    AppBehaviorSettings settings,
-  ) {
-    final selectedIds = settings.normalizedTodoTagIds.toSet();
-    if (selectedIds.isNotEmpty) {
-      final selectedNames = tags
-          .where((tag) => selectedIds.contains(tag.id))
-          .map((tag) => tag.name.trim())
-          .where((name) => name.isNotEmpty)
-          .toSet()
-          .toList(growable: false);
-      if (selectedNames.isNotEmpty) {
-        return selectedNames;
-      }
-    }
-
-    return settings.normalizedTodoTagNames;
-  }
-}
-
-class _TodoTagSelectionResult {
-  const _TodoTagSelectionResult({required this.tagIds, required this.tagNames});
-
-  final List<int> tagIds;
-  final List<String> tagNames;
 }
 
 class _ConnectionStatusBanner extends StatelessWidget {
@@ -754,72 +516,6 @@ class _SettingsToggleTile extends StatelessWidget {
           Switch(value: value, onChanged: onChanged),
         ],
       ),
-    );
-  }
-}
-
-class _SelectedTodoTags extends StatelessWidget {
-  const _SelectedTodoTags({required this.tagNames});
-
-  final List<String> tagNames;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-
-    if (tagNames.isEmpty) {
-      return DecoratedBox(
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surfaceContainerLow,
-          borderRadius: BorderRadius.circular(18),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.only(top: 2),
-                child: Icon(
-                  Icons.info_outline,
-                  size: 18,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      l10n.noTodoTagsSelectedYet,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      l10n.noTodoTagsSelectedDescription,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: [
-        for (final tagName in tagNames)
-          Chip(label: Text(tagName), visualDensity: VisualDensity.compact),
-      ],
     );
   }
 }

@@ -362,12 +362,6 @@ abstract class AppLocalizations {
   /// **'Appearance & Behavior'**
   String get settingsAppearanceBehaviorSection;
 
-  /// No description provided for @settingsTodosSection.
-  ///
-  /// In en, this message translates to:
-  /// **'Todos'**
-  String get settingsTodosSection;
-
   /// No description provided for @settingsServerUrlSubtitle.
   ///
   /// In en, this message translates to:
@@ -488,47 +482,11 @@ abstract class AppLocalizations {
   /// **'Persist the preference for faster browsing as local caching expands.'**
   String get cachePreviewsSubtitle;
 
-  /// No description provided for @todoTagsTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'TODO tags'**
-  String get todoTagsTitle;
-
-  /// No description provided for @todoTagsSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Select which server tags should feed the Todos tab.'**
-  String get todoTagsSubtitle;
-
-  /// No description provided for @selectTodoTagsAction.
-  ///
-  /// In en, this message translates to:
-  /// **'Select TODO tags'**
-  String get selectTodoTagsAction;
-
-  /// No description provided for @couldNotLoadAvailableTags.
-  ///
-  /// In en, this message translates to:
-  /// **'Could not load available tags.'**
-  String get couldNotLoadAvailableTags;
-
   /// No description provided for @retryTagLoadingAction.
   ///
   /// In en, this message translates to:
   /// **'Retry tag loading'**
   String get retryTagLoadingAction;
-
-  /// No description provided for @loadingAvailableTags.
-  ///
-  /// In en, this message translates to:
-  /// **'Loading available tags...'**
-  String get loadingAvailableTags;
-
-  /// No description provided for @selectTodoTagsDialogTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Select TODO tags'**
-  String get selectTodoTagsDialogTitle;
 
   /// No description provided for @noTagsAvailableOnServer.
   ///
@@ -713,7 +671,7 @@ abstract class AppLocalizations {
   /// No description provided for @nothingToReviewDescription.
   ///
   /// In en, this message translates to:
-  /// **'Documents with your configured TODO tags will appear here once they need manual attention.'**
+  /// **'Documents currently in your inbox appear here for manual verification.'**
   String get nothingToReviewDescription;
 
   /// No description provided for @verificationQueueTitle.
@@ -725,14 +683,8 @@ abstract class AppLocalizations {
   /// No description provided for @verificationQueueDescription.
   ///
   /// In en, this message translates to:
-  /// **'Documents matching your configured TODO tags are listed here for manual review. Choose one or more TODO tags in Settings so documents can appear in the review queue.'**
+  /// **'Documents currently in your inbox are listed here for manual review.'**
   String get verificationQueueDescription;
-
-  /// No description provided for @openTodoTagSettingsAction.
-  ///
-  /// In en, this message translates to:
-  /// **'Open TODO tag settings'**
-  String get openTodoTagSettingsAction;
 
   /// No description provided for @couldNotLoadReviewQueueTitle.
   ///
@@ -743,7 +695,7 @@ abstract class AppLocalizations {
   /// No description provided for @couldNotLoadReviewQueueDescription.
   ///
   /// In en, this message translates to:
-  /// **'The app could not load documents matching your configured TODO tags right now.'**
+  /// **'The app could not load inbox documents requiring manual review right now.'**
   String get couldNotLoadReviewQueueDescription;
 
   /// No description provided for @drawerRecentlyOpened.
@@ -1519,18 +1471,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No tags selected.'**
   String get noTagsSelected;
-
-  /// No description provided for @noTodoTagsSelectedYet.
-  ///
-  /// In en, this message translates to:
-  /// **'No TODO tags selected yet.'**
-  String get noTodoTagsSelectedYet;
-
-  /// No description provided for @noTodoTagsSelectedDescription.
-  ///
-  /// In en, this message translates to:
-  /// **'Use Select TODO tags below to choose which documents appear in the Todos tab.'**
-  String get noTodoTagsSelectedDescription;
 
   /// No description provided for @editTagsAction.
   ///

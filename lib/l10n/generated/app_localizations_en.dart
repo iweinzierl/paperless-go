@@ -149,9 +149,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsAppearanceBehaviorSection => 'Appearance & Behavior';
 
   @override
-  String get settingsTodosSection => 'Todos';
-
-  @override
   String get settingsServerUrlSubtitle =>
       'Paperless-ngx endpoint used for login, sync, and downloads.';
 
@@ -219,26 +216,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Persist the preference for faster browsing as local caching expands.';
 
   @override
-  String get todoTagsTitle => 'TODO tags';
-
-  @override
-  String get todoTagsSubtitle =>
-      'Select which server tags should feed the Todos tab.';
-
-  @override
-  String get selectTodoTagsAction => 'Select TODO tags';
-
-  @override
-  String get couldNotLoadAvailableTags => 'Could not load available tags.';
-
-  @override
   String get retryTagLoadingAction => 'Retry tag loading';
-
-  @override
-  String get loadingAvailableTags => 'Loading available tags...';
-
-  @override
-  String get selectTodoTagsDialogTitle => 'Select TODO tags';
 
   @override
   String get noTagsAvailableOnServer => 'No tags are available on the server.';
@@ -347,24 +325,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get nothingToReviewDescription =>
-      'Documents with your configured TODO tags will appear here once they need manual attention.';
+      'Documents currently in your inbox appear here for manual verification.';
 
   @override
   String get verificationQueueTitle => 'Verification queue';
 
   @override
   String get verificationQueueDescription =>
-      'Documents matching your configured TODO tags are listed here for manual review. Choose one or more TODO tags in Settings so documents can appear in the review queue.';
-
-  @override
-  String get openTodoTagSettingsAction => 'Open TODO tag settings';
+      'Documents currently in your inbox are listed here for manual review.';
 
   @override
   String get couldNotLoadReviewQueueTitle => 'Could not load review queue';
 
   @override
   String get couldNotLoadReviewQueueDescription =>
-      'The app could not load documents matching your configured TODO tags right now.';
+      'The app could not load inbox documents requiring manual review right now.';
 
   @override
   String get drawerRecentlyOpened => 'Recently opened';
@@ -805,13 +780,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noTagsSelected => 'No tags selected.';
-
-  @override
-  String get noTodoTagsSelectedYet => 'No TODO tags selected yet.';
-
-  @override
-  String get noTodoTagsSelectedDescription =>
-      'Use Select TODO tags below to choose which documents appear in the Todos tab.';
 
   @override
   String get editTagsAction => 'Edit tags';

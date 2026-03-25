@@ -35,12 +35,4 @@ class AppBehaviorSettingsController extends Notifier<AppBehaviorSettings> {
     state = state.copyWith(themeMode: value);
     unawaited(_preferences.saveSettings(state));
   }
-
-  void setTodoTagSelection({
-    required List<int> tagIds,
-    required List<String> tagNames,
-  }) {
-    state = state.copyWith(todoTagIds: tagIds, todoTagNames: tagNames);
-    unawaited(_preferences.saveSettings(state));
-  }
 }

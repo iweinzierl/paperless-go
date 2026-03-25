@@ -149,9 +149,6 @@ class AppLocalizationsIt extends AppLocalizations {
   String get settingsAppearanceBehaviorSection => 'Aspetto e comportamento';
 
   @override
-  String get settingsTodosSection => 'Todos';
-
-  @override
   String get settingsServerUrlSubtitle =>
       'Endpoint paperless-ngx usato per accesso, sincronizzazione e download.';
 
@@ -220,27 +217,7 @@ class AppLocalizationsIt extends AppLocalizations {
       'Mantiene la preferenza per una navigazione più rapida mentre cresce la cache locale.';
 
   @override
-  String get todoTagsTitle => 'Tag TODO';
-
-  @override
-  String get todoTagsSubtitle =>
-      'Scegli quali tag del server devono alimentare la scheda Todos.';
-
-  @override
-  String get selectTodoTagsAction => 'Seleziona tag TODO';
-
-  @override
-  String get couldNotLoadAvailableTags =>
-      'Impossibile caricare i tag disponibili.';
-
-  @override
   String get retryTagLoadingAction => 'Ricarica tag';
-
-  @override
-  String get loadingAvailableTags => 'Caricamento dei tag disponibili...';
-
-  @override
-  String get selectTodoTagsDialogTitle => 'Seleziona tag TODO';
 
   @override
   String get noTagsAvailableOnServer => 'Nessun tag disponibile sul server.';
@@ -350,17 +327,14 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get nothingToReviewDescription =>
-      'I documenti con i tag TODO configurati appariranno qui quando richiederanno attenzione manuale.';
+      'I documenti attualmente nella tua inbox compaiono qui per la verifica manuale.';
 
   @override
   String get verificationQueueTitle => 'Coda di verifica';
 
   @override
   String get verificationQueueDescription =>
-      'I documenti che corrispondono ai tag TODO configurati sono elencati qui per la revisione manuale. Scegli uno o più tag TODO nelle impostazioni affinché i documenti possano comparire nella coda di verifica.';
-
-  @override
-  String get openTodoTagSettingsAction => 'Apri impostazioni tag TODO';
+      'I documenti attualmente nella tua inbox sono elencati qui per la revisione manuale.';
 
   @override
   String get couldNotLoadReviewQueueTitle =>
@@ -368,7 +342,7 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get couldNotLoadReviewQueueDescription =>
-      'L\'app non riesce a caricare in questo momento i documenti che corrispondono ai tag TODO configurati.';
+      'L\'app non riesce a caricare in questo momento i documenti della inbox da verificare.';
 
   @override
   String get drawerRecentlyOpened => 'Aperti di recente';
@@ -816,13 +790,6 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get noTagsSelected => 'Nessun tag selezionato.';
-
-  @override
-  String get noTodoTagsSelectedYet => 'Nessun tag TODO selezionato finora.';
-
-  @override
-  String get noTodoTagsSelectedDescription =>
-      'Usa Seleziona tag TODO qui sotto per scegliere quali documenti compaiono nella scheda Todos.';
 
   @override
   String get editTagsAction => 'Modifica tag';

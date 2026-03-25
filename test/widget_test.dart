@@ -212,14 +212,14 @@ void main() {
     expect(find.text('Theme mode'), findsOneWidget);
     expect(find.text('Light'), findsWidgets);
     await tester.scrollUntilVisible(
-      find.text('Todos'),
+      find.text('Cache thumbnails and previews'),
       200,
       scrollable: settingsScrollable(),
     );
     await tester.pumpAndSettle();
-    expect(find.text('Todos'), findsOneWidget);
-    expect(find.text('TODO tags'), findsOneWidget);
-    expect(find.text('Select TODO tags'), findsOneWidget);
+    expect(find.text('Todos'), findsNothing);
+    expect(find.text('TODO tags'), findsNothing);
+    expect(find.text('Select TODO tags'), findsNothing);
   });
 
   testWidgets('uses saved dark theme mode on startup', (
@@ -295,59 +295,6 @@ void main() {
     final materialApp = tester.widget<MaterialApp>(find.byType(MaterialApp));
 
     expect(materialApp.themeMode, equals(ThemeMode.dark));
-  });
-
-  testWidgets('shows TODO tag selector in settings', (
-    WidgetTester tester,
-  ) async {
-    await pumpApp(
-      tester,
-      initialValues: const <String, Object>{
-        'auth.server_url': 'https://example.com/paperless/',
-        'auth.username': 'jane.doe',
-        'auth.password': 'secret',
-        'auth.token': 'token-123',
-        'auth.display_name': 'Jane Doe',
-        'app_behavior.todo_tag_ids': <String>['2'],
-      },
-      overrides: [
-        recentUploadsProvider.overrideWith((ref) async => [fakeRecentDocument]),
-        reviewDocumentsProvider.overrideWith((ref) async => [fakeTodoDocument]),
-        documentsPageProvider.overrideWith((ref) async => fakeDocumentsPage),
-        tagOptionsProvider.overrideWith(
-          (ref) async => const [
-            PaperlessFilterOption(id: 1, name: 'Inbox'),
-            PaperlessFilterOption(id: 2, name: 'Prüfen'),
-          ],
-        ),
-        correspondentOptionsProvider.overrideWith(
-          (ref) async => fakeFilterOptions,
-        ),
-        documentTypeOptionsProvider.overrideWith(
-          (ref) async => fakeFilterOptions,
-        ),
-      ],
-    );
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.byTooltip('Open navigation menu'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Settings'));
-    await tester.pumpAndSettle();
-
-    await tester.scrollUntilVisible(
-      find.text('Select TODO tags'),
-      200,
-      scrollable: settingsScrollable(),
-    );
-    await tester.pumpAndSettle();
-
-    expect(find.text('Select TODO tags'), findsOneWidget);
-    expect(find.text('Prüfen'), findsOneWidget);
-    expect(
-      find.text('Select which server tags should feed the Todos tab.'),
-      findsOneWidget,
-    );
   });
 
   testWidgets('shows login page on app start', (WidgetTester tester) async {
@@ -927,7 +874,7 @@ void main() {
     expect(find.text('Insurance claim.pdf'), findsWidgets);
   });
 
-  testWidgets('shows empty review queue when no TODO tags are configured', (
+  testWidgets('shows empty review queue when inbox is empty', (
     WidgetTester tester,
   ) async {
     await pumpApp(
@@ -938,8 +885,6 @@ void main() {
         'auth.password': 'secret',
         'auth.token': 'token-123',
         'auth.display_name': 'Jane Doe',
-        'app_behavior.todo_tag_names': <String>[],
-        'app_behavior.todo_tag_ids': <String>[],
       },
       overrides: [
         recentUploadsProvider.overrideWith((ref) async => [fakeRecentDocument]),
@@ -963,7 +908,7 @@ void main() {
     expect(find.text('Nothing to review'), findsOneWidget);
     expect(
       find.text(
-        'Documents with your configured TODO tags will appear here once they need manual attention.',
+        'Documents currently in your inbox appear here for manual verification.',
       ),
       findsOneWidget,
     );

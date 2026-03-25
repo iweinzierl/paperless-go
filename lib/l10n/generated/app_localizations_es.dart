@@ -151,9 +151,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get settingsAppearanceBehaviorSection => 'Apariencia y comportamiento';
 
   @override
-  String get settingsTodosSection => 'Todos';
-
-  @override
   String get settingsServerUrlSubtitle =>
       'Punto de acceso de paperless-ngx usado para iniciar sesión, sincronizar y descargar.';
 
@@ -222,27 +219,7 @@ class AppLocalizationsEs extends AppLocalizations {
       'Mantiene la preferencia para una navegación más rápida a medida que crece la caché local.';
 
   @override
-  String get todoTagsTitle => 'Etiquetas TODO';
-
-  @override
-  String get todoTagsSubtitle =>
-      'Selecciona qué etiquetas del servidor alimentan la pestaña Todos.';
-
-  @override
-  String get selectTodoTagsAction => 'Seleccionar etiquetas TODO';
-
-  @override
-  String get couldNotLoadAvailableTags =>
-      'No se pudieron cargar las etiquetas disponibles.';
-
-  @override
   String get retryTagLoadingAction => 'Reintentar carga de etiquetas';
-
-  @override
-  String get loadingAvailableTags => 'Cargando etiquetas disponibles...';
-
-  @override
-  String get selectTodoTagsDialogTitle => 'Seleccionar etiquetas TODO';
 
   @override
   String get noTagsAvailableOnServer =>
@@ -353,17 +330,14 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get nothingToReviewDescription =>
-      'Los documentos con tus etiquetas TODO configuradas aparecerán aquí cuando necesiten atención manual.';
+      'Los documentos que están actualmente en tu bandeja de entrada aparecen aquí para revisión manual.';
 
   @override
   String get verificationQueueTitle => 'Cola de verificación';
 
   @override
   String get verificationQueueDescription =>
-      'Los documentos que coinciden con tus etiquetas TODO configuradas se muestran aquí para revisión manual. Elige una o más etiquetas TODO en Ajustes para que los documentos puedan aparecer en la cola de revisión.';
-
-  @override
-  String get openTodoTagSettingsAction => 'Abrir ajustes de etiquetas TODO';
+      'Los documentos que están actualmente en tu bandeja de entrada se muestran aquí para revisión manual.';
 
   @override
   String get couldNotLoadReviewQueueTitle =>
@@ -371,7 +345,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get couldNotLoadReviewQueueDescription =>
-      'La aplicación no puede cargar ahora mismo los documentos que coinciden con tus etiquetas TODO configuradas.';
+      'La aplicación no puede cargar ahora mismo los documentos de la bandeja de entrada para revisión.';
 
   @override
   String get drawerRecentlyOpened => 'Abiertos recientemente';
@@ -820,14 +794,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get noTagsSelected => 'No hay etiquetas seleccionadas.';
-
-  @override
-  String get noTodoTagsSelectedYet =>
-      'Todavía no se han seleccionado etiquetas TODO.';
-
-  @override
-  String get noTodoTagsSelectedDescription =>
-      'Usa Seleccionar etiquetas TODO abajo para elegir qué documentos aparecen en la pestaña Todos.';
 
   @override
   String get editTagsAction => 'Editar etiquetas';

@@ -13,11 +13,6 @@ class AppBehaviorPreferences {
   final SharedPreferences _sharedPreferences;
 
   AppBehaviorSettings readSettings() {
-    final todoTagIds = _readTodoTagIds();
-    final todoTagNames =
-        _sharedPreferences.getStringList(_todoTagsKey) ??
-        (todoTagIds.isEmpty ? const <String>['Prüfen'] : const <String>[]);
-
     return AppBehaviorSettings(
       cachePreviewsEnabled:
           _sharedPreferences.getBool(_cachePreviewsKey) ?? true,
@@ -27,8 +22,6 @@ class AppBehaviorPreferences {
       themeMode: AppThemeMode.fromStorageValue(
         _sharedPreferences.getString(_themeModeKey),
       ),
-      todoTagIds: todoTagIds,
-      todoTagNames: todoTagNames,
     );
   }
 
@@ -45,28 +38,7 @@ class AppBehaviorPreferences {
       _themeModeKey,
       settings.themeMode.storageValue,
     );
-    final todoTagIds = settings.normalizedTodoTagIds
-        .map((id) => id.toString())
-        .toList(growable: false);
-    if (todoTagIds.isEmpty) {
-      await _sharedPreferences.remove(_todoTagIdsKey);
-    } else {
-      await _sharedPreferences.setStringList(_todoTagIdsKey, todoTagIds);
-    }
-
-    await _sharedPreferences.setStringList(
-      _todoTagsKey,
-      settings.normalizedTodoTagNames,
-    );
-  }
-
-  List<int> _readTodoTagIds() {
-    return (_sharedPreferences.getStringList(_todoTagIdsKey) ??
-            const <String>[])
-        .map(int.tryParse)
-        .whereType<int>()
-        .where((id) => id > 0)
-        .toSet()
-        .toList(growable: false);
+    await _sharedPreferences.remove(_todoTagIdsKey);
+    await _sharedPreferences.remove(_todoTagsKey);
   }
 }
