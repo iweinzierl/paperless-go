@@ -18,6 +18,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:paperless_ngx_app/src/app/app.dart';
 import 'package:paperless_ngx_app/src/features/auth/domain/models/paperless_auth_session.dart';
+import 'package:paperless_ngx_app/src/features/auth/domain/models/paperless_user_capabilities.dart';
 import 'package:paperless_ngx_app/src/features/app_shell/domain/models/recently_opened_document.dart';
 import 'package:paperless_ngx_app/src/features/app_shell/domain/models/app_drawer_statistics.dart';
 import 'package:paperless_ngx_app/src/features/app_shell/presentation/providers/help_feedback_providers.dart';
@@ -27,8 +28,10 @@ import 'package:paperless_ngx_app/src/features/documents/data/repositories/docum
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_document.dart';
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_document_page.dart';
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_filter_option.dart';
+import 'package:paperless_ngx_app/src/features/auth/presentation/providers/current_user_capabilities_provider.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/providers/document_detail_provider.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/providers/documents_providers.dart';
+import 'package:paperless_ngx_app/src/features/documents/presentation/providers/incoming_pdf_controller.dart';
 
 void main() {
   const fakeRecentDocument = PaperlessDocument(
@@ -52,9 +55,49 @@ void main() {
     pageCount: 2,
   );
 
+  const fakeOwnedRecentDocument = PaperlessDocument(
+    id: 1,
+    title: 'Quarterly tax summary.pdf',
+    created: '2026-03-20',
+    added: '2026-03-20T12:00:00Z',
+    pageCount: 4,
+    ownerId: 7,
+  );
+
+  const fakeSharedEditableDocument = PaperlessDocument(
+    id: 3,
+    title: 'Shared vendor contract.pdf',
+    created: '2026-03-18',
+    added: '2026-03-18T09:15:00Z',
+    pageCount: 8,
+    ownerId: 42,
+    permissions: PaperlessObjectPermissions(
+      view: PaperlessPermissionAssignments(userIds: <int>[], groupIds: <int>[]),
+      change: PaperlessPermissionAssignments(
+        userIds: <int>[7],
+        groupIds: <int>[],
+      ),
+    ),
+  );
+
+  const fullAccessCapabilities = PaperlessUserCapabilities(
+    userId: 7,
+    groupIds: <int>[],
+    permissionCodenames: <String>{'change_document', 'delete_document'},
+    isStaff: false,
+    isSuperuser: false,
+  );
+
+  const changeOnlyCapabilities = PaperlessUserCapabilities(
+    userId: 7,
+    groupIds: <int>[],
+    permissionCodenames: <String>{'change_document'},
+    isStaff: false,
+    isSuperuser: false,
+  );
+
   const fakeFilterOptions = [PaperlessFilterOption(id: 1, name: 'Inbox')];
   const fakeDrawerStatistics = AppDrawerStatistics(
-    documents: 128,
     correspondents: 12,
     tags: 34,
     documentTypes: 7,
@@ -87,6 +130,12 @@ void main() {
       ProviderScope(
         overrides: [
           sharedPreferencesProvider.overrideWithValue(sharedPreferences),
+          incomingPdfControllerProvider.overrideWith(
+            _FakeIncomingPdfController.new,
+          ),
+          incomingPdfPlatformBridgeProvider.overrideWith(
+            (ref) => const _FakeIncomingPdfPlatformBridge(),
+          ),
           appDrawerStatisticsProvider.overrideWith(
             (ref) async => fakeDrawerStatistics,
           ),
@@ -95,9 +144,17 @@ void main() {
         child: const PaperlessNgxApp(),
       ),
     );
+
+    await tester.pump();
   }
 
   Finder settingsScrollable() => find.byType(Scrollable).first;
+
+  Override overrideCapabilities(PaperlessUserCapabilities? capabilities) {
+    return currentUserCapabilitiesProvider.overrideWith(
+      (ref) async => capabilities,
+    );
+  }
 
   testWidgets('opens settings page with existing connection values', (
     WidgetTester tester,
@@ -113,7 +170,7 @@ void main() {
       },
       overrides: [
         recentUploadsProvider.overrideWith((ref) async => [fakeRecentDocument]),
-        todoDocumentsProvider.overrideWith((ref) async => [fakeTodoDocument]),
+        reviewDocumentsProvider.overrideWith((ref) async => [fakeTodoDocument]),
         documentsPageProvider.overrideWith((ref) async => fakeDocumentsPage),
         tagOptionsProvider.overrideWith((ref) async => fakeFilterOptions),
         correspondentOptionsProvider.overrideWith(
@@ -205,7 +262,7 @@ void main() {
       },
       overrides: [
         recentUploadsProvider.overrideWith((ref) async => [fakeRecentDocument]),
-        todoDocumentsProvider.overrideWith((ref) async => [fakeTodoDocument]),
+        reviewDocumentsProvider.overrideWith((ref) async => [fakeTodoDocument]),
         documentsPageProvider.overrideWith((ref) async => fakeDocumentsPage),
         tagOptionsProvider.overrideWith((ref) async => fakeFilterOptions),
         correspondentOptionsProvider.overrideWith(
@@ -255,7 +312,7 @@ void main() {
       },
       overrides: [
         recentUploadsProvider.overrideWith((ref) async => [fakeRecentDocument]),
-        todoDocumentsProvider.overrideWith((ref) async => [fakeTodoDocument]),
+        reviewDocumentsProvider.overrideWith((ref) async => [fakeTodoDocument]),
         documentsPageProvider.overrideWith((ref) async => fakeDocumentsPage),
         tagOptionsProvider.overrideWith(
           (ref) async => const [
@@ -300,7 +357,7 @@ void main() {
     expect(find.text('Login'), findsOneWidget);
   });
 
-  testWidgets('shows home page when a saved session exists', (
+  testWidgets('shows documents page when a saved session exists', (
     WidgetTester tester,
   ) async {
     await pumpApp(
@@ -314,7 +371,7 @@ void main() {
       },
       overrides: [
         recentUploadsProvider.overrideWith((ref) async => [fakeRecentDocument]),
-        todoDocumentsProvider.overrideWith((ref) async => [fakeTodoDocument]),
+        reviewDocumentsProvider.overrideWith((ref) async => [fakeTodoDocument]),
         documentsPageProvider.overrideWith((ref) async => fakeDocumentsPage),
         tagOptionsProvider.overrideWith((ref) async => fakeFilterOptions),
         correspondentOptionsProvider.overrideWith(
@@ -327,25 +384,19 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Paperless-ngx'), findsOneWidget);
-    expect(find.text('Recent uploads'), findsWidgets);
-    expect(find.text('Todos'), findsWidgets);
-    expect(find.byTooltip('Refresh home'), findsOneWidget);
+    expect(find.text('Documents'), findsWidgets);
+    expect(find.byTooltip('Refresh documents'), findsOneWidget);
     expect(find.byType(RefreshIndicator), findsOneWidget);
     expect(find.text('Updated just now'), findsOneWidget);
-    expect(find.text('Welcome back, Jane Doe'), findsNothing);
+    expect(find.text('Search by title'), findsOneWidget);
     expect(
-      find.text(
-        'The latest 20 documents uploaded to your paperless-ngx server.',
-      ),
-      findsNothing,
+      find.text('Connected to https://example.com/paperless/'),
+      findsOneWidget,
     );
-    expect(find.text('Added'), findsNothing);
-    expect(find.text('Quarterly tax summary.pdf'), findsOneWidget);
-    expect(find.text('Uploaded 20 Mar 2026, 12:00 · 4 pages'), findsOneWidget);
+    expect(find.text('Quarterly tax summary.pdf'), findsWidgets);
   });
 
-  testWidgets('opens the scan document flow from the home page', (
+  testWidgets('opens the scan document flow from the recent page', (
     WidgetTester tester,
   ) async {
     await pumpApp(
@@ -359,7 +410,7 @@ void main() {
       },
       overrides: [
         recentUploadsProvider.overrideWith((ref) async => [fakeRecentDocument]),
-        todoDocumentsProvider.overrideWith((ref) async => [fakeTodoDocument]),
+        reviewDocumentsProvider.overrideWith((ref) async => [fakeTodoDocument]),
         documentsPageProvider.overrideWith((ref) async => fakeDocumentsPage),
         tagOptionsProvider.overrideWith((ref) async => fakeFilterOptions),
         correspondentOptionsProvider.overrideWith(
@@ -370,6 +421,9 @@ void main() {
         ),
       ],
     );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Recent').last);
     await tester.pumpAndSettle();
 
     await tester.tap(
@@ -381,7 +435,7 @@ void main() {
     expect(find.text('Upload scan'), findsNothing);
   });
 
-  testWidgets('shows snackbar after manual home refresh', (
+  testWidgets('shows snackbar after manual recent refresh', (
     WidgetTester tester,
   ) async {
     await pumpApp(
@@ -395,7 +449,7 @@ void main() {
       },
       overrides: [
         recentUploadsProvider.overrideWith((ref) async => [fakeRecentDocument]),
-        todoDocumentsProvider.overrideWith((ref) async => [fakeTodoDocument]),
+        reviewDocumentsProvider.overrideWith((ref) async => [fakeTodoDocument]),
         documentsPageProvider.overrideWith((ref) async => fakeDocumentsPage),
         tagOptionsProvider.overrideWith((ref) async => fakeFilterOptions),
         correspondentOptionsProvider.overrideWith(
@@ -406,6 +460,9 @@ void main() {
         ),
       ],
     );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Recent').last);
     await tester.pumpAndSettle();
 
     await tester.tap(find.byTooltip('Refresh home'));
@@ -429,7 +486,7 @@ void main() {
       },
       overrides: [
         recentUploadsProvider.overrideWith((ref) async => [fakeRecentDocument]),
-        todoDocumentsProvider.overrideWith((ref) async => [fakeTodoDocument]),
+        reviewDocumentsProvider.overrideWith((ref) async => [fakeTodoDocument]),
         documentsPageProvider.overrideWith((ref) async => fakeDocumentsPage),
         documentDetailProvider(
           fakeRecentDocument.id,
@@ -468,11 +525,12 @@ void main() {
       },
       overrides: [
         recentUploadsProvider.overrideWith((ref) async => [fakeRecentDocument]),
-        todoDocumentsProvider.overrideWith((ref) async => [fakeTodoDocument]),
+        reviewDocumentsProvider.overrideWith((ref) async => [fakeTodoDocument]),
         documentsPageProvider.overrideWith((ref) async => fakeDocumentsPage),
+        overrideCapabilities(fullAccessCapabilities),
         documentDetailProvider(
           fakeRecentDocument.id,
-        ).overrideWith((ref) async => fakeRecentDocument),
+        ).overrideWith((ref) async => fakeOwnedRecentDocument),
         tagOptionsProvider.overrideWith((ref) async => fakeFilterOptions),
         correspondentOptionsProvider.overrideWith(
           (ref) async => fakeFilterOptions,
@@ -514,11 +572,12 @@ void main() {
       overrides: [
         documentsRepositoryProvider.overrideWithValue(repository),
         recentUploadsProvider.overrideWith((ref) async => [fakeRecentDocument]),
-        todoDocumentsProvider.overrideWith((ref) async => [fakeTodoDocument]),
+        reviewDocumentsProvider.overrideWith((ref) async => [fakeTodoDocument]),
         documentsPageProvider.overrideWith((ref) async => fakeDocumentsPage),
+        overrideCapabilities(fullAccessCapabilities),
         documentDetailProvider(
           fakeRecentDocument.id,
-        ).overrideWith((ref) async => fakeRecentDocument),
+        ).overrideWith((ref) async => fakeOwnedRecentDocument),
       ],
     );
     await tester.pumpAndSettle();
@@ -531,7 +590,6 @@ void main() {
 
     expect(find.text('New correspondent'), findsOneWidget);
     expect(find.text('New document type'), findsOneWidget);
-    expect(find.text('New tag'), findsOneWidget);
 
     await tester.tap(find.text('New correspondent'));
     await tester.pumpAndSettle();
@@ -562,7 +620,6 @@ void main() {
     expect(repository.createdTagNames, isEmpty);
     expect(find.text('Acme Corp'), findsOneWidget);
     expect(find.text('Invoice'), findsOneWidget);
-    expect(find.text('New tag'), findsOneWidget);
   });
 
   testWidgets('disables save while a new correspondent is being created', (
@@ -582,11 +639,12 @@ void main() {
       overrides: [
         documentsRepositoryProvider.overrideWithValue(repository),
         recentUploadsProvider.overrideWith((ref) async => [fakeRecentDocument]),
-        todoDocumentsProvider.overrideWith((ref) async => [fakeTodoDocument]),
+        reviewDocumentsProvider.overrideWith((ref) async => [fakeTodoDocument]),
         documentsPageProvider.overrideWith((ref) async => fakeDocumentsPage),
+        overrideCapabilities(fullAccessCapabilities),
         documentDetailProvider(
           fakeRecentDocument.id,
-        ).overrideWith((ref) async => fakeRecentDocument),
+        ).overrideWith((ref) async => fakeOwnedRecentDocument),
       ],
     );
     await tester.pumpAndSettle();
@@ -639,7 +697,7 @@ void main() {
       },
       overrides: [
         recentUploadsProvider.overrideWith((ref) async => [fakeRecentDocument]),
-        todoDocumentsProvider.overrideWith((ref) async => [fakeTodoDocument]),
+        reviewDocumentsProvider.overrideWith((ref) async => [fakeTodoDocument]),
         documentsPageProvider.overrideWith((ref) async => fakeDocumentsPage),
         tagOptionsProvider.overrideWith((ref) async => fakeFilterOptions),
         correspondentOptionsProvider.overrideWith(
@@ -652,7 +710,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Documents'));
+    await tester.tap(find.text('Documents').last);
     await tester.pumpAndSettle();
 
     expect(find.byTooltip('Refresh documents'), findsOneWidget);
@@ -682,7 +740,7 @@ void main() {
       },
       overrides: [
         recentUploadsProvider.overrideWith((ref) async => [fakeRecentDocument]),
-        todoDocumentsProvider.overrideWith((ref) async => [fakeTodoDocument]),
+        reviewDocumentsProvider.overrideWith((ref) async => [fakeTodoDocument]),
         documentsPageProvider.overrideWith((ref) async => fakeDocumentsPage),
         tagOptionsProvider.overrideWith((ref) async => fakeFilterOptions),
         correspondentOptionsProvider.overrideWith(
@@ -695,7 +753,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Documents'));
+    await tester.tap(find.text('Documents').last);
     await tester.pumpAndSettle();
 
     await tester.tap(find.byTooltip('Refresh documents'));
@@ -719,7 +777,7 @@ void main() {
       },
       overrides: [
         recentUploadsProvider.overrideWith((ref) async => [fakeRecentDocument]),
-        todoDocumentsProvider.overrideWith((ref) async => [fakeTodoDocument]),
+        reviewDocumentsProvider.overrideWith((ref) async => [fakeTodoDocument]),
         documentsPageProvider.overrideWith((ref) async => fakeDocumentsPage),
         tagOptionsProvider.overrideWith((ref) async => fakeFilterOptions),
         correspondentOptionsProvider.overrideWith(
@@ -731,15 +789,11 @@ void main() {
       ],
     );
     await tester.pumpAndSettle();
-
-    await tester.tap(find.text('Documents'));
-    await tester.pumpAndSettle();
-
     await tester.tap(find.byTooltip('Filters'));
     await tester.pumpAndSettle();
 
     expect(find.text('Filters'), findsOneWidget);
-    expect(find.text('Sort by'), findsOneWidget);
+    expect(find.text('Sort by'), findsWidgets);
     expect(find.text('Tag'), findsOneWidget);
     expect(find.text('Correspondent'), findsOneWidget);
     expect(find.text('Document type'), findsOneWidget);
@@ -747,7 +801,94 @@ void main() {
     expect(find.text('Created date (newest first)'), findsOneWidget);
   });
 
-  testWidgets('shows tagged review documents on the Todos tab', (
+  testWidgets('hides delete action without delete capability', (
+    WidgetTester tester,
+  ) async {
+    await pumpApp(
+      tester,
+      initialValues: const <String, Object>{
+        'auth.server_url': 'https://example.com/paperless/',
+        'auth.username': 'jane.doe',
+        'auth.password': 'secret',
+        'auth.token': 'token-123',
+        'auth.display_name': 'Jane Doe',
+      },
+      overrides: [
+        recentUploadsProvider.overrideWith(
+          (ref) async => [fakeSharedEditableDocument],
+        ),
+        reviewDocumentsProvider.overrideWith((ref) async => [fakeTodoDocument]),
+        documentsPageProvider.overrideWith((ref) async => fakeDocumentsPage),
+        overrideCapabilities(changeOnlyCapabilities),
+        documentDetailProvider(
+          fakeSharedEditableDocument.id,
+        ).overrideWith((ref) async => fakeSharedEditableDocument),
+        tagOptionsProvider.overrideWith((ref) async => fakeFilterOptions),
+        correspondentOptionsProvider.overrideWith(
+          (ref) async => fakeFilterOptions,
+        ),
+        documentTypeOptionsProvider.overrideWith(
+          (ref) async => fakeFilterOptions,
+        ),
+      ],
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Recent').last);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Shared vendor contract.pdf').first);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(PopupMenuButton), findsNothing);
+  });
+
+  testWidgets('allows shared editors to edit metadata', (
+    WidgetTester tester,
+  ) async {
+    await pumpApp(
+      tester,
+      initialValues: const <String, Object>{
+        'auth.server_url': 'https://example.com/paperless/',
+        'auth.username': 'jane.doe',
+        'auth.password': 'secret',
+        'auth.token': 'token-123',
+        'auth.display_name': 'Jane Doe',
+      },
+      overrides: [
+        recentUploadsProvider.overrideWith(
+          (ref) async => [fakeSharedEditableDocument],
+        ),
+        reviewDocumentsProvider.overrideWith((ref) async => [fakeTodoDocument]),
+        documentsPageProvider.overrideWith((ref) async => fakeDocumentsPage),
+        overrideCapabilities(fullAccessCapabilities),
+        documentDetailProvider(
+          fakeSharedEditableDocument.id,
+        ).overrideWith((ref) async => fakeSharedEditableDocument),
+        tagOptionsProvider.overrideWith((ref) async => fakeFilterOptions),
+        correspondentOptionsProvider.overrideWith(
+          (ref) async => fakeFilterOptions,
+        ),
+        documentTypeOptionsProvider.overrideWith(
+          (ref) async => fakeFilterOptions,
+        ),
+      ],
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Recent').last);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Shared vendor contract.pdf').first);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Edit metadata'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Editable fields'), findsOneWidget);
+  });
+
+  testWidgets('shows tagged review documents on the Inbox tab', (
     WidgetTester tester,
   ) async {
     await pumpApp(
@@ -761,7 +902,7 @@ void main() {
       },
       overrides: [
         recentUploadsProvider.overrideWith((ref) async => [fakeRecentDocument]),
-        todoDocumentsProvider.overrideWith((ref) async => [fakeTodoDocument]),
+        reviewDocumentsProvider.overrideWith((ref) async => [fakeTodoDocument]),
         documentsPageProvider.overrideWith((ref) async => fakeDocumentsPage),
         documentDetailProvider(
           fakeTodoDocument.id,
@@ -777,17 +918,16 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Todos'));
+    await tester.tap(find.text('Inbox').last);
     await tester.pumpAndSettle();
 
     expect(find.byType(RefreshIndicator), findsOneWidget);
     expect(find.text('Updated just now'), findsOneWidget);
-    expect(find.text('Verification queue'), findsNothing);
-    expect(find.text('Insurance claim.pdf'), findsOneWidget);
-    expect(find.text('Uploaded 19 Mar 2026, 08:30 · 2 pages'), findsOneWidget);
+    expect(find.text('Verification queue'), findsOneWidget);
+    expect(find.text('Insurance claim.pdf'), findsWidgets);
   });
 
-  testWidgets('links to settings when no TODO tags are configured', (
+  testWidgets('shows empty review queue when no TODO tags are configured', (
     WidgetTester tester,
   ) async {
     await pumpApp(
@@ -803,7 +943,7 @@ void main() {
       },
       overrides: [
         recentUploadsProvider.overrideWith((ref) async => [fakeRecentDocument]),
-        todoDocumentsProvider.overrideWith((ref) async => const []),
+        reviewDocumentsProvider.overrideWith((ref) async => const []),
         documentsPageProvider.overrideWith((ref) async => fakeDocumentsPage),
         tagOptionsProvider.overrideWith((ref) async => fakeFilterOptions),
         correspondentOptionsProvider.overrideWith(
@@ -816,34 +956,14 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Todos'));
+    await tester.tap(find.text('Inbox').last);
     await tester.pumpAndSettle();
 
     expect(find.text('Verification queue'), findsOneWidget);
-    expect(find.text('No TODO tags configured'), findsNothing);
+    expect(find.text('Nothing to review'), findsOneWidget);
     expect(
       find.text(
-        'Documents matching your configured TODO tags are listed here for manual review. Choose one or more TODO tags in Settings so documents can appear in the review queue.',
-      ),
-      findsOneWidget,
-    );
-    expect(find.text('Open TODO tag settings'), findsOneWidget);
-
-    await tester.tap(find.text('Open TODO tag settings'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Settings'), findsOneWidget);
-    await tester.scrollUntilVisible(
-      find.text('TODO tags'),
-      200,
-      scrollable: settingsScrollable(),
-    );
-    await tester.pumpAndSettle();
-    expect(find.text('TODO tags'), findsOneWidget);
-    expect(find.text('No TODO tags selected yet.'), findsOneWidget);
-    expect(
-      find.text(
-        'Use Select TODO tags below to choose which documents appear in the Todos tab.',
+        'Documents with your configured TODO tags will appear here once they need manual attention.',
       ),
       findsOneWidget,
     );
@@ -877,7 +997,7 @@ void main() {
       },
       overrides: [
         recentUploadsProvider.overrideWith((ref) async => [fakeRecentDocument]),
-        todoDocumentsProvider.overrideWith((ref) async => [fakeTodoDocument]),
+        reviewDocumentsProvider.overrideWith((ref) async => [fakeTodoDocument]),
         documentsPageProvider.overrideWith((ref) async => fakeDocumentsPage),
         tagOptionsProvider.overrideWith((ref) async => fakeFilterOptions),
         correspondentOptionsProvider.overrideWith(
@@ -896,9 +1016,9 @@ void main() {
     expect(find.text('Recently opened'), findsOneWidget);
     expect(find.text('Settings'), findsOneWidget);
     expect(find.text('Help & Feedback'), findsOneWidget);
-    expect(find.text('Statistics'), findsOneWidget);
-    expect(find.text('Documents'), findsWidgets);
-    expect(find.text('128'), findsOneWidget);
+    expect(find.text('Correspondents'), findsOneWidget);
+    expect(find.text('Document types'), findsOneWidget);
+    expect(find.text('Tags'), findsOneWidget);
     expect(find.text('12'), findsOneWidget);
     expect(find.text('34'), findsOneWidget);
     expect(find.text('7'), findsOneWidget);
@@ -921,7 +1041,7 @@ void main() {
       },
       overrides: [
         recentUploadsProvider.overrideWith((ref) async => [fakeRecentDocument]),
-        todoDocumentsProvider.overrideWith((ref) async => [fakeTodoDocument]),
+        reviewDocumentsProvider.overrideWith((ref) async => [fakeTodoDocument]),
         documentsPageProvider.overrideWith((ref) async => fakeDocumentsPage),
         tagOptionsProvider.overrideWith((ref) async => fakeFilterOptions),
         correspondentOptionsProvider.overrideWith(
@@ -963,7 +1083,7 @@ void main() {
       },
       overrides: [
         recentUploadsProvider.overrideWith((ref) async => [fakeRecentDocument]),
-        todoDocumentsProvider.overrideWith((ref) async => [fakeTodoDocument]),
+        reviewDocumentsProvider.overrideWith((ref) async => [fakeTodoDocument]),
         documentsPageProvider.overrideWith((ref) async => fakeDocumentsPage),
         tagOptionsProvider.overrideWith((ref) async => fakeFilterOptions),
         correspondentOptionsProvider.overrideWith(
@@ -1007,7 +1127,7 @@ void main() {
       },
       overrides: [
         recentUploadsProvider.overrideWith((ref) async => [fakeRecentDocument]),
-        todoDocumentsProvider.overrideWith((ref) async => [fakeTodoDocument]),
+        reviewDocumentsProvider.overrideWith((ref) async => [fakeTodoDocument]),
         documentsPageProvider.overrideWith((ref) async => fakeDocumentsPage),
         tagOptionsProvider.overrideWith((ref) async => fakeFilterOptions),
         correspondentOptionsProvider.overrideWith(
@@ -1056,7 +1176,7 @@ void main() {
       },
       overrides: [
         recentUploadsProvider.overrideWith((ref) async => [fakeRecentDocument]),
-        todoDocumentsProvider.overrideWith((ref) async => [fakeTodoDocument]),
+        reviewDocumentsProvider.overrideWith((ref) async => [fakeTodoDocument]),
         documentsPageProvider.overrideWith((ref) async => fakeDocumentsPage),
         tagOptionsProvider.overrideWith((ref) async => fakeFilterOptions),
         correspondentOptionsProvider.overrideWith(
@@ -1089,6 +1209,21 @@ void main() {
 class _FakeHelpLinkLauncher implements HelpLinkLauncher {
   @override
   Future<void> open(Uri uri) async {}
+}
+
+class _FakeIncomingPdfPlatformBridge implements IncomingPdfPlatformBridge {
+  const _FakeIncomingPdfPlatformBridge();
+
+  @override
+  Future<String?> consumeInitialPdfPath() async => null;
+
+  @override
+  Stream<String> get openedPdfPaths => const Stream<String>.empty();
+}
+
+class _FakeIncomingPdfController extends IncomingPdfController {
+  @override
+  IncomingPdfState build() => const IncomingPdfState();
 }
 
 class _FakeDocumentsRepository extends DocumentsRepository {

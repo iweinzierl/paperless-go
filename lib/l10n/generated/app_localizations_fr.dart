@@ -425,6 +425,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get deleteCorrespondentAction => 'Supprimer le correspondant';
 
   @override
+  String get deleteDocumentAction => 'Supprimer le document';
+
+  @override
   String get deleteDocumentTypeAction => 'Supprimer le type de document';
 
   @override
@@ -432,6 +435,11 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String deleteCorrespondentConfirmationMessage(Object name) {
+    return 'Supprimer \"$name\" ? Cette action est irreversible.';
+  }
+
+  @override
+  String deleteDocumentConfirmationMessage(Object name) {
     return 'Supprimer \"$name\" ? Cette action est irreversible.';
   }
 
@@ -861,6 +869,9 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get correspondentDeleted => 'Correspondant supprimé.';
+
+  @override
+  String get documentDeleted => 'Document supprimé.';
 
   @override
   String get documentTypeCreated => 'Type de document créé.';

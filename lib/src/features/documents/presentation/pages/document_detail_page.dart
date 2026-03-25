@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:paperless_ngx_app/src/features/auth/presentation/providers/current_user_capabilities_provider.dart';
 import 'package:paperless_ngx_app/src/core/presentation/formatters/document_text.dart';
 import 'package:paperless_ngx_app/src/core/presentation/localization/app_localizations_x.dart';
 import 'package:paperless_ngx_app/src/core/presentation/formatters/timestamp_text.dart';
@@ -7,10 +8,13 @@ import 'package:paperless_ngx_app/src/features/app_shell/presentation/providers/
 import 'package:paperless_ngx_app/src/features/auth/presentation/controllers/auth_session_controller.dart';
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_document.dart';
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_filter_option.dart';
+import 'package:paperless_ngx_app/src/features/documents/presentation/providers/document_delete_controller.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/providers/document_detail_provider.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/providers/document_open_controller.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/providers/documents_providers.dart';
 import 'package:paperless_ngx_app/src/features/documents/data/repositories/documents_repository.dart';
+
+enum _DocumentDetailAction { delete }
 
 class DocumentDetailPage extends ConsumerWidget {
   const DocumentDetailPage({required this.documentId, super.key});
@@ -20,9 +24,47 @@ class DocumentDetailPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final documentAsync = ref.watch(documentDetailProvider(documentId));
+    final capabilities = ref.watch(currentUserCapabilitiesProvider).valueOrNull;
+    final document = documentAsync.valueOrNull;
+    final deletingIds = ref.watch(documentDeleteControllerProvider);
+    final isDeleting = deletingIds.contains(documentId);
+    final canSeeDeleteAction =
+        document != null &&
+        capabilities != null &&
+        capabilities.hasPermission('delete_document');
+    final canDeleteDocument =
+        document != null &&
+        capabilities != null &&
+        document.canBeDeletedBy(capabilities);
 
     return Scaffold(
-      appBar: AppBar(title: Text(context.l10n.documentDetailsTitle)),
+      appBar: AppBar(
+        title: Text(context.l10n.documentDetailsTitle),
+        actions: [
+          if (canSeeDeleteAction)
+            if (isDeleting)
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(strokeWidth: 2.5),
+                ),
+              )
+            else
+              PopupMenuButton<_DocumentDetailAction>(
+                onSelected: (_) => _deleteDocument(context, ref, document),
+                itemBuilder: (context) =>
+                    <PopupMenuEntry<_DocumentDetailAction>>[
+                      PopupMenuItem<_DocumentDetailAction>(
+                        value: _DocumentDetailAction.delete,
+                        enabled: canDeleteDocument,
+                        child: Text(context.l10n.deleteDocumentAction),
+                      ),
+                    ],
+              ),
+        ],
+      ),
       body: documentAsync.when(
         data: (document) => _DocumentDetailBody(document: document),
         error: (error, stackTrace) => _DocumentDetailError(
@@ -31,6 +73,62 @@ class DocumentDetailPage extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
       ),
     );
+  }
+
+  Future<void> _deleteDocument(
+    BuildContext context,
+    WidgetRef ref,
+    PaperlessDocument document,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(dialogContext.l10n.deleteDocumentAction),
+        content: Text(
+          dialogContext.l10n.deleteDocumentConfirmationMessage(document.title),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(dialogContext.l10n.cancelAction),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(dialogContext.l10n.deleteAction),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !context.mounted) {
+      return;
+    }
+
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+
+    try {
+      await ref
+          .read(documentDeleteControllerProvider.notifier)
+          .deleteDocument(document);
+
+      if (!context.mounted) {
+        return;
+      }
+
+      navigator.pop();
+      messenger
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(context.l10n.documentDeleted)));
+    } catch (error) {
+      if (!context.mounted) {
+        return;
+      }
+
+      messenger
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(error.toString())));
+    }
   }
 }
 
@@ -42,7 +140,10 @@ class _DocumentDetailBody extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final openingIds = ref.watch(documentOpenControllerProvider);
+    final capabilities = ref.watch(currentUserCapabilitiesProvider).valueOrNull;
     final isOpening = openingIds.contains(document.id);
+    final canEditMetadata =
+        capabilities != null && document.canBeChangedBy(capabilities);
     final theme = Theme.of(context);
     final l10n = context.l10n;
     final session = ref.watch(authSessionProvider);
@@ -125,7 +226,9 @@ class _DocumentDetailBody extends ConsumerWidget {
                   runSpacing: 12,
                   children: [
                     OutlinedButton.icon(
-                      onPressed: () => _editMetadata(context, ref, document),
+                      onPressed: canEditMetadata
+                          ? () => _editMetadata(context, ref, document)
+                          : null,
                       icon: const Icon(Icons.edit_outlined),
                       label: Text(l10n.editMetadataAction),
                     ),

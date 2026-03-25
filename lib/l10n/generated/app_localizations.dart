@@ -842,6 +842,12 @@ abstract class AppLocalizations {
   /// **'Delete correspondent'**
   String get deleteCorrespondentAction;
 
+  /// No description provided for @deleteDocumentAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete document'**
+  String get deleteDocumentAction;
+
   /// No description provided for @deleteDocumentTypeAction.
   ///
   /// In en, this message translates to:
@@ -859,6 +865,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Delete \"{name}\"? This action cannot be undone.'**
   String deleteCorrespondentConfirmationMessage(Object name);
+
+  /// No description provided for @deleteDocumentConfirmationMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete \"{name}\"? This action cannot be undone.'**
+  String deleteDocumentConfirmationMessage(Object name);
 
   /// No description provided for @deleteDocumentTypeConfirmationMessage.
   ///
@@ -1591,6 +1603,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Correspondent deleted.'**
   String get correspondentDeleted;
+
+  /// No description provided for @documentDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Document deleted.'**
+  String get documentDeleted;
 
   /// No description provided for @documentTypeCreated.
   ///

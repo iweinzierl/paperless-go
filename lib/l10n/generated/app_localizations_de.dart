@@ -426,6 +426,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get deleteCorrespondentAction => 'Korrespondent löschen';
 
   @override
+  String get deleteDocumentAction => 'Dokument löschen';
+
+  @override
   String get deleteDocumentTypeAction => 'Dokumenttyp löschen';
 
   @override
@@ -433,6 +436,11 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String deleteCorrespondentConfirmationMessage(Object name) {
+    return '\"$name\" löschen? Diese Aktion kann nicht rückgängig gemacht werden.';
+  }
+
+  @override
+  String deleteDocumentConfirmationMessage(Object name) {
     return '\"$name\" löschen? Diese Aktion kann nicht rückgängig gemacht werden.';
   }
 
@@ -855,6 +863,9 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get correspondentDeleted => 'Korrespondent gelöscht.';
+
+  @override
+  String get documentDeleted => 'Dokument gelöscht.';
 
   @override
   String get documentTypeCreated => 'Dokumenttyp erstellt.';

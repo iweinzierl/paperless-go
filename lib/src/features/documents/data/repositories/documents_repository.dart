@@ -78,6 +78,19 @@ class DocumentsRepository {
     return PaperlessDocument.fromJson(_asJsonMap(response.data));
   }
 
+  Future<void> deleteDocument({required int documentId}) async {
+    final token = _requireAuthToken();
+    final apiUri = Uri.parse(
+      _session.serverUrl,
+    ).resolve('api/documents/$documentId/');
+    await _dio.deleteUri(
+      apiUri,
+      options: Options(
+        headers: <String, Object>{'Authorization': 'Token $token'},
+      ),
+    );
+  }
+
   Future<String> uploadDocument({
     required String filePath,
     String? title,

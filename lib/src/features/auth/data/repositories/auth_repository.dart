@@ -4,6 +4,7 @@ import 'package:paperless_ngx_app/src/core/network/dio_provider.dart';
 import 'package:paperless_ngx_app/src/features/auth/data/remote/models/paperless_auth_token_request.dart';
 import 'package:paperless_ngx_app/src/features/auth/data/remote/models/paperless_auth_token_response.dart';
 import 'package:paperless_ngx_app/src/features/auth/domain/models/paperless_auth_session.dart';
+import 'package:paperless_ngx_app/src/features/auth/domain/models/paperless_user_capabilities.dart';
 import 'package:paperless_ngx_app/src/features/auth/domain/models/paperless_user_profile.dart';
 
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
@@ -40,6 +41,22 @@ class AuthRepository {
     } on DioException catch (error) {
       throw _messageFromError(error);
     }
+  }
+
+  Future<PaperlessUserCapabilities> fetchUserCapabilities({
+    required String serverUrl,
+    required String authToken,
+  }) async {
+    final normalizedServerUrl = normalizePaperlessBaseUrl(serverUrl);
+    final apiBaseUri = buildPaperlessApiBaseUri(normalizedServerUrl);
+    final response = await _dio.getUri(
+      apiBaseUri.resolve('ui_settings/'),
+      options: Options(
+        headers: <String, Object>{'Authorization': 'Token $authToken'},
+      ),
+    );
+
+    return PaperlessUserCapabilities.fromJson(_asJsonMap(response.data));
   }
 
   Future<PaperlessAuthTokenResponse> _createToken(

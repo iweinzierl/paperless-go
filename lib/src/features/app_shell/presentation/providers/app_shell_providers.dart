@@ -77,6 +77,18 @@ class RecentlyOpenedDocumentsController
     unawaited(_preferences.saveDocuments(state));
   }
 
+  void removeDocument(int documentId) {
+    final updated = state
+        .where((item) => item.id != documentId)
+        .toList(growable: false);
+    if (updated.length == state.length) {
+      return;
+    }
+
+    state = updated;
+    unawaited(_preferences.saveDocuments(state));
+  }
+
   void clear() {
     state = const <RecentlyOpenedDocument>[];
     unawaited(_preferences.saveDocuments(state));

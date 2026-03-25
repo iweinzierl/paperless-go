@@ -425,6 +425,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get deleteCorrespondentAction => 'Eliminar corresponsal';
 
   @override
+  String get deleteDocumentAction => 'Eliminar documento';
+
+  @override
   String get deleteDocumentTypeAction => 'Eliminar tipo de documento';
 
   @override
@@ -432,6 +435,11 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String deleteCorrespondentConfirmationMessage(Object name) {
+    return '¿Eliminar \"$name\"? Esta acción no se puede deshacer.';
+  }
+
+  @override
+  String deleteDocumentConfirmationMessage(Object name) {
     return '¿Eliminar \"$name\"? Esta acción no se puede deshacer.';
   }
 
@@ -859,6 +867,9 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get correspondentDeleted => 'Corresponsal eliminado.';
+
+  @override
+  String get documentDeleted => 'Documento eliminado.';
 
   @override
   String get documentTypeCreated => 'Tipo de documento creado.';
