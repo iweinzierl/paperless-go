@@ -8,11 +8,13 @@ import 'package:paperless_ngx_app/src/core/presentation/widgets/refresh_status_t
 import 'package:paperless_ngx_app/src/core/providers/sync_status_preferences_provider.dart';
 import 'package:paperless_ngx_app/src/features/app_shell/presentation/providers/app_shell_providers.dart';
 import 'package:paperless_ngx_app/src/features/app_shell/presentation/widgets/app_drawer.dart';
-import 'package:paperless_ngx_app/src/features/auth/presentation/controllers/auth_session_controller.dart';
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_document.dart';
+import 'package:paperless_ngx_app/src/features/documents/presentation/models/documents_layout_mode.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/pages/document_detail_page.dart';
+import 'package:paperless_ngx_app/src/features/documents/presentation/providers/document_open_controller.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/providers/documents_providers.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/widgets/paperless_document_card.dart';
+import 'package:paperless_ngx_app/src/features/documents/presentation/widgets/paperless_document_list_item.dart';
 
 class ReviewQueuePage extends ConsumerStatefulWidget {
   const ReviewQueuePage({super.key});
@@ -35,7 +37,10 @@ class _ReviewQueuePageState extends ConsumerState<ReviewQueuePage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final l10n = context.l10n;
+    final layoutMode = ref.watch(documentsLayoutModeProvider);
+    final openingIds = ref.watch(documentOpenControllerProvider);
 
     ref.listen<AsyncValue<List<PaperlessDocument>>>(reviewDocumentsProvider, (
       previous,
@@ -83,135 +88,167 @@ class _ReviewQueuePageState extends ConsumerState<ReviewQueuePage> {
 
     return Scaffold(
       drawer: const AppDrawer(),
-      appBar: AppBar(
-        title: Text(l10n.verificationQueueTitle),
-        actions: [
-          IconButton(
-            tooltip: l10n.homeRefreshTooltip,
-            onPressed: reviewDocuments.isRefreshing
-                ? null
-                : () => _refreshReviewQueue(context),
-            icon: const Icon(Icons.refresh),
+      appBar: AppBar(titleSpacing: 0, title: Text(l10n.navigationInbox)),
+      body: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              theme.colorScheme.surface,
+              theme.colorScheme.surfaceContainerHigh,
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
-          IconButton(
-            tooltip: l10n.logoutTooltip,
-            onPressed: () => ref.read(authSessionProvider.notifier).signOut(),
-            icon: const Icon(Icons.logout),
-          ),
-        ],
-      ),
-      body: Stack(
-        children: [
-          RefreshIndicator(
-            onRefresh: () => ref.refresh(reviewDocumentsProvider.future),
-            child: documents != null
-                ? ListView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
-                    children: [
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: RefreshStatusText(
+        ),
+        child: Stack(
+          children: [
+            RefreshIndicator(
+              onRefresh: () => ref.refresh(reviewDocumentsProvider.future),
+              child: documents != null
+                  ? ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
+                      children: [
+                        RefreshStatusText(
                           lastUpdatedAt: _lastUpdatedAt,
                           isRefreshing: reviewDocuments.isRefreshing,
                           lastRefreshFailedAt: _lastRefreshFailedAt,
                         ),
-                      ),
-                      const SizedBox(height: 12),
-                      if (documents.isEmpty)
-                        _ReviewEmptyStateCard(
-                          title: l10n.nothingToReviewTitle,
-                          description: l10n.nothingToReviewDescription,
-                        ),
-                      for (final document in documents) ...[
-                        PaperlessDocumentCard(
-                          document: document,
-                          onTap: () =>
-                              _openDocumentDetails(context, ref, document),
-                        ),
                         const SizedBox(height: 12),
-                      ],
-                    ],
-                  )
-                : reviewDocuments.when(
-                    data: (_) => const SizedBox.shrink(),
-                    error: (error, stackTrace) {
-                      return ListView(
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
-                        children: [
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: RefreshStatusText(
-                              lastUpdatedAt: _lastUpdatedAt,
-                              isRefreshing: reviewDocuments.isRefreshing,
-                              lastRefreshFailedAt: _lastRefreshFailedAt,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
+                        if (documents.isEmpty)
                           _ReviewEmptyStateCard(
-                            title: l10n.couldNotLoadReviewQueueTitle,
-                            description:
-                                l10n.couldNotLoadReviewQueueDescription,
+                            title: l10n.nothingToReviewTitle,
+                            description: l10n.nothingToReviewDescription,
+                          ),
+                        for (final document in documents) ...[
+                          if (layoutMode == DocumentsLayoutMode.card)
+                            PaperlessDocumentCard(
+                              document: document,
+                              onTap: () =>
+                                  _openDocumentDetails(context, ref, document),
+                              footer: Row(
+                                children: [
+                                  SizedBox(
+                                    width: 148,
+                                    child: FilledButton(
+                                      onPressed:
+                                          openingIds.contains(document.id)
+                                          ? null
+                                          : () => _openDocument(
+                                              context,
+                                              ref,
+                                              document,
+                                            ),
+                                      style: FilledButton.styleFrom(
+                                        minimumSize: const Size.fromHeight(58),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 18,
+                                          vertical: 12,
+                                        ),
+                                        shape: const StadiumBorder(),
+                                        textStyle: theme.textTheme.labelLarge
+                                            ?.copyWith(
+                                              fontWeight: FontWeight.w800,
+                                              letterSpacing: 1.2,
+                                            ),
+                                      ),
+                                      child: Text(
+                                        (openingIds.contains(document.id)
+                                                ? l10n.openingAction
+                                                : l10n.openAction)
+                                            .toUpperCase(),
+                                      ),
+                                    ),
+                                  ),
+                                  const Spacer(),
+                                  TextButton(
+                                    onPressed: () => _openDocumentDetails(
+                                      context,
+                                      ref,
+                                      document,
+                                    ),
+                                    style: TextButton.styleFrom(
+                                      foregroundColor:
+                                          theme.colorScheme.primary,
+                                      textStyle: theme.textTheme.labelLarge
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.w800,
+                                            letterSpacing: 1.2,
+                                          ),
+                                    ),
+                                    child: Text(
+                                      l10n.detailsAction.toUpperCase(),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )
+                          else
+                            PaperlessDocumentListItem(
+                              document: document,
+                              onTap: () =>
+                                  _openDocumentDetails(context, ref, document),
+                              isOpening: openingIds.contains(document.id),
+                              onOpen: () =>
+                                  _openDocument(context, ref, document),
+                            ),
+                          SizedBox(
+                            height: layoutMode == DocumentsLayoutMode.card
+                                ? 18
+                                : 10,
                           ),
                         ],
-                      );
-                    },
-                    loading: () {
-                      return ListView(
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
-                        children: [
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: RefreshStatusText(
+                      ],
+                    )
+                  : reviewDocuments.when(
+                      data: (_) => const SizedBox.shrink(),
+                      error: (error, stackTrace) {
+                        return ListView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
+                          children: [
+                            RefreshStatusText(
                               lastUpdatedAt: _lastUpdatedAt,
                               isRefreshing: reviewDocuments.isRefreshing,
                               lastRefreshFailedAt: _lastRefreshFailedAt,
                             ),
-                          ),
-                          const SizedBox(height: 12),
-                          const _ReviewLoadingCard(),
-                        ],
-                      );
-                    },
-                  ),
-          ),
-          if (reviewDocuments.isRefreshing && documents != null)
-            const Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              child: LinearProgressIndicator(minHeight: 2),
+                            const SizedBox(height: 12),
+                            _ReviewEmptyStateCard(
+                              title: l10n.couldNotLoadReviewQueueTitle,
+                              description:
+                                  l10n.couldNotLoadReviewQueueDescription,
+                            ),
+                          ],
+                        );
+                      },
+                      loading: () {
+                        return ListView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
+                          children: [
+                            RefreshStatusText(
+                              lastUpdatedAt: _lastUpdatedAt,
+                              isRefreshing: reviewDocuments.isRefreshing,
+                              lastRefreshFailedAt: _lastRefreshFailedAt,
+                            ),
+                            const SizedBox(height: 12),
+                            const _ReviewLoadingCard(),
+                          ],
+                        );
+                      },
+                    ),
             ),
-        ],
+            if (reviewDocuments.isRefreshing && documents != null)
+              const Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: LinearProgressIndicator(minHeight: 2),
+              ),
+          ],
+        ),
       ),
     );
-  }
-
-  Future<void> _refreshReviewQueue(BuildContext context) async {
-    final scaffoldMessenger = ScaffoldMessenger.of(context);
-    scaffoldMessenger.hideCurrentSnackBar();
-
-    try {
-      final _ = await ref.refresh(reviewDocumentsProvider.future);
-
-      if (!context.mounted) {
-        return;
-      }
-
-      scaffoldMessenger.showSnackBar(
-        SnackBar(content: Text(context.l10n.homeUpdated)),
-      );
-    } catch (_) {
-      if (!context.mounted) {
-        return;
-      }
-
-      scaffoldMessenger.showSnackBar(
-        SnackBar(content: Text(context.l10n.homeRefreshFailed)),
-      );
-    }
   }
 
   void _openDocumentDetails(
@@ -226,6 +263,27 @@ class _ReviewQueuePageState extends ConsumerState<ReviewQueuePage> {
       ),
     );
   }
+
+  Future<void> _openDocument(
+    BuildContext context,
+    WidgetRef ref,
+    PaperlessDocument document,
+  ) async {
+    try {
+      ref.read(recentlyOpenedDocumentsProvider.notifier).record(document);
+      await ref
+          .read(documentOpenControllerProvider.notifier)
+          .openDocument(document);
+    } catch (error) {
+      if (!context.mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(error.toString())));
+    }
+  }
 }
 
 class _ReviewLoadingCard extends StatelessWidget {
@@ -238,13 +296,10 @@ class _ReviewLoadingCard extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerLow,
-        borderRadius: const BorderRadius.all(Radius.circular(20)),
-        border: Border.all(
-          color: theme.colorScheme.outline.withValues(alpha: 0.18),
-        ),
+        borderRadius: const BorderRadius.all(Radius.circular(28)),
       ),
       child: const Padding(
-        padding: EdgeInsets.all(20),
+        padding: EdgeInsets.all(28),
         child: Center(child: CircularProgressIndicator()),
       ),
     );
@@ -264,13 +319,10 @@ class _ReviewEmptyStateCard extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: theme.colorScheme.outline.withValues(alpha: 0.18),
-        ),
+        borderRadius: BorderRadius.circular(28),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

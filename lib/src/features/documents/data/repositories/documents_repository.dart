@@ -297,6 +297,18 @@ class DocumentsRepository {
     ).resolve('api/documents/$documentId/thumb/');
   }
 
+  Uri buildDocumentPreviewUri({
+    required int documentId,
+    bool original = false,
+  }) {
+    final apiUri = Uri.parse(
+      _session.serverUrl,
+    ).resolve('api/documents/$documentId/preview/');
+    return apiUri.replace(
+      queryParameters: <String, String>{if (original) 'original': 'true'},
+    );
+  }
+
   ImageProvider<Object>? buildDocumentThumbnailImageProvider(int documentId) {
     return null;
   }

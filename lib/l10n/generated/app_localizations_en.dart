@@ -15,6 +15,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get navigationHome => 'Home';
 
   @override
+  String get navigationLibrary => 'Library';
+
+  @override
   String get navigationDocuments => 'Documents';
 
   @override
@@ -22,6 +25,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get navigationInbox => 'Inbox';
+
+  @override
+  String get navigationProfile => 'Profile';
 
   @override
   String get navigationReview => 'Review';
@@ -418,6 +424,12 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get couldNotLoadReviewQueueDescription =>
       'The app could not load inbox documents requiring manual review right now.';
+
+  @override
+  String get drawerMainMenu => 'Main menu';
+
+  @override
+  String get drawerCategories => 'Categories';
 
   @override
   String get drawerRecentlyOpened => 'Recently opened';

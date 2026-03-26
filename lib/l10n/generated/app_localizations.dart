@@ -116,6 +116,12 @@ abstract class AppLocalizations {
   /// **'Home'**
   String get navigationHome;
 
+  /// No description provided for @navigationLibrary.
+  ///
+  /// In en, this message translates to:
+  /// **'Library'**
+  String get navigationLibrary;
+
   /// No description provided for @navigationDocuments.
   ///
   /// In en, this message translates to:
@@ -133,6 +139,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Inbox'**
   String get navigationInbox;
+
+  /// No description provided for @navigationProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile'**
+  String get navigationProfile;
 
   /// No description provided for @navigationReview.
   ///
@@ -835,6 +847,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The app could not load inbox documents requiring manual review right now.'**
   String get couldNotLoadReviewQueueDescription;
+
+  /// No description provided for @drawerMainMenu.
+  ///
+  /// In en, this message translates to:
+  /// **'Main menu'**
+  String get drawerMainMenu;
+
+  /// No description provided for @drawerCategories.
+  ///
+  /// In en, this message translates to:
+  /// **'Categories'**
+  String get drawerCategories;
 
   /// No description provided for @drawerRecentlyOpened.
   ///

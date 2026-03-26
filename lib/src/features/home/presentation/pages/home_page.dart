@@ -10,10 +10,12 @@ import 'package:paperless_ngx_app/src/features/app_shell/presentation/providers/
 import 'package:paperless_ngx_app/src/features/app_shell/presentation/widgets/app_drawer.dart';
 import 'package:paperless_ngx_app/src/features/auth/presentation/controllers/auth_session_controller.dart';
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_document.dart';
+import 'package:paperless_ngx_app/src/features/documents/presentation/models/documents_layout_mode.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/pages/document_detail_page.dart';
-import 'package:paperless_ngx_app/src/features/documents/presentation/pages/scan_document_page.dart';
+import 'package:paperless_ngx_app/src/features/documents/presentation/providers/document_open_controller.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/providers/documents_providers.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/widgets/paperless_document_card.dart';
+import 'package:paperless_ngx_app/src/features/documents/presentation/widgets/paperless_document_list_item.dart';
 
 class HomePage extends ConsumerWidget {
   const HomePage({super.key});
@@ -43,26 +45,7 @@ class HomePage extends ConsumerWidget {
         ],
       ),
       body: const _RecentUploadsTab(),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _openScanDocument(context),
-        icon: const Icon(Icons.upload_file_outlined),
-        label: Text(l10n.scanDocumentAction),
-      ),
     );
-  }
-
-  Future<void> _openScanDocument(BuildContext context) async {
-    final taskId = await Navigator.of(context).push<String>(
-      MaterialPageRoute<String>(builder: (context) => const ScanDocumentPage()),
-    );
-
-    if (!context.mounted || taskId == null || taskId.isEmpty) {
-      return;
-    }
-
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(context.l10n.scanDocumentQueued)));
   }
 
   Future<void> _refreshHome(BuildContext context, WidgetRef ref) async {
@@ -113,6 +96,8 @@ class _RecentUploadsTabState extends ConsumerState<_RecentUploadsTab> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final layoutMode = ref.watch(documentsLayoutModeProvider);
+    final openingIds = ref.watch(documentOpenControllerProvider);
 
     ref.listen<AsyncValue<List<PaperlessDocument>>>(recentUploadsProvider, (
       previous,
@@ -182,12 +167,83 @@ class _RecentUploadsTabState extends ConsumerState<_RecentUploadsTab> {
                         description: l10n.noUploadsYetDescription,
                       ),
                     for (final document in documents) ...[
-                      PaperlessDocumentCard(
-                        document: document,
-                        onTap: () =>
-                            _openDocumentDetails(context, ref, document),
+                      if (layoutMode == DocumentsLayoutMode.card)
+                        PaperlessDocumentCard(
+                          document: document,
+                          onTap: () =>
+                              _openDocumentDetails(context, ref, document),
+                          footer: Row(
+                            children: [
+                              SizedBox(
+                                width: 148,
+                                child: FilledButton(
+                                  onPressed: openingIds.contains(document.id)
+                                      ? null
+                                      : () => _openDocument(
+                                          context,
+                                          ref,
+                                          document,
+                                        ),
+                                  style: FilledButton.styleFrom(
+                                    minimumSize: const Size.fromHeight(58),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 18,
+                                      vertical: 12,
+                                    ),
+                                    shape: const StadiumBorder(),
+                                    textStyle: Theme.of(context)
+                                        .textTheme
+                                        .labelLarge
+                                        ?.copyWith(
+                                          fontWeight: FontWeight.w800,
+                                          letterSpacing: 1.2,
+                                        ),
+                                  ),
+                                  child: Text(
+                                    (openingIds.contains(document.id)
+                                            ? l10n.openingAction
+                                            : l10n.openAction)
+                                        .toUpperCase(),
+                                  ),
+                                ),
+                              ),
+                              const Spacer(),
+                              TextButton(
+                                onPressed: () => _openDocumentDetails(
+                                  context,
+                                  ref,
+                                  document,
+                                ),
+                                style: TextButton.styleFrom(
+                                  foregroundColor: Theme.of(
+                                    context,
+                                  ).colorScheme.primary,
+                                  textStyle: Theme.of(context)
+                                      .textTheme
+                                      .labelLarge
+                                      ?.copyWith(
+                                        fontWeight: FontWeight.w800,
+                                        letterSpacing: 1.2,
+                                      ),
+                                ),
+                                child: Text(l10n.detailsAction.toUpperCase()),
+                              ),
+                            ],
+                          ),
+                        )
+                      else
+                        PaperlessDocumentListItem(
+                          document: document,
+                          onTap: () =>
+                              _openDocumentDetails(context, ref, document),
+                          isOpening: openingIds.contains(document.id),
+                          onOpen: () => _openDocument(context, ref, document),
+                        ),
+                      SizedBox(
+                        height: layoutMode == DocumentsLayoutMode.card
+                            ? 12
+                            : 10,
                       ),
-                      const SizedBox(height: 12),
                     ],
                   ],
                 )
@@ -257,6 +313,27 @@ class _RecentUploadsTabState extends ConsumerState<_RecentUploadsTab> {
         builder: (context) => DocumentDetailPage(documentId: document.id),
       ),
     );
+  }
+
+  Future<void> _openDocument(
+    BuildContext context,
+    WidgetRef ref,
+    PaperlessDocument document,
+  ) async {
+    try {
+      ref.read(recentlyOpenedDocumentsProvider.notifier).record(document);
+      await ref
+          .read(documentOpenControllerProvider.notifier)
+          .openDocument(document);
+    } catch (error) {
+      if (!context.mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(error.toString())));
+    }
   }
 }
 

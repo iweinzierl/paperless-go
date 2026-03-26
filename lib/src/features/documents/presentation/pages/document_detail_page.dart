@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:pdfrx/pdfrx.dart';
 import 'package:paperless_ngx_app/src/features/auth/presentation/providers/current_user_capabilities_provider.dart';
-import 'package:paperless_ngx_app/src/core/presentation/formatters/document_text.dart';
 import 'package:paperless_ngx_app/src/core/presentation/localization/app_localizations_x.dart';
 import 'package:paperless_ngx_app/src/core/presentation/formatters/timestamp_text.dart';
 import 'package:paperless_ngx_app/src/features/app_shell/presentation/providers/app_shell_providers.dart';
-import 'package:paperless_ngx_app/src/features/auth/presentation/controllers/auth_session_controller.dart';
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_document.dart';
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_filter_option.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/providers/document_delete_controller.dart';
@@ -14,7 +13,7 @@ import 'package:paperless_ngx_app/src/features/documents/presentation/providers/
 import 'package:paperless_ngx_app/src/features/documents/presentation/providers/documents_providers.dart';
 import 'package:paperless_ngx_app/src/features/documents/data/repositories/documents_repository.dart';
 
-enum _DocumentDetailAction { delete }
+enum _DocumentDetailAction { openOriginal, delete }
 
 class DocumentDetailPage extends ConsumerWidget {
   const DocumentDetailPage({required this.documentId, super.key});
@@ -41,7 +40,7 @@ class DocumentDetailPage extends ConsumerWidget {
       appBar: AppBar(
         title: Text(context.l10n.documentDetailsTitle),
         actions: [
-          if (canSeeDeleteAction)
+          if (document != null)
             if (isDeleting)
               const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -53,15 +52,34 @@ class DocumentDetailPage extends ConsumerWidget {
               )
             else
               PopupMenuButton<_DocumentDetailAction>(
-                onSelected: (_) => _deleteDocument(context, ref, document),
-                itemBuilder: (context) =>
-                    <PopupMenuEntry<_DocumentDetailAction>>[
+                onSelected: (action) {
+                  switch (action) {
+                    case _DocumentDetailAction.openOriginal:
+                      _openOriginalDocument(context, ref, document);
+                    case _DocumentDetailAction.delete:
+                      _deleteDocument(context, ref, document);
+                  }
+                },
+                itemBuilder: (context) {
+                  final items = <PopupMenuEntry<_DocumentDetailAction>>[
+                    PopupMenuItem<_DocumentDetailAction>(
+                      value: _DocumentDetailAction.openOriginal,
+                      child: Text(context.l10n.openOriginalAction),
+                    ),
+                  ];
+
+                  if (canSeeDeleteAction) {
+                    items.add(
                       PopupMenuItem<_DocumentDetailAction>(
                         value: _DocumentDetailAction.delete,
                         enabled: canDeleteDocument,
                         child: Text(context.l10n.deleteDocumentAction),
                       ),
-                    ],
+                    );
+                  }
+
+                  return items;
+                },
               ),
         ],
       ),
@@ -73,6 +91,27 @@ class DocumentDetailPage extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
       ),
     );
+  }
+
+  Future<void> _openOriginalDocument(
+    BuildContext context,
+    WidgetRef ref,
+    PaperlessDocument document,
+  ) async {
+    try {
+      ref.read(recentlyOpenedDocumentsProvider.notifier).record(document);
+      await ref
+          .read(documentOpenControllerProvider.notifier)
+          .openDocument(document, original: true);
+    } catch (error) {
+      if (!context.mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(error.toString())));
+    }
   }
 
   Future<void> _deleteDocument(
@@ -132,13 +171,36 @@ class DocumentDetailPage extends ConsumerWidget {
   }
 }
 
-class _DocumentDetailBody extends ConsumerWidget {
+class _DocumentDetailBody extends ConsumerStatefulWidget {
   const _DocumentDetailBody({required this.document});
 
   final PaperlessDocument document;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_DocumentDetailBody> createState() =>
+      _DocumentDetailBodyState();
+}
+
+class _DocumentDetailBodyState extends ConsumerState<_DocumentDetailBody> {
+  int _selectedPage = 1;
+
+  @override
+  void didUpdateWidget(covariant _DocumentDetailBody oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.document.id != widget.document.id) {
+      _selectedPage = 1;
+      return;
+    }
+
+    final maxPage = widget.document.pageCount ?? 1;
+    if (_selectedPage > maxPage) {
+      _selectedPage = maxPage;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final document = widget.document;
     final openingIds = ref.watch(documentOpenControllerProvider);
     final capabilities = ref.watch(currentUserCapabilitiesProvider).valueOrNull;
     final isOpening = openingIds.contains(document.id);
@@ -146,239 +208,190 @@ class _DocumentDetailBody extends ConsumerWidget {
         capabilities != null && document.canBeChangedBy(capabilities);
     final theme = Theme.of(context);
     final l10n = context.l10n;
-    final session = ref.watch(authSessionProvider);
     final repository = ref.watch(documentsRepositoryProvider);
     final thumbnailWidget = repository.buildDocumentThumbnailWidget(document);
     final thumbnailImageProvider = repository
         .buildDocumentThumbnailImageProvider(document.id);
+    final effectivePageCount = document.pageCount ?? 1;
+    final selectedPage = _selectedPage > effectivePageCount
+        ? effectivePageCount
+        : _selectedPage;
     final correspondentOptions = ref.watch(correspondentOptionsProvider);
     final documentTypeOptions = ref.watch(documentTypeOptionsProvider);
     final tagOptions = ref.watch(tagOptionsProvider);
-
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-      children: [
-        DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                theme.colorScheme.primaryContainer,
-                theme.colorScheme.surfaceContainerHighest,
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(24),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 52,
-                      height: 52,
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.primary.withValues(
-                          alpha: 0.12,
-                        ),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Icon(
-                        Icons.description_outlined,
-                        color: theme.colorScheme.primary,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            document.title,
-                            style: theme.textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            formatDocumentSubtitle(
-                              l10n: l10n,
-                              localeName: context.localeName,
-                              id: document.id,
-                              added: document.added,
-                              created: document.created,
-                              pageCount: document.pageCount,
-                              archiveSerialNumber: document.archiveSerialNumber,
-                            ),
-                            style: theme.textTheme.bodyMedium,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 12,
-                  children: [
-                    OutlinedButton.icon(
-                      onPressed: canEditMetadata
-                          ? () => _editMetadata(context, ref, document)
-                          : null,
-                      icon: const Icon(Icons.edit_outlined),
-                      label: Text(l10n.editMetadataAction),
-                    ),
-                    FilledButton.icon(
-                      onPressed: isOpening
-                          ? null
-                          : () => _openDocument(context, ref, document),
-                      icon: Icon(
-                        isOpening ? Icons.hourglass_top : Icons.open_in_new,
-                      ),
-                      label: Text(
-                        isOpening
-                            ? l10n.openingAction
-                            : l10n.openDocumentAction,
-                      ),
-                    ),
-                    OutlinedButton.icon(
-                      onPressed: isOpening
-                          ? null
-                          : () => _openDocument(
-                              context,
-                              ref,
-                              document,
-                              original: true,
-                            ),
-                      icon: const Icon(Icons.file_download_outlined),
-                      label: Text(l10n.openOriginalAction),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
+    final correspondentName = _resolveOptionName(
+      correspondentOptions,
+      document.correspondentId,
+    );
+    final documentTypeName = _resolveOptionName(
+      documentTypeOptions,
+      document.documentTypeId,
+    );
+    final tagNames = _resolveTagNames(tagOptions, document.tags);
+    final summaryBadges = <String>[
+      if (correspondentName != null) correspondentName,
+      if (documentTypeName != null) documentTypeName,
+      for (final tagName in tagNames.take(3)) tagName,
+      if (tagNames.length > 3) '+${tagNames.length - 3}',
+    ];
+    final summaryMetadata = <Widget>[
+      if (document.added != null && document.added!.trim().isNotEmpty)
+        _CompactMetadataItem(
+          icon: Icons.calendar_today_outlined,
+          label: _formatMetadataTimestamp(context, document.added)!,
         ),
-        const SizedBox(height: 20),
-        _DetailSection(
-          title: l10n.thumbnailPreviewTitle,
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: AspectRatio(
-                aspectRatio: 16 / 10,
-                child:
-                    thumbnailWidget ??
-                    (thumbnailImageProvider != null
-                        ? Image(
-                            image: thumbnailImageProvider,
-                            fit: BoxFit.cover,
-                          )
-                        : Image.network(
-                            repository
-                                .buildDocumentThumbnailUri(document.id)
-                                .toString(),
-                            headers: repository.buildAuthenticatedHeaders(),
-                            fit: BoxFit.cover,
-                            loadingBuilder: (context, child, loadingProgress) {
-                              if (loadingProgress == null) {
-                                return child;
-                              }
+      if (document.pageCount != null)
+        _CompactMetadataItem(
+          icon: Icons.description_outlined,
+          label: l10n.documentPages(document.pageCount!),
+        ),
+      if (document.mimeType != null && document.mimeType!.trim().isNotEmpty)
+        _CompactMetadataItem(
+          icon: Icons.layers_outlined,
+          label: document.mimeType!,
+        ),
+    ];
 
-                              return ColoredBox(
-                                color: theme.colorScheme.surfaceContainerLow,
-                                child: Center(
-                                  child: CircularProgressIndicator(),
-                                ),
-                              );
-                            },
-                            errorBuilder: (context, error, stackTrace) {
-                              return ColoredBox(
-                                color:
-                                    theme.colorScheme.surfaceContainerHighest,
-                                child: Center(
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(24),
-                                    child: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(
-                                          Icons.image_not_supported_outlined,
-                                          color: theme.colorScheme.primary,
-                                        ),
-                                        const SizedBox(height: 12),
-                                        Text(l10n.noThumbnailPreviewAvailable),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              );
-                            },
-                          )),
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            theme.colorScheme.surface,
+            theme.colorScheme.surfaceContainerHigh,
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+        children: [
+          _DocumentSummaryCard(
+            document: document,
+            badges: summaryBadges,
+            metadata: summaryMetadata,
+          ),
+          const SizedBox(height: 18),
+          FilledButton.icon(
+            onPressed: isOpening
+                ? null
+                : () => _openDocument(context, ref, document),
+            style: FilledButton.styleFrom(
+              minimumSize: const Size.fromHeight(56),
+              shape: const StadiumBorder(),
+              textStyle: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1.0,
               ),
             ),
-            const SizedBox(height: 12),
-            Text(
-              l10n.authenticatedThumbnailRequest(session.serverUrl),
-              style: theme.textTheme.bodySmall,
+            icon: Icon(
+              isOpening ? Icons.hourglass_top : Icons.visibility_outlined,
             ),
-          ],
-        ),
-        const SizedBox(height: 20),
-        _DetailSection(
-          title: l10n.metadataTitle,
-          children: [
-            _DetailRow(
-              label: l10n.fileNameLabel,
-              value: document.preferredFileName,
+            label: Text(
+              (isOpening ? l10n.openingAction : l10n.openDocumentAction)
+                  .toUpperCase(),
             ),
-            _DetailRow(label: l10n.mimeTypeLabel, value: document.mimeType),
-            _DetailRow(
-              label: l10n.createdLabel,
-              value: _formatMetadataTimestamp(context, document.created),
+          ),
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            onPressed: canEditMetadata
+                ? () => _editMetadata(context, ref, document)
+                : null,
+            style: OutlinedButton.styleFrom(
+              minimumSize: const Size.fromHeight(56),
+              shape: const StadiumBorder(),
+              textStyle: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1.0,
+              ),
             ),
-            _DetailRow(
-              label: l10n.addedLabel,
-              value: _formatMetadataTimestamp(context, document.added),
-            ),
-            _DetailRow(
-              label: l10n.pagesLabel,
-              value: document.pageCount?.toString(),
-            ),
-            _DetailRow(
-              label: l10n.archiveSerialNumberLabel,
-              value: document.archiveSerialNumber?.toString(),
-            ),
-            _ResolvedOptionRow(
-              label: l10n.correspondentLabel,
-              optionId: document.correspondentId,
-              options: correspondentOptions,
-              fallbackValue: document.correspondentId?.toString(),
-            ),
-            _ResolvedOptionRow(
-              label: l10n.documentTypeLabel,
-              optionId: document.documentTypeId,
-              options: documentTypeOptions,
-              fallbackValue: document.documentTypeId?.toString(),
-            ),
-            _ResolvedTagsRow(document: document, options: tagOptions),
-          ],
-        ),
-        if (document.content != null &&
-            document.content!.trim().isNotEmpty) ...[
+            icon: const Icon(Icons.edit_outlined),
+            label: Text(l10n.editMetadataAction.toUpperCase()),
+          ),
           const SizedBox(height: 20),
-          _DetailSection(
-            title: l10n.contentPreviewTitle,
+          _PreviewCard(
+            title: l10n.thumbnailPreviewTitle,
+            document: document,
+            pageCount: effectivePageCount,
+            selectedPage: selectedPage,
+            thumbnailWidget: thumbnailWidget,
+            thumbnailImageProvider: thumbnailImageProvider,
+            repository: repository,
+            onSelectPage: (pageNumber) {
+              if (pageNumber == _selectedPage) {
+                return;
+              }
+              setState(() {
+                _selectedPage = pageNumber;
+              });
+            },
+            onPreview: isOpening
+                ? null
+                : () => _openDocument(
+                    context,
+                    ref,
+                    document,
+                    variant: DocumentOpenVariant.preview,
+                  ),
+          ),
+          const SizedBox(height: 20),
+          _MetadataCard(
+            title: l10n.metadataTitle,
             children: [
-              Text(document.content!.trim(), style: theme.textTheme.bodyMedium),
+              _MetadataInfoRow(
+                label: l10n.fileNameLabel,
+                value: document.preferredFileName,
+              ),
+              _MetadataInfoRow(
+                label: l10n.mimeTypeLabel,
+                value: document.mimeType,
+              ),
+              _MetadataInfoRow(
+                label: l10n.createdLabel,
+                value: _formatMetadataTimestamp(context, document.created),
+              ),
+              _MetadataInfoRow(
+                label: l10n.addedLabel,
+                value: _formatMetadataTimestamp(context, document.added),
+              ),
+              _MetadataInfoRow(
+                label: l10n.pagesLabel,
+                value: document.pageCount?.toString(),
+              ),
+              _MetadataInfoRow(
+                label: l10n.archiveSerialNumberLabel,
+                value: document.archiveSerialNumber?.toString(),
+              ),
+              _ResolvedOptionRow(
+                label: l10n.correspondentLabel,
+                optionId: document.correspondentId,
+                options: correspondentOptions,
+                fallbackValue: document.correspondentId?.toString(),
+              ),
+              _ResolvedOptionRow(
+                label: l10n.documentTypeLabel,
+                optionId: document.documentTypeId,
+                options: documentTypeOptions,
+                fallbackValue: document.documentTypeId?.toString(),
+              ),
+              _ResolvedTagsRow(document: document, options: tagOptions),
             ],
           ),
+          if (document.content != null &&
+              document.content!.trim().isNotEmpty) ...[
+            const SizedBox(height: 20),
+            _DetailSection(
+              title: l10n.contentPreviewTitle,
+              children: [
+                Text(
+                  document.content!.trim(),
+                  style: theme.textTheme.bodyMedium?.copyWith(height: 1.55),
+                ),
+              ],
+            ),
+          ],
         ],
-      ],
+      ),
     );
   }
 
@@ -424,6 +437,49 @@ class _DocumentDetailBody extends ConsumerWidget {
       ..hideCurrentSnackBar()
       ..showSnackBar(SnackBar(content: Text(context.l10n.metadataUpdated)));
   }
+}
+
+String? _resolveOptionName(
+  AsyncValue<List<PaperlessFilterOption>> options,
+  int? id,
+) {
+  if (id == null) {
+    return null;
+  }
+
+  return options.maybeWhen(
+    data: (items) {
+      for (final item in items) {
+        if (item.id == id) {
+          return item.name;
+        }
+      }
+      return null;
+    },
+    orElse: () => null,
+  );
+}
+
+List<String> _resolveTagNames(
+  AsyncValue<List<PaperlessFilterOption>> options,
+  List<int> ids,
+) {
+  if (ids.isEmpty) {
+    return const <String>[];
+  }
+
+  return options.maybeWhen(
+    data: (items) {
+      final namesById = <int, String>{
+        for (final item in items) item.id: item.name,
+      };
+      return ids
+          .map((id) => namesById[id])
+          .whereType<String>()
+          .toList(growable: false);
+    },
+    orElse: () => const <String>[],
+  );
 }
 
 class _EditDocumentMetadataPage extends ConsumerStatefulWidget {
@@ -1083,6 +1139,390 @@ String? _formatMetadataTimestamp(BuildContext context, String? value) {
   );
 }
 
+class _DocumentSummaryCard extends StatelessWidget {
+  const _DocumentSummaryCard({
+    required this.document,
+    required this.badges,
+    required this.metadata,
+  });
+
+  final PaperlessDocument document;
+  final List<String> badges;
+  final List<Widget> metadata;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(30),
+        boxShadow: [
+          BoxShadow(
+            color: theme.colorScheme.shadow.withValues(alpha: 0.08),
+            blurRadius: 26,
+            offset: const Offset(0, 14),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(22),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              document.title,
+              style: theme.textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.8,
+                height: 1.05,
+              ),
+            ),
+            if (metadata.isNotEmpty) ...[
+              const SizedBox(height: 14),
+              Wrap(spacing: 10, runSpacing: 10, children: metadata),
+            ],
+            if (badges.isNotEmpty) ...[
+              const SizedBox(height: 18),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: badges
+                    .map((badge) => _StatBadge(label: badge))
+                    .toList(growable: false),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CompactMetadataItem extends StatelessWidget {
+  const _CompactMetadataItem({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest.withValues(
+          alpha: 0.55,
+        ),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 16, color: theme.colorScheme.onSurfaceVariant),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: theme.textTheme.labelLarge?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MetadataCard extends StatelessWidget {
+  const _MetadataCard({required this.title, required this.children});
+
+  final String title;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [
+          BoxShadow(
+            color: theme.colorScheme.shadow.withValues(alpha: 0.05),
+            blurRadius: 18,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.tune_outlined,
+                  size: 20,
+                  color: theme.colorScheme.primary,
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  title,
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.3,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            ...children,
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MetadataInfoRow extends StatelessWidget {
+  const _MetadataInfoRow({required this.label, required this.value});
+
+  final String label;
+  final String? value;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            flex: 4,
+            child: Text(
+              label,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            flex: 6,
+            child: Text(
+              value?.trim().isNotEmpty == true ? value! : '-',
+              textAlign: TextAlign.right,
+              style: theme.textTheme.bodyLarge?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: theme.colorScheme.onSurface,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MetadataTagsRow extends StatelessWidget {
+  const _MetadataTagsRow({required this.label, required this.values});
+
+  final String label;
+  final List<String> values;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 12),
+          if (values.isEmpty)
+            Text(
+              '-',
+              style: theme.textTheme.bodyLarge?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            )
+          else
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: values
+                  .map(
+                    (value) => DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.surfaceContainerHighest
+                            .withValues(alpha: 0.55),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                        child: Text(
+                          value,
+                          style: theme.textTheme.labelLarge?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ),
+                  )
+                  .toList(growable: false),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PreviewCard extends StatelessWidget {
+  const _PreviewCard({
+    required this.title,
+    required this.document,
+    required this.pageCount,
+    required this.selectedPage,
+    required this.thumbnailWidget,
+    required this.thumbnailImageProvider,
+    required this.repository,
+    required this.onSelectPage,
+    required this.onPreview,
+  });
+
+  final String title;
+  final PaperlessDocument document;
+  final int pageCount;
+  final int selectedPage;
+  final Widget? thumbnailWidget;
+  final ImageProvider<Object>? thumbnailImageProvider;
+  final DocumentsRepository repository;
+  final ValueChanged<int> onSelectPage;
+  final VoidCallback? onPreview;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final previewUri = repository.buildDocumentPreviewUri(
+      documentId: document.id,
+    );
+    final headers = repository.buildAuthenticatedHeaders();
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [
+          BoxShadow(
+            color: theme.colorScheme.shadow.withValues(alpha: 0.06),
+            blurRadius: 22,
+            offset: const Offset(0, 12),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.4,
+              ),
+            ),
+            const SizedBox(height: 14),
+            PdfDocumentViewBuilder.uri(
+              previewUri,
+              headers: headers,
+              builder: (context, pdfDocument) {
+                if (pdfDocument == null) {
+                  return _PreviewFallback(
+                    document: document,
+                    thumbnailWidget: thumbnailWidget,
+                    thumbnailImageProvider: thumbnailImageProvider,
+                    repository: repository,
+                    onPreview: onPreview,
+                    aspectRatio: 0.84,
+                  );
+                }
+
+                final effectivePageCount = pdfDocument.pages.length;
+                final effectiveSelectedPage = selectedPage.clamp(
+                  1,
+                  effectivePageCount,
+                );
+
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _PreviewPanel(
+                      pdfDocument: pdfDocument,
+                      selectedPage: effectiveSelectedPage,
+                      onPreview: onPreview,
+                      aspectRatio: 0.84,
+                    ),
+                    const SizedBox(height: 12),
+                    _PagePreviewStrip(
+                      pageCount: effectivePageCount,
+                      selectedPage: effectiveSelectedPage,
+                      pdfDocument: pdfDocument,
+                      onPageSelected: onSelectPage,
+                    ),
+                    const SizedBox(height: 12),
+                    Center(
+                      child: Text(
+                        'PAGE $effectiveSelectedPage OF $effectivePageCount',
+                        style: theme.textTheme.labelLarge?.copyWith(
+                          fontWeight: FontWeight.w800,
+                          color: theme.colorScheme.onSurfaceVariant,
+                          letterSpacing: 0.8,
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
+              loadingBuilder: (context) =>
+                  _PreviewLoadingState(onPreview: onPreview, aspectRatio: 0.84),
+              errorBuilder: (context, error, stackTrace) => _PreviewFallback(
+                document: document,
+                thumbnailWidget: thumbnailWidget,
+                thumbnailImageProvider: thumbnailImageProvider,
+                repository: repository,
+                onPreview: onPreview,
+                aspectRatio: 0.84,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _ResolvedOptionRow extends StatelessWidget {
   const _ResolvedOptionRow({
     required this.label,
@@ -1105,15 +1545,17 @@ class _ResolvedOptionRow extends StatelessWidget {
     return options.when(
       data: (items) {
         final match = items.where((item) => item.id == optionId).firstOrNull;
-        return _DetailRow(
+        return _MetadataInfoRow(
           label: label,
           value: match?.name ?? fallbackValue ?? optionId.toString(),
         );
       },
-      error: (error, stackTrace) =>
-          _DetailRow(label: label, value: fallbackValue ?? optionId.toString()),
+      error: (error, stackTrace) => _MetadataInfoRow(
+        label: label,
+        value: fallbackValue ?? optionId.toString(),
+      ),
       loading: () =>
-          _DetailRow(label: label, value: context.l10n.loadingStatus),
+          _MetadataInfoRow(label: label, value: context.l10n.loadingStatus),
     );
   }
 }
@@ -1754,18 +2196,15 @@ class _ResolvedTagsRow extends StatelessWidget {
                   '#$tagId',
             )
             .toList();
-        return _DetailRow(
-          label: context.l10n.tagsLabel,
-          value: names.join(', '),
-        );
+        return _MetadataTagsRow(label: context.l10n.tagsLabel, values: names);
       },
-      error: (error, stackTrace) => _DetailRow(
+      error: (error, stackTrace) => _MetadataTagsRow(
         label: context.l10n.tagsLabel,
-        value: document.tags.join(', '),
+        values: document.tags.map((tagId) => tagId.toString()).toList(),
       ),
-      loading: () => _DetailRow(
+      loading: () => _MetadataTagsRow(
         label: context.l10n.tagsLabel,
-        value: context.l10n.loadingStatus,
+        values: [context.l10n.loadingStatus],
       ),
     );
   }
@@ -1784,14 +2223,15 @@ class _DetailSection extends StatelessWidget {
     return Card(
       margin: EdgeInsets.zero,
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(22),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               title,
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.4,
               ),
             ),
             const SizedBox(height: 16),
@@ -1803,61 +2243,379 @@ class _DetailSection extends StatelessWidget {
   }
 }
 
-class _DetailRow extends StatelessWidget {
-  const _DetailRow({required this.label, required this.value});
+class _StatBadge extends StatelessWidget {
+  const _StatBadge({required this.label});
 
   final String label;
-  final String? value;
 
   @override
   Widget build(BuildContext context) {
-    if (value == null || value!.trim().isEmpty) {
-      return const SizedBox.shrink();
-    }
-
     final theme = Theme.of(context);
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+        child: Text(
+          label,
+          style: theme.textTheme.labelMedium?.copyWith(
+            color: theme.colorScheme.onSurface,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ),
+    );
+  }
+}
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final useStackedLayout = constraints.maxWidth < 420;
+class _PreviewPanel extends StatelessWidget {
+  const _PreviewPanel({
+    required this.pdfDocument,
+    required this.selectedPage,
+    required this.onPreview,
+    this.aspectRatio = 16 / 11,
+  });
 
-          if (useStackedLayout) {
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(value!, style: theme.textTheme.bodyMedium),
-              ],
-            );
-          }
+  final PdfDocument pdfDocument;
+  final int selectedPage;
+  final VoidCallback? onPreview;
+  final double aspectRatio;
 
-          return Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(
-                width: 160,
-                child: Text(
-                  label,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(22),
+          child: AspectRatio(
+            aspectRatio: aspectRatio,
+            child: ColoredBox(
+              color: Colors.white,
+              child: Padding(
+                padding: const EdgeInsets.all(10),
+                child: PdfPageView(
+                  key: ValueKey<int>(selectedPage),
+                  document: pdfDocument,
+                  pageNumber: selectedPage,
+                  alignment: Alignment.topCenter,
+                  decoration: const BoxDecoration(color: Colors.white),
+                  backgroundColor: Colors.white,
                 ),
               ),
-              Expanded(child: Text(value!, style: theme.textTheme.bodyMedium)),
-            ],
+            ),
+          ),
+        ),
+        Positioned(
+          right: 12,
+          bottom: 12,
+          child: FilledButton.tonalIcon(
+            onPressed: onPreview,
+            style: FilledButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            ),
+            icon: const Icon(Icons.search),
+            label: Text(context.l10n.openAction.toUpperCase()),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _PagePreviewStrip extends StatelessWidget {
+  const _PagePreviewStrip({
+    required this.pageCount,
+    required this.selectedPage,
+    required this.pdfDocument,
+    required this.onPageSelected,
+  });
+
+  final int pageCount;
+  final int selectedPage;
+  final PdfDocument pdfDocument;
+  final ValueChanged<int> onPageSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 142,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: pageCount,
+        separatorBuilder: (context, index) => const SizedBox(width: 12),
+        itemBuilder: (context, index) {
+          return _PagePreviewTile(
+            pageNumber: index + 1,
+            selected: selectedPage == index + 1,
+            pdfDocument: pdfDocument,
+            onTap: () => onPageSelected(index + 1),
           );
         },
       ),
+    );
+  }
+}
+
+class _PagePreviewTile extends StatelessWidget {
+  const _PagePreviewTile({
+    required this.pageNumber,
+    required this.selected,
+    required this.pdfDocument,
+    required this.onTap,
+  });
+
+  final int pageNumber;
+  final bool selected;
+  final PdfDocument pdfDocument;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return SizedBox(
+      width: 98,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(18),
+                onTap: onTap,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(18),
+                    border: selected
+                        ? Border.all(color: theme.colorScheme.primary, width: 2)
+                        : null,
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: ColoredBox(
+                      color: Colors.white,
+                      child: Padding(
+                        padding: const EdgeInsets.all(6),
+                        child: PdfPageView(
+                          key: ValueKey<int>(pageNumber),
+                          document: pdfDocument,
+                          pageNumber: pageNumber,
+                          alignment: Alignment.topCenter,
+                          decoration: const BoxDecoration(color: Colors.white),
+                          backgroundColor: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Center(
+            child: Text(
+              context.l10n.scannedPageLabel(pageNumber),
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: selected
+                    ? theme.colorScheme.primary
+                    : theme.colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PreviewLoadingState extends StatelessWidget {
+  const _PreviewLoadingState({
+    required this.onPreview,
+    required this.aspectRatio,
+  });
+
+  final VoidCallback? onPreview;
+  final double aspectRatio;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(22),
+          child: AspectRatio(
+            aspectRatio: aspectRatio,
+            child: const ColoredBox(
+              color: Colors.white,
+              child: Center(child: CircularProgressIndicator()),
+            ),
+          ),
+        ),
+        Positioned(
+          right: 12,
+          bottom: 12,
+          child: FilledButton.tonalIcon(
+            onPressed: onPreview,
+            style: FilledButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            ),
+            icon: const Icon(Icons.search),
+            label: Text(context.l10n.openAction.toUpperCase()),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _PreviewFallback extends StatelessWidget {
+  const _PreviewFallback({
+    required this.document,
+    required this.thumbnailWidget,
+    required this.thumbnailImageProvider,
+    required this.repository,
+    required this.onPreview,
+    required this.aspectRatio,
+  });
+
+  final PaperlessDocument document;
+  final Widget? thumbnailWidget;
+  final ImageProvider<Object>? thumbnailImageProvider;
+  final DocumentsRepository repository;
+  final VoidCallback? onPreview;
+  final double aspectRatio;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final pageCount = document.pageCount ?? 0;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _ThumbnailFallbackPanel(
+          document: document,
+          thumbnailWidget: thumbnailWidget,
+          thumbnailImageProvider: thumbnailImageProvider,
+          repository: repository,
+          onPreview: onPreview,
+          aspectRatio: aspectRatio,
+        ),
+        if (pageCount > 0) ...[
+          const SizedBox(height: 12),
+          Center(
+            child: Text(
+              '$pageCount page${pageCount == 1 ? '' : 's'}',
+              style: theme.textTheme.labelLarge?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _ThumbnailFallbackPanel extends StatelessWidget {
+  const _ThumbnailFallbackPanel({
+    required this.document,
+    required this.thumbnailWidget,
+    required this.thumbnailImageProvider,
+    required this.repository,
+    required this.onPreview,
+    required this.aspectRatio,
+  });
+
+  final PaperlessDocument document;
+  final Widget? thumbnailWidget;
+  final ImageProvider<Object>? thumbnailImageProvider;
+  final DocumentsRepository repository;
+  final VoidCallback? onPreview;
+  final double aspectRatio;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(22),
+          child: AspectRatio(
+            aspectRatio: aspectRatio,
+            child:
+                thumbnailWidget ??
+                (thumbnailImageProvider != null
+                    ? Image(image: thumbnailImageProvider!, fit: BoxFit.cover)
+                    : _DocumentThumbnailImage(
+                        imageUri: repository.buildDocumentThumbnailUri(
+                          document.id,
+                        ),
+                        headers: repository.buildAuthenticatedHeaders(),
+                      )),
+          ),
+        ),
+        Positioned(
+          right: 12,
+          bottom: 12,
+          child: FilledButton.tonalIcon(
+            onPressed: onPreview,
+            style: FilledButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            ),
+            icon: const Icon(Icons.search),
+            label: Text(context.l10n.openAction.toUpperCase()),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _DocumentThumbnailImage extends StatelessWidget {
+  const _DocumentThumbnailImage({
+    required this.imageUri,
+    required this.headers,
+  });
+
+  final Uri imageUri;
+  final Map<String, String> headers;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Image.network(
+      imageUri.toString(),
+      headers: headers,
+      fit: BoxFit.cover,
+      loadingBuilder: (context, child, loadingProgress) {
+        if (loadingProgress == null) {
+          return child;
+        }
+
+        return ColoredBox(
+          color: theme.colorScheme.surfaceContainerLow,
+          child: const Center(child: CircularProgressIndicator()),
+        );
+      },
+      errorBuilder: (context, error, stackTrace) {
+        return ColoredBox(
+          color: theme.colorScheme.primary.withValues(alpha: 0.72),
+          child: Center(
+            child: Icon(
+              Icons.description_outlined,
+              size: 72,
+              color: theme.colorScheme.onPrimary,
+            ),
+          ),
+        );
+      },
     );
   }
 }

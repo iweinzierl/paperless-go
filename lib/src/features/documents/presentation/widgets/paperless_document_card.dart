@@ -25,6 +25,7 @@ class PaperlessDocumentCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final l10n = context.l10n;
+    final colorScheme = theme.colorScheme;
     final repository = ref.watch(documentsRepositoryProvider);
     final thumbnailWidget = repository.buildDocumentThumbnailWidget(document);
     final thumbnailImageProvider = repository
@@ -42,169 +43,117 @@ class PaperlessDocumentCard extends ConsumerWidget {
       document.tags,
     );
     final createdLabel = _formatTimestamp(context, document.created);
-    final addedLabel = _formatTimestamp(context, document.added);
-    final metadataLabels = <Widget>[
+    final metadata = <Widget>[
       if (createdLabel != null)
-        _MetadataPill(
-          icon: Icons.event_outlined,
-          label: l10n.createdLabel,
-          value: createdLabel,
-        ),
+        _MetadataItem(icon: Icons.event_outlined, label: createdLabel),
       if (document.pageCount != null)
-        _MetadataPill(
-          icon: Icons.layers_outlined,
+        _MetadataItem(
+          icon: Icons.description_outlined,
           label: l10n.documentPages(document.pageCount!),
-        ),
-      if (document.archiveSerialNumber != null)
-        _MetadataPill(
-          icon: Icons.confirmation_number_outlined,
-          label: l10n.archiveSerialNumberLabel,
-          value: document.archiveSerialNumber.toString(),
-        ),
-      if (createdLabel == null && addedLabel != null)
-        _MetadataPill(
-          icon: Icons.schedule_outlined,
-          label: l10n.addedLabel,
-          value: addedLabel,
         ),
     ];
 
     return Card(
       margin: EdgeInsets.zero,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-        side: BorderSide(
-          color: theme.colorScheme.outline.withValues(alpha: 0.12),
-        ),
-      ),
+      elevation: 0,
+      color: colorScheme.surfaceContainerLow,
+      surfaceTintColor: Colors.transparent,
+      shadowColor: colorScheme.shadow.withValues(alpha: 0.08),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(34)),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(18),
-                    child: SizedBox(
-                      width: 88,
-                      height: 116,
-                      child:
-                          thumbnailWidget ??
-                          (thumbnailImageProvider != null
-                              ? Image(
-                                  image: thumbnailImageProvider,
-                                  fit: BoxFit.cover,
-                                )
-                              : Image.network(
-                                  repository
-                                      .buildDocumentThumbnailUri(document.id)
-                                      .toString(),
-                                  headers: repository
-                                      .buildAuthenticatedHeaders(),
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return _ThumbnailFallback(
-                                      document: document,
+              ClipRRect(
+                borderRadius: BorderRadius.circular(24),
+                child: AspectRatio(
+                  aspectRatio: 1.52,
+                  child:
+                      thumbnailWidget ??
+                      (thumbnailImageProvider != null
+                          ? Image(
+                              image: thumbnailImageProvider,
+                              fit: BoxFit.cover,
+                            )
+                          : Image.network(
+                              repository
+                                  .buildDocumentThumbnailUri(document.id)
+                                  .toString(),
+                              headers: repository.buildAuthenticatedHeaders(),
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return _ThumbnailFallback(document: document);
+                              },
+                              loadingBuilder:
+                                  (context, child, loadingProgress) {
+                                    if (loadingProgress == null) {
+                                      return child;
+                                    }
+
+                                    return ColoredBox(
+                                      color: colorScheme.surfaceContainerHigh,
+                                      child: const Center(
+                                        child: CircularProgressIndicator(),
+                                      ),
                                     );
                                   },
-                                  loadingBuilder:
-                                      (context, child, loadingProgress) {
-                                        if (loadingProgress == null) {
-                                          return child;
-                                        }
-
-                                        return ColoredBox(
-                                          color: theme
-                                              .colorScheme
-                                              .surfaceContainerHigh,
-                                          child: const Center(
-                                            child: CircularProgressIndicator(),
-                                          ),
-                                        );
-                                      },
-                                )),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: Text(
-                                document.title,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: theme.textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                  color: theme.colorScheme.onSurface,
-                                  height: 1.2,
-                                ),
-                              ),
-                            ),
-                            if (trailingLabel != null) ...[
-                              const SizedBox(width: 12),
-                              _StatusChip(label: trailingLabel!),
-                            ],
-                          ],
-                        ),
-                        const SizedBox(height: 10),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: [
-                            if (correspondentName != null)
-                              _EntityChip(
-                                icon: Icons.person_outline,
-                                label: correspondentName,
-                              ),
-                            if (documentTypeName != null)
-                              _EntityChip(
-                                icon: Icons.category_outlined,
-                                label: documentTypeName,
-                              ),
-                          ],
-                        ),
-                        if (metadataLabels.isNotEmpty) ...[
-                          const SizedBox(height: 10),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: metadataLabels,
-                          ),
-                        ],
-                        if (tagNames.isNotEmpty) ...[
-                          const SizedBox(height: 10),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: [
-                              for (final tagName in tagNames.take(3))
-                                _TagChip(label: tagName),
-                              if (tagNames.length > 3)
-                                _TagChip(
-                                  label:
-                                      '+${tagNames.length - 3} ${l10n.tagsLabel.toLowerCase()}',
-                                ),
-                            ],
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                ],
+                            )),
+                ),
               ),
-              if (footer != null) ...[
-                const SizedBox(height: 14),
-                Align(alignment: Alignment.centerRight, child: footer),
+              const SizedBox(height: 18),
+              Text(
+                document.title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.9,
+                  height: 1.05,
+                ),
+              ),
+              const SizedBox(height: 16),
+              if (correspondentName != null || documentTypeName != null)
+                Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: [
+                    if (correspondentName != null)
+                      _SoftChip(label: correspondentName, emphasized: true),
+                    if (documentTypeName != null)
+                      _SoftChip(label: documentTypeName),
+                  ],
+                ),
+              if (tagNames.isNotEmpty) ...[
+                const SizedBox(height: 10),
+                Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: [
+                    for (final tagName in tagNames.take(2))
+                      _SoftChip(label: tagName),
+                    if (tagNames.length > 2)
+                      _SoftChip(label: '+${tagNames.length - 2}'),
+                  ],
+                ),
+              ],
+              if (metadata.isNotEmpty) ...[
+                const SizedBox(height: 18),
+                Wrap(spacing: 20, runSpacing: 10, children: metadata),
+              ],
+              if (footer != null || trailingLabel != null) ...[
+                const SizedBox(height: 18),
+                if (footer != null)
+                  footer!
+                else if (trailingLabel != null)
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: _TrailingLabel(label: trailingLabel!),
+                  ),
               ],
             ],
           ),
@@ -282,79 +231,65 @@ class _ThumbnailFallback extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            theme.colorScheme.primaryContainer,
-            theme.colorScheme.surfaceContainerHighest,
+            theme.colorScheme.primary.withValues(alpha: 0.85),
+            theme.colorScheme.primary.withValues(alpha: 0.55),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
       ),
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Icon(
+            Icons.description_outlined,
+            size: 52,
+            color: theme.colorScheme.onPrimary,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SoftChip extends StatelessWidget {
+  const _SoftChip({required this.label, this.emphasized = false});
+
+  final String label;
+  final bool emphasized;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final backgroundColor = emphasized
+        ? theme.colorScheme.secondaryContainer.withValues(alpha: 0.9)
+        : theme.colorScheme.surfaceContainerHigh;
+    final foregroundColor = emphasized
+        ? theme.colorScheme.onSecondaryContainer
+        : theme.colorScheme.onSurfaceVariant;
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(18),
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: 34,
-              height: 34,
-              decoration: BoxDecoration(
-                color: theme.colorScheme.primary.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              alignment: Alignment.center,
-              child: Icon(
-                Icons.description_outlined,
-                color: theme.colorScheme.primary,
-              ),
-            ),
-            const Spacer(),
-            Text(
-              '#${document.id}',
-              style: theme.textTheme.labelMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              document.preferredFileName,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.bodySmall?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: theme.colorScheme.onSurface,
-              ),
-            ),
-          ],
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+        child: Text(
+          label.toUpperCase(),
+          style: theme.textTheme.labelMedium?.copyWith(
+            color: foregroundColor,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.9,
+          ),
         ),
       ),
     );
   }
 }
 
-class _StatusChip extends StatelessWidget {
-  const _StatusChip({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Chip(
-      label: Text(label),
-      side: BorderSide.none,
-      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      visualDensity: VisualDensity.compact,
-      backgroundColor: theme.colorScheme.primaryContainer,
-      labelStyle: theme.textTheme.labelMedium?.copyWith(
-        color: theme.colorScheme.onPrimaryContainer,
-        fontWeight: FontWeight.w700,
-      ),
-    );
-  }
-}
-
-class _EntityChip extends StatelessWidget {
-  const _EntityChip({required this.icon, required this.label});
+class _MetadataItem extends StatelessWidget {
+  const _MetadataItem({required this.icon, required this.label});
 
   final IconData icon;
   final String label;
@@ -362,74 +297,37 @@ class _EntityChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Chip(
-      avatar: Icon(icon, size: 16, color: theme.colorScheme.onSurfaceVariant),
-      label: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 180),
-        child: Text(label, overflow: TextOverflow.ellipsis),
-      ),
-      side: BorderSide.none,
-      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      visualDensity: VisualDensity.compact,
-      backgroundColor: theme.colorScheme.surfaceContainerHighest,
-      labelStyle: theme.textTheme.labelLarge?.copyWith(
-        color: theme.colorScheme.onSurface,
-      ),
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 20, color: theme.colorScheme.onSurfaceVariant),
+        const SizedBox(width: 8),
+        Text(
+          label,
+          style: theme.textTheme.titleMedium?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
     );
   }
 }
 
-class _MetadataPill extends StatelessWidget {
-  const _MetadataPill({required this.icon, required this.label, this.value});
-
-  final IconData icon;
-  final String label;
-  final String? value;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final text = value == null ? label : '$label: $value';
-    return Tooltip(
-      message: text,
-      child: Chip(
-        avatar: Icon(icon, size: 16, color: theme.colorScheme.onSurfaceVariant),
-        label: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 150),
-          child: Text(text, maxLines: 1, overflow: TextOverflow.ellipsis),
-        ),
-        side: BorderSide(
-          color: theme.colorScheme.outline.withValues(alpha: 0.16),
-        ),
-        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-        visualDensity: VisualDensity.compact,
-        backgroundColor: Colors.transparent,
-        labelStyle: theme.textTheme.labelMedium?.copyWith(
-          color: theme.colorScheme.onSurfaceVariant,
-        ),
-      ),
-    );
-  }
-}
-
-class _TagChip extends StatelessWidget {
-  const _TagChip({required this.label});
+class _TrailingLabel extends StatelessWidget {
+  const _TrailingLabel({required this.label});
 
   final String label;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Chip(
-      label: Text(label),
-      side: BorderSide.none,
-      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      visualDensity: VisualDensity.compact,
-      backgroundColor: theme.colorScheme.secondaryContainer.withValues(
-        alpha: 0.7,
-      ),
-      labelStyle: theme.textTheme.labelMedium?.copyWith(
-        color: theme.colorScheme.onSecondaryContainer,
+    return Text(
+      label,
+      style: theme.textTheme.labelLarge?.copyWith(
+        color: theme.colorScheme.primary,
+        fontWeight: FontWeight.w800,
+        letterSpacing: 0.8,
       ),
     );
   }

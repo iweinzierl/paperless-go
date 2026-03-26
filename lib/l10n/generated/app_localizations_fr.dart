@@ -15,6 +15,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get navigationHome => 'Accueil';
 
   @override
+  String get navigationLibrary => 'Bibliothèque';
+
+  @override
   String get navigationDocuments => 'Documents';
 
   @override
@@ -22,6 +25,9 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get navigationInbox => 'Boîte de réception';
+
+  @override
+  String get navigationProfile => 'Profil';
 
   @override
   String get navigationReview => 'Vérifier';
@@ -424,6 +430,12 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get couldNotLoadReviewQueueDescription =>
       'L\'application ne peut pas charger pour le moment les documents de la boîte de réception à vérifier.';
+
+  @override
+  String get drawerMainMenu => 'Menu principal';
+
+  @override
+  String get drawerCategories => 'Catégories';
 
   @override
   String get drawerRecentlyOpened => 'Récemment ouverts';

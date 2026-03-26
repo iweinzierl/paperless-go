@@ -161,6 +161,14 @@ class ScreenshotDocumentsRepository extends DocumentsRepository {
   }
 
   @override
+  Uri buildDocumentPreviewUri({
+    required int documentId,
+    bool original = false,
+  }) {
+    return Uri.parse('file:///preview-not-available-$documentId.pdf');
+  }
+
+  @override
   ImageProvider<Object>? buildDocumentThumbnailImageProvider(int documentId) {
     return null;
   }

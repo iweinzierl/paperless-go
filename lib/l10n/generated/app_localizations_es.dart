@@ -15,6 +15,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get navigationHome => 'Inicio';
 
   @override
+  String get navigationLibrary => 'Biblioteca';
+
+  @override
   String get navigationDocuments => 'Documentos';
 
   @override
@@ -22,6 +25,9 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get navigationInbox => 'Bandeja de entrada';
+
+  @override
+  String get navigationProfile => 'Perfil';
 
   @override
   String get navigationReview => 'Revisar';
@@ -424,6 +430,12 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get couldNotLoadReviewQueueDescription =>
       'La aplicación no puede cargar ahora mismo los documentos de la bandeja de entrada para revisión.';
+
+  @override
+  String get drawerMainMenu => 'Menú principal';
+
+  @override
+  String get drawerCategories => 'Categorías';
 
   @override
   String get drawerRecentlyOpened => 'Abiertos recientemente';

@@ -2,23 +2,24 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:paperless_ngx_app/src/core/presentation/localization/app_localizations_x.dart';
 import 'package:paperless_ngx_app/src/core/data/local/sync_status_preferences.dart';
-import 'package:paperless_ngx_app/src/core/providers/sync_status_preferences_provider.dart';
+import 'package:paperless_ngx_app/src/core/presentation/localization/app_localizations_x.dart';
 import 'package:paperless_ngx_app/src/core/presentation/widgets/refresh_status_text.dart';
+import 'package:paperless_ngx_app/src/core/providers/sync_status_preferences_provider.dart';
 import 'package:paperless_ngx_app/src/features/app_shell/presentation/providers/app_shell_providers.dart';
 import 'package:paperless_ngx_app/src/features/app_shell/presentation/widgets/app_drawer.dart';
-import 'package:paperless_ngx_app/src/features/auth/presentation/controllers/auth_session_controller.dart';
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_document.dart';
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_document_page.dart';
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_filter_option.dart';
+import 'package:paperless_ngx_app/src/features/documents/presentation/models/documents_filter_state.dart';
+import 'package:paperless_ngx_app/src/features/documents/presentation/models/documents_layout_mode.dart';
+import 'package:paperless_ngx_app/src/features/documents/presentation/models/documents_sort_option.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/pages/document_detail_page.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/pages/documents_filters_page.dart';
-import 'package:paperless_ngx_app/src/features/documents/presentation/models/documents_filter_state.dart';
-import 'package:paperless_ngx_app/src/features/documents/presentation/models/documents_sort_option.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/providers/document_open_controller.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/providers/documents_providers.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/widgets/paperless_document_card.dart';
+import 'package:paperless_ngx_app/src/features/documents/presentation/widgets/paperless_document_list_item.dart';
 
 class DocumentsPage extends ConsumerStatefulWidget {
   const DocumentsPage({this.openDrawerOnLoad = false, super.key});
@@ -32,6 +33,7 @@ class DocumentsPage extends ConsumerStatefulWidget {
 class _DocumentsPageState extends ConsumerState<DocumentsPage> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   late final TextEditingController _searchController;
+  late final FocusNode _searchFocusNode;
   DateTime? _lastUpdatedAt;
   DateTime? _lastRefreshFailedAt;
 
@@ -39,6 +41,7 @@ class _DocumentsPageState extends ConsumerState<DocumentsPage> {
   void initState() {
     super.initState();
     _searchController = TextEditingController();
+    _searchFocusNode = FocusNode();
     _lastUpdatedAt = ref
         .read(syncStatusPreferencesProvider)
         .readLastSuccessfulSync(SyncStatusScope.documents);
@@ -56,11 +59,13 @@ class _DocumentsPageState extends ConsumerState<DocumentsPage> {
   @override
   void dispose() {
     _searchController.dispose();
+    _searchFocusNode.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final l10n = context.l10n;
 
     ref.listen<AsyncValue<PaperlessDocumentPage>>(documentsPageProvider, (
@@ -94,10 +99,11 @@ class _DocumentsPageState extends ConsumerState<DocumentsPage> {
 
     final documentsPage = ref.watch(documentsPageProvider);
     final page = documentsPage.valueOrNull;
-    final session = ref.watch(authSessionProvider);
     final query = ref.watch(documentsSearchQueryProvider);
     final ordering = ref.watch(documentsOrderingProvider);
     final filterState = ref.watch(documentsFilterStateProvider);
+    final layoutMode = ref.watch(documentsLayoutModeProvider);
+    final activeFilterCount = _activeFilterCount(filterState, ordering);
 
     _syncController(query);
 
@@ -105,148 +111,182 @@ class _DocumentsPageState extends ConsumerState<DocumentsPage> {
       key: _scaffoldKey,
       drawer: const AppDrawer(),
       appBar: AppBar(
-        title: Text(l10n.documentsTitle),
+        titleSpacing: 0,
+        title: Text(l10n.appTitle),
         actions: [
           IconButton(
-            tooltip: l10n.refreshDocumentsTooltip,
-            onPressed: documentsPage.isRefreshing
-                ? null
-                : () => _handleManualRefresh(context),
-            icon: const Icon(Icons.refresh),
+            tooltip: l10n.searchByTitleHint,
+            onPressed: () => _searchFocusNode.requestFocus(),
+            icon: const Icon(Icons.search),
           ),
-          IconButton(
-            tooltip: l10n.logoutTooltip,
-            onPressed: () => ref.read(authSessionProvider.notifier).signOut(),
-            icon: const Icon(Icons.logout),
-          ),
+          const SizedBox(width: 8),
         ],
       ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+      body: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              theme.colorScheme.surface,
+              theme.colorScheme.surfaceContainerHigh,
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 10),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(0, 8, 0, 4),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _searchController,
-                        textInputAction: TextInputAction.search,
-                        onSubmitted: _submitSearch,
-                        decoration: InputDecoration(
-                          hintText: l10n.searchByTitleHint,
-                          prefixIcon: const Icon(Icons.search),
-                          suffixIcon: query.isNotEmpty
-                              ? IconButton(
-                                  tooltip: l10n.clearSearchTooltip,
-                                  onPressed: _clearSearch,
-                                  icon: const Icon(Icons.close),
-                                )
-                              : null,
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _searchController,
+                            focusNode: _searchFocusNode,
+                            textInputAction: TextInputAction.search,
+                            onSubmitted: _submitSearch,
+                            decoration: InputDecoration(
+                              hintText: l10n.searchByTitleHint,
+                              prefixIcon: const Icon(Icons.search),
+                              suffixIcon: query.isNotEmpty
+                                  ? IconButton(
+                                      tooltip: l10n.clearSearchTooltip,
+                                      onPressed: _clearSearch,
+                                      icon: const Icon(Icons.close),
+                                    )
+                                  : null,
+                            ),
+                          ),
                         ),
-                      ),
+                        const SizedBox(width: 12),
+                        IconButton.filledTonal(
+                          onPressed: () => _updateLayoutMode(
+                            layoutMode == DocumentsLayoutMode.card
+                                ? DocumentsLayoutMode.list
+                                : DocumentsLayoutMode.card,
+                          ),
+                          style: IconButton.styleFrom(
+                            minimumSize: const Size(56, 56),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                          ),
+                          icon: Icon(
+                            layoutMode == DocumentsLayoutMode.card
+                                ? Icons.view_list_rounded
+                                : Icons.dashboard_customize_rounded,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        IconButton.filledTonal(
+                          tooltip: l10n.filtersTooltip,
+                          onPressed: () => _openFilters(context),
+                          style: IconButton.styleFrom(
+                            minimumSize: const Size(56, 56),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                          ),
+                          icon: Badge.count(
+                            isLabelVisible: activeFilterCount > 0,
+                            count: activeFilterCount,
+                            child: const Icon(Icons.tune),
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 12),
-                    IconButton.filledTonal(
-                      tooltip: l10n.filtersTooltip,
-                      onPressed: () => _openFilters(context),
-                      icon: Badge.count(
-                        isLabelVisible:
-                            _activeFilterCount(filterState, ordering) > 0,
-                        count: _activeFilterCount(filterState, ordering),
-                        child: const Icon(Icons.tune),
+                    if (activeFilterCount > 0) ...[
+                      const SizedBox(height: 14),
+                      _ActiveDocumentsControls(
+                        filterState: filterState,
+                        ordering: ordering,
+                        onRemoveTag: (tagId) => _updateFilters(
+                          filterState.copyWith(
+                            tagIds: filterState.tagIds
+                                .where((currentTagId) => currentTagId != tagId)
+                                .toList(growable: false),
+                            clearTag: filterState.tagIds.length == 1,
+                          ),
+                        ),
+                        onClearCorrespondent:
+                            filterState.correspondentId != null
+                            ? () => _updateFilters(
+                                filterState.copyWith(clearCorrespondent: true),
+                              )
+                            : null,
+                        onClearDocumentType: filterState.documentTypeId != null
+                            ? () => _updateFilters(
+                                filterState.copyWith(clearDocumentType: true),
+                              )
+                            : null,
+                        onResetOrdering:
+                            ordering != documentsSortOptions.first.ordering
+                            ? () => _updateOrdering(
+                                documentsSortOptions.first.ordering,
+                              )
+                            : null,
                       ),
+                    ],
+                    const SizedBox(height: 12),
+                    RefreshStatusText(
+                      lastUpdatedAt: _lastUpdatedAt,
+                      isRefreshing: documentsPage.isRefreshing,
+                      lastRefreshFailedAt: _lastRefreshFailedAt,
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
-                _ActiveDocumentsControls(
-                  filterState: filterState,
-                  ordering: ordering,
-                  onRemoveTag: (tagId) => _updateFilters(
-                    filterState.copyWith(
-                      tagIds: filterState.tagIds
-                          .where((currentTagId) => currentTagId != tagId)
-                          .toList(growable: false),
-                      clearTag: filterState.tagIds.length == 1,
-                    ),
-                  ),
-                  onClearCorrespondent: filterState.correspondentId != null
-                      ? () => _updateFilters(
-                          filterState.copyWith(clearCorrespondent: true),
-                        )
-                      : null,
-                  onClearDocumentType: filterState.documentTypeId != null
-                      ? () => _updateFilters(
-                          filterState.copyWith(clearDocumentType: true),
-                        )
-                      : null,
-                  onResetOrdering:
-                      ordering != documentsSortOptions.first.ordering
-                      ? () =>
-                            _updateOrdering(documentsSortOptions.first.ordering)
-                      : null,
-                ),
-                if (_activeFilterCount(filterState, ordering) > 0)
-                  const SizedBox(height: 12),
-                Text(
-                  l10n.connectedToServer(session.serverUrl),
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-                const SizedBox(height: 4),
-                RefreshStatusText(
-                  lastUpdatedAt: _lastUpdatedAt,
-                  isRefreshing: documentsPage.isRefreshing,
-                  lastRefreshFailedAt: _lastRefreshFailedAt,
-                ),
-              ],
+              ),
             ),
-          ),
-          Expanded(
-            child: Stack(
-              children: [
-                RefreshIndicator(
-                  onRefresh: _refreshDocumentsPage,
-                  child: page != null
-                      ? _DocumentsList(
-                          page: page,
-                          onPreviousPage:
-                              page.count > 0 &&
-                                  ref.read(documentsCurrentPageProvider) > 1
-                              ? () => _goToPage(
-                                  ref.read(documentsCurrentPageProvider) - 1,
-                                )
-                              : null,
-                          onNextPage:
-                              (ref.read(documentsCurrentPageProvider) * 20) <
-                                  page.count
-                              ? () => _goToPage(
-                                  ref.read(documentsCurrentPageProvider) + 1,
-                                )
-                              : null,
-                        )
-                      : documentsPage.when(
-                          data: (_) => const SizedBox.shrink(),
-                          error: (error, stackTrace) => _DocumentsError(
-                            onRetry: () =>
-                                ref.invalidate(documentsPageProvider),
+            Expanded(
+              child: Stack(
+                children: [
+                  RefreshIndicator(
+                    onRefresh: _refreshDocumentsPage,
+                    child: page != null
+                        ? _DocumentsList(
+                            page: page,
+                            layoutMode: layoutMode,
+                            onPreviousPage:
+                                page.count > 0 &&
+                                    ref.read(documentsCurrentPageProvider) > 1
+                                ? () => _goToPage(
+                                    ref.read(documentsCurrentPageProvider) - 1,
+                                  )
+                                : null,
+                            onNextPage:
+                                (ref.read(documentsCurrentPageProvider) * 20) <
+                                    page.count
+                                ? () => _goToPage(
+                                    ref.read(documentsCurrentPageProvider) + 1,
+                                  )
+                                : null,
+                          )
+                        : documentsPage.when(
+                            data: (_) => const SizedBox.shrink(),
+                            error: (error, stackTrace) => _DocumentsError(
+                              onRetry: () =>
+                                  ref.invalidate(documentsPageProvider),
+                            ),
+                            loading: () => const _DocumentsLoading(),
                           ),
-                          loading: () => const _DocumentsLoading(),
-                        ),
-                ),
-                if (documentsPage.isRefreshing && page != null)
-                  const Positioned(
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    child: LinearProgressIndicator(minHeight: 2),
                   ),
-              ],
+                  if (documentsPage.isRefreshing && page != null)
+                    const Positioned(
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      child: LinearProgressIndicator(minHeight: 2),
+                    ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -280,6 +320,15 @@ class _DocumentsPageState extends ConsumerState<DocumentsPage> {
     ref.read(documentsCurrentPageProvider.notifier).state = 1;
   }
 
+  void _updateLayoutMode(DocumentsLayoutMode mode) {
+    if (ref.read(documentsLayoutModeProvider) == mode) {
+      return;
+    }
+
+    ref.read(documentsLayoutModeProvider.notifier).state = mode;
+    unawaited(ref.read(documentsViewPreferencesProvider).saveLayoutMode(mode));
+  }
+
   void _syncController(String query) {
     if (_searchController.text == query) {
       return;
@@ -293,31 +342,6 @@ class _DocumentsPageState extends ConsumerState<DocumentsPage> {
 
   Future<void> _refreshDocumentsPage() async {
     final _ = await ref.refresh(documentsPageProvider.future);
-  }
-
-  Future<void> _handleManualRefresh(BuildContext context) async {
-    final scaffoldMessenger = ScaffoldMessenger.of(context);
-    scaffoldMessenger.hideCurrentSnackBar();
-
-    try {
-      await _refreshDocumentsPage();
-
-      if (!context.mounted) {
-        return;
-      }
-
-      scaffoldMessenger.showSnackBar(
-        SnackBar(content: Text(context.l10n.documentsUpdated)),
-      );
-    } catch (_) {
-      if (!context.mounted) {
-        return;
-      }
-
-      scaffoldMessenger.showSnackBar(
-        SnackBar(content: Text(context.l10n.documentRefreshFailed)),
-      );
-    }
   }
 
   Future<void> _openFilters(BuildContext context) async {
@@ -460,16 +484,19 @@ class _ActiveDocumentsControls extends ConsumerWidget {
 class _DocumentsList extends ConsumerWidget {
   const _DocumentsList({
     required this.page,
+    required this.layoutMode,
     required this.onPreviousPage,
     required this.onNextPage,
   });
 
   final PaperlessDocumentPage page;
+  final DocumentsLayoutMode layoutMode;
   final VoidCallback? onPreviousPage;
   final VoidCallback? onNextPage;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
     final currentPage = ref.watch(documentsCurrentPageProvider);
     final openingIds = ref.watch(documentOpenControllerProvider);
     final l10n = context.l10n;
@@ -477,11 +504,22 @@ class _DocumentsList extends ConsumerWidget {
     if (page.results.isEmpty) {
       return ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
         children: [
-          Padding(
-            padding: const EdgeInsets.all(24),
-            child: Center(child: Text(l10n.noDocumentsMatchSearch)),
+          DecoratedBox(
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surfaceContainerLow,
+              borderRadius: BorderRadius.circular(28),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(28),
+              child: Text(
+                l10n.noDocumentsMatchSearch,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ),
           ),
         ],
       );
@@ -489,72 +527,104 @@ class _DocumentsList extends ConsumerWidget {
 
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
       children: [
         Text(
           l10n.documentCount(page.count),
-          style: Theme.of(
-            context,
-          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w700,
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 10),
         for (final document in page.results) ...[
-          PaperlessDocumentCard(
-            document: document,
-            onTap: () => _openDetails(context, ref, document),
-            footer: Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              alignment: WrapAlignment.end,
-              children: [
-                TextButton.icon(
-                  onPressed: () => _openDetails(context, ref, document),
-                  icon: const Icon(Icons.info_outline),
-                  label: Text(l10n.detailsAction),
-                ),
-                FilledButton.tonalIcon(
-                  style: FilledButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 10,
+          if (layoutMode == DocumentsLayoutMode.card)
+            PaperlessDocumentCard(
+              document: document,
+              onTap: () => _openDetails(context, ref, document),
+              footer: Row(
+                children: [
+                  SizedBox(
+                    width: 148,
+                    child: FilledButton(
+                      onPressed: openingIds.contains(document.id)
+                          ? null
+                          : () => _openDocument(context, ref, document),
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size.fromHeight(58),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 18,
+                          vertical: 12,
+                        ),
+                        shape: const StadiumBorder(),
+                        textStyle: theme.textTheme.labelLarge?.copyWith(
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 1.2,
+                        ),
+                      ),
+                      child: Text(
+                        (openingIds.contains(document.id)
+                                ? l10n.openingAction
+                                : l10n.openAction)
+                            .toUpperCase(),
+                      ),
                     ),
                   ),
-                  onPressed: openingIds.contains(document.id)
-                      ? null
-                      : () => _openDocument(context, ref, document),
-                  icon: Icon(
-                    openingIds.contains(document.id)
-                        ? Icons.hourglass_top
-                        : Icons.open_in_new,
+                  const Spacer(),
+                  TextButton(
+                    onPressed: () => _openDetails(context, ref, document),
+                    style: TextButton.styleFrom(
+                      foregroundColor: theme.colorScheme.primary,
+                      textStyle: theme.textTheme.labelLarge?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                    child: Text(l10n.detailsAction.toUpperCase()),
                   ),
-                  label: Text(
-                    openingIds.contains(document.id)
-                        ? l10n.openingAction
-                        : l10n.openAction,
+                ],
+              ),
+            )
+          else
+            PaperlessDocumentListItem(
+              document: document,
+              isOpening: openingIds.contains(document.id),
+              onTap: () => _openDetails(context, ref, document),
+              onOpen: () => _openDocument(context, ref, document),
+            ),
+          SizedBox(height: layoutMode == DocumentsLayoutMode.card ? 12 : 10),
+        ],
+        const SizedBox(height: 6),
+        DecoratedBox(
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(24),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            child: Row(
+              children: [
+                IconButton(
+                  onPressed: onPreviousPage,
+                  icon: const Icon(Icons.chevron_left),
+                ),
+                Expanded(
+                  child: Center(
+                    child: Text(
+                      l10n.pageIndicator(currentPage),
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                   ),
+                ),
+                IconButton(
+                  onPressed: onNextPage,
+                  icon: const Icon(Icons.chevron_right),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 12),
-        ],
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            OutlinedButton.icon(
-              onPressed: onPreviousPage,
-              icon: const Icon(Icons.chevron_left),
-              label: Text(l10n.previousAction),
-            ),
-            const Spacer(),
-            Text(l10n.pageIndicator(currentPage)),
-            const Spacer(),
-            FilledButton.icon(
-              onPressed: onNextPage,
-              icon: const Icon(Icons.chevron_right),
-              label: Text(l10n.nextAction),
-            ),
-          ],
         ),
       ],
     );
@@ -588,9 +658,9 @@ class _DocumentsList extends ConsumerWidget {
         return;
       }
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(error.toString())));
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(error.toString())));
     }
   }
 }
@@ -602,20 +672,30 @@ class _DocumentsError extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(16, 24, 16, 100),
+      padding: const EdgeInsets.fromLTRB(16, 24, 16, 120),
       children: [
-        Column(
-          children: [
-            Text(context.l10n.couldNotLoadDocuments),
-            const SizedBox(height: 12),
-            FilledButton.icon(
-              onPressed: onRetry,
-              icon: const Icon(Icons.refresh),
-              label: Text(context.l10n.retryAction),
+        DecoratedBox(
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(28),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              children: [
+                Text(context.l10n.couldNotLoadDocuments),
+                const SizedBox(height: 12),
+                FilledButton.icon(
+                  onPressed: onRetry,
+                  icon: const Icon(Icons.refresh),
+                  label: Text(context.l10n.retryAction),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ],
     );
@@ -627,10 +707,22 @@ class _DocumentsLoading extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(16, 24, 16, 100),
-      children: const [Center(child: CircularProgressIndicator())],
+      padding: const EdgeInsets.fromLTRB(16, 24, 16, 120),
+      children: [
+        DecoratedBox(
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(28),
+          ),
+          child: const Padding(
+            padding: EdgeInsets.all(28),
+            child: Center(child: CircularProgressIndicator()),
+          ),
+        ),
+      ],
     );
   }
 }

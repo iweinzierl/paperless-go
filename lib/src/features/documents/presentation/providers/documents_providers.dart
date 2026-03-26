@@ -1,10 +1,19 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:paperless_ngx_app/src/core/providers/shared_preferences_provider.dart';
+import 'package:paperless_ngx_app/src/features/documents/data/local/documents_view_preferences.dart';
 import 'package:paperless_ngx_app/src/features/documents/data/repositories/documents_repository.dart';
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_document.dart';
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_document_page.dart';
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_filter_option.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/models/documents_filter_state.dart';
+import 'package:paperless_ngx_app/src/features/documents/presentation/models/documents_layout_mode.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/models/documents_sort_option.dart';
+
+final documentsViewPreferencesProvider = Provider<DocumentsViewPreferences>((
+  ref,
+) {
+  return DocumentsViewPreferences(ref.watch(sharedPreferencesProvider));
+});
 
 final recentUploadsProvider = FutureProvider<List<PaperlessDocument>>((
   ref,
@@ -43,6 +52,9 @@ final documentsOrderingProvider = StateProvider<String>(
 final documentsFilterStateProvider = StateProvider<DocumentsFilterState>(
   (ref) => const DocumentsFilterState(),
 );
+final documentsLayoutModeProvider = StateProvider<DocumentsLayoutMode>((ref) {
+  return ref.watch(documentsViewPreferencesProvider).readLayoutMode();
+});
 
 final tagOptionsProvider = FutureProvider<List<PaperlessFilterOption>>((
   ref,

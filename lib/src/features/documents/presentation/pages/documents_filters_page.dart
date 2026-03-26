@@ -44,43 +44,116 @@ class _DocumentsFiltersPageState extends ConsumerState<DocumentsFiltersPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final l10n = context.l10n;
     final tagOptions = ref.watch(tagOptionsProvider);
     final correspondentOptions = ref.watch(correspondentOptionsProvider);
     final documentTypeOptions = ref.watch(documentTypeOptionsProvider);
+    final hasActiveSelections =
+        _filterState.hasActiveFilters ||
+        _ordering != documentsSortOptions.first.ordering;
 
     return Scaffold(
+      backgroundColor: theme.colorScheme.surface,
       appBar: AppBar(
-        title: Text(l10n.filtersTitle),
-        actions: [TextButton(onPressed: _reset, child: Text(l10n.resetAction))],
+        automaticallyImplyLeading: false,
+        leading: IconButton(
+          onPressed: () => Navigator.of(context).maybePop(),
+          icon: const Icon(Icons.close),
+        ),
+        title: Text(
+          '${l10n.filtersTitle} & ${l10n.sortByLabel}',
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.w800,
+            letterSpacing: -0.3,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: _reset,
+            style: TextButton.styleFrom(
+              textStyle: theme.textTheme.labelMedium?.copyWith(
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.7,
+              ),
+            ),
+            child: Text(l10n.resetAction),
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          _FiltersSection(
-            title: l10n.sortByLabel,
-            icon: Icons.sort,
-            child: _SortSelector(
+      body: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              theme.colorScheme.surface,
+              theme.colorScheme.surfaceContainerLowest,
+            ],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(18, 14, 18, 156),
+          children: [
+            if (hasActiveSelections) ...[
+              _SectionTitle(title: l10n.filtersTitle),
+              const SizedBox(height: 14),
+              _ActiveFiltersWrap(
+                filterState: _filterState,
+                ordering: _ordering,
+                tagOptions: tagOptions,
+                correspondentOptions: correspondentOptions,
+                documentTypeOptions: documentTypeOptions,
+                onRemoveTag: (tagId) {
+                  setState(() {
+                    final nextTagIds = _filterState.tagIds
+                        .where((selectedId) => selectedId != tagId)
+                        .toList(growable: false);
+                    _filterState = _filterState.copyWith(
+                      tagIds: nextTagIds,
+                      clearTag: nextTagIds.isEmpty,
+                    );
+                  });
+                },
+                onClearCorrespondent: () {
+                  setState(() {
+                    _filterState = _filterState.copyWith(
+                      clearCorrespondent: true,
+                    );
+                  });
+                },
+                onClearDocumentType: () {
+                  setState(() {
+                    _filterState = _filterState.copyWith(
+                      clearDocumentType: true,
+                    );
+                  });
+                },
+                onResetOrdering: () {
+                  setState(() {
+                    _ordering = documentsSortOptions.first.ordering;
+                  });
+                },
+              ),
+              const SizedBox(height: 28),
+            ],
+            _SectionTitle(title: l10n.sortByLabel),
+            const SizedBox(height: 14),
+            _SortOptionsGrid(
               selectedOrdering: _ordering,
               onChanged: (value) {
-                if (value == null) {
-                  return;
-                }
-
                 setState(() {
                   _ordering = value;
                 });
               },
             ),
-          ),
-          const SizedBox(height: 16),
-          _FiltersSection(
-            title: l10n.filterTagLabel,
-            icon: Icons.label_outline,
-            child: _TagFilterSection(
-              label: l10n.filterTagLabel,
-              selectedIds: _filterState.tagIds,
+            const SizedBox(height: 28),
+            _SectionTitle(title: l10n.filtersTitle),
+            const SizedBox(height: 14),
+            _TagCategoryCard(
               options: tagOptions,
+              selectedIds: _filterState.tagIds,
               searchHint: l10n.searchTagsHint,
               dialogTitle: l10n.selectTagsDialogTitle,
               noResultsMessage: l10n.noTagsMatchSearch,
@@ -93,15 +166,13 @@ class _DocumentsFiltersPageState extends ConsumerState<DocumentsFiltersPage> {
                 });
               },
             ),
-          ),
-          const SizedBox(height: 16),
-          _FiltersSection(
-            title: l10n.filterCorrespondentLabel,
-            icon: Icons.person_outline,
-            child: _FilterDropdown(
-              label: l10n.filterCorrespondentLabel,
-              selectedId: _filterState.correspondentId,
+            const SizedBox(height: 16),
+            _SingleFilterCategoryCard(
+              title: l10n.filterCorrespondentLabel,
+              icon: Icons.business_outlined,
+              iconBackgroundColor: const Color(0xFFD6EAF9),
               options: correspondentOptions,
+              selectedId: _filterState.correspondentId,
               searchHint: l10n.searchCorrespondentsHint,
               dialogTitle: l10n.selectCorrespondentDialogTitle,
               noResultsMessage: l10n.noCorrespondentsMatchSearch,
@@ -114,15 +185,13 @@ class _DocumentsFiltersPageState extends ConsumerState<DocumentsFiltersPage> {
                 });
               },
             ),
-          ),
-          const SizedBox(height: 16),
-          _FiltersSection(
-            title: l10n.filterDocumentTypeLabel,
-            icon: Icons.description_outlined,
-            child: _FilterDropdown(
-              label: l10n.filterDocumentTypeLabel,
-              selectedId: _filterState.documentTypeId,
+            const SizedBox(height: 16),
+            _SingleFilterCategoryCard(
+              title: l10n.filterDocumentTypeLabel,
+              icon: Icons.description_outlined,
+              iconBackgroundColor: const Color(0xFFFFDDD3),
               options: documentTypeOptions,
+              selectedId: _filterState.documentTypeId,
               searchHint: l10n.searchDocumentTypesHint,
               dialogTitle: l10n.selectDocumentTypeDialogTitle,
               noResultsMessage: l10n.noDocumentTypesMatchSearch,
@@ -135,18 +204,84 @@ class _DocumentsFiltersPageState extends ConsumerState<DocumentsFiltersPage> {
                 });
               },
             ),
-          ),
-        ],
+          ],
+        ),
       ),
       bottomNavigationBar: SafeArea(
-        child: ColoredBox(
-          color: Theme.of(context).colorScheme.surface,
+        top: false,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surface,
+            boxShadow: [
+              BoxShadow(
+                color: theme.colorScheme.shadow.withValues(alpha: 0.08),
+                blurRadius: 18,
+                offset: const Offset(0, -6),
+              ),
+            ],
+          ),
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-            child: FilledButton.icon(
-              onPressed: _apply,
-              icon: const Icon(Icons.check),
-              label: Text(l10n.applyFiltersAction),
+            padding: const EdgeInsets.fromLTRB(18, 14, 18, 18),
+            child: Row(
+              children: [
+                SizedBox(
+                  width: 160,
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.of(context).maybePop(),
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(66),
+                      textStyle: theme.textTheme.labelMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1.0,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.close),
+                        const SizedBox(width: 10),
+                        Flexible(
+                          child: Text(
+                            l10n.cancelAction.toUpperCase(),
+                            maxLines: 1,
+                            overflow: TextOverflow.fade,
+                            softWrap: false,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: FilledButton(
+                    onPressed: _apply,
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size.fromHeight(66),
+                      shape: const StadiumBorder(),
+                      textStyle: theme.textTheme.labelMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1.0,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.check_circle_rounded),
+                        const SizedBox(width: 10),
+                        Flexible(
+                          child: Text(
+                            l10n.applyFiltersAction.toUpperCase(),
+                            maxLines: 1,
+                            overflow: TextOverflow.fade,
+                            softWrap: false,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ),
@@ -168,44 +303,143 @@ class _DocumentsFiltersPageState extends ConsumerState<DocumentsFiltersPage> {
   }
 }
 
-class _FiltersSection extends StatelessWidget {
-  const _FiltersSection({
-    required this.title,
-    required this.icon,
-    required this.child,
-  });
+class _SectionTitle extends StatelessWidget {
+  const _SectionTitle({required this.title});
 
   final String title;
-  final IconData icon;
-  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Text(
+      title.toUpperCase(),
+      style: theme.textTheme.labelMedium?.copyWith(
+        color: theme.colorScheme.onSurfaceVariant,
+        fontWeight: FontWeight.w800,
+        letterSpacing: 1.7,
+      ),
+    );
+  }
+}
+
+class _ActiveFiltersWrap extends StatelessWidget {
+  const _ActiveFiltersWrap({
+    required this.filterState,
+    required this.ordering,
+    required this.tagOptions,
+    required this.correspondentOptions,
+    required this.documentTypeOptions,
+    required this.onRemoveTag,
+    required this.onClearCorrespondent,
+    required this.onClearDocumentType,
+    required this.onResetOrdering,
+  });
+
+  final DocumentsFilterState filterState;
+  final String ordering;
+  final AsyncValue<List<PaperlessFilterOption>> tagOptions;
+  final AsyncValue<List<PaperlessFilterOption>> correspondentOptions;
+  final AsyncValue<List<PaperlessFilterOption>> documentTypeOptions;
+  final void Function(int tagId) onRemoveTag;
+  final VoidCallback onClearCorrespondent;
+  final VoidCallback onClearDocumentType;
+  final VoidCallback onResetOrdering;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final chips = <Widget>[];
+
+    if (ordering != documentsSortOptions.first.ordering) {
+      chips.add(
+        _FilterChip(
+          label: documentSortOptionLabel(l10n, ordering),
+          tint: const Color(0xFFE3EFFC),
+          onRemoved: onResetOrdering,
+        ),
+      );
+    }
+
+    for (final tagId in filterState.tagIds) {
+      chips.add(
+        _FilterChip(
+          label:
+              '${l10n.filterTagLabel}: ${_resolveOptionLabel(tagOptions, tagId) ?? '#$tagId'}',
+          tint: const Color(0xFFE1F7F2),
+          onRemoved: () => onRemoveTag(tagId),
+        ),
+      );
+    }
+
+    if (filterState.correspondentId != null) {
+      chips.add(
+        _FilterChip(
+          label:
+              '${l10n.filterCorrespondentLabel}: ${_resolveOptionLabel(correspondentOptions, filterState.correspondentId!) ?? '#${filterState.correspondentId}'}',
+          tint: const Color(0xFFE3EFFC),
+          onRemoved: onClearCorrespondent,
+        ),
+      );
+    }
+
+    if (filterState.documentTypeId != null) {
+      chips.add(
+        _FilterChip(
+          label:
+              '${l10n.filterDocumentTypeLabel}: ${_resolveOptionLabel(documentTypeOptions, filterState.documentTypeId!) ?? '#${filterState.documentTypeId}'}',
+          tint: const Color(0xFFFFE7DF),
+          onRemoved: onClearDocumentType,
+        ),
+      );
+    }
+
+    return Wrap(spacing: 10, runSpacing: 12, children: chips);
+  }
+}
+
+class _FilterChip extends StatelessWidget {
+  const _FilterChip({
+    required this.label,
+    required this.tint,
+    required this.onRemoved,
+  });
+
+  final String label;
+  final Color tint;
+  final VoidCallback onRemoved;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Card(
-      margin: EdgeInsets.zero,
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: tint,
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Row(
-              children: [
-                Icon(icon, color: theme.colorScheme.primary),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    title,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
+            Flexible(
+              child: Text(
+                label,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: theme.colorScheme.primary,
                 ),
-              ],
+              ),
             ),
-            const SizedBox(height: 16),
-            child,
+            const SizedBox(width: 10),
+            GestureDetector(
+              onTap: onRemoved,
+              child: Icon(
+                Icons.close,
+                size: 18,
+                color: theme.colorScheme.primary,
+              ),
+            ),
           ],
         ),
       ),
@@ -213,123 +447,78 @@ class _FiltersSection extends StatelessWidget {
   }
 }
 
-class _SortSelector extends StatelessWidget {
-  const _SortSelector({
+class _SortOptionsGrid extends StatelessWidget {
+  const _SortOptionsGrid({
     required this.selectedOrdering,
     required this.onChanged,
   });
 
   final String selectedOrdering;
-  final ValueChanged<String?> onChanged;
+  final ValueChanged<String> onChanged;
 
   @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    final theme = Theme.of(context);
-    final selectedOption = documentsSortOptions
-        .where((option) => option.ordering == selectedOrdering)
-        .firstOrNull;
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: documentsSortOptions.length,
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        mainAxisSpacing: 14,
+        crossAxisSpacing: 14,
+        childAspectRatio: 2.45,
+      ),
+      itemBuilder: (context, index) {
+        final option = documentsSortOptions[index];
+        final isSelected = option.ordering == selectedOrdering;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (selectedOption == null)
-          Text(
-            documentSortOptionLabel(l10n, documentsSortOptions.first.ordering),
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          )
-        else
-          InputChip(
-            label: Text(documentSortOptionLabel(l10n, selectedOption.ordering)),
-            onDeleted: selectedOrdering == documentsSortOptions.first.ordering
-                ? null
-                : () => onChanged(documentsSortOptions.first.ordering),
-            deleteIcon: const Icon(Icons.close),
-          ),
-        const SizedBox(height: 12),
-        FilledButton.tonalIcon(
-          onPressed: () async {
-            final result = await showModalBottomSheet<String>(
-              context: context,
-              showDragHandle: true,
-              builder: (dialogContext) =>
-                  _SortSelectionSheet(selectedOrdering: selectedOrdering),
-            );
-
-            if (result == null || result == selectedOrdering) {
-              return;
-            }
-
-            onChanged(result);
-          },
-          icon: const Icon(Icons.sort),
-          label: Text(l10n.sortByLabel),
-        ),
-      ],
+        return _SortOptionButton(
+          label: _compactSortLabel(context, option.ordering),
+          selected: isSelected,
+          onTap: () => onChanged(option.ordering),
+        );
+      },
     );
   }
 }
 
-class _SortSelectionSheet extends StatelessWidget {
-  const _SortSelectionSheet({required this.selectedOrdering});
+class _SortOptionButton extends StatelessWidget {
+  const _SortOptionButton({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
 
-  final String selectedOrdering;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
     final theme = Theme.of(context);
 
-    return SafeArea(
-      top: false,
-      child: SizedBox(
-        height: MediaQuery.sizeOf(context).height * 0.56,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                l10n.sortByLabel,
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+    return Material(
+      color: selected
+          ? theme.colorScheme.primary
+          : theme.colorScheme.surfaceContainerLowest,
+      borderRadius: BorderRadius.circular(18),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: onTap,
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Text(
+              label,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.titleSmall?.copyWith(
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                color: selected
+                    ? theme.colorScheme.onPrimary
+                    : theme.colorScheme.onSurface,
               ),
-              const SizedBox(height: 16),
-              Expanded(
-                child: ListView.builder(
-                  itemCount: documentsSortOptions.length,
-                  itemBuilder: (context, index) {
-                    final option = documentsSortOptions[index];
-                    final isSelected = option.ordering == selectedOrdering;
-
-                    return ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: Icon(
-                        isSelected
-                            ? Icons.radio_button_checked
-                            : Icons.radio_button_off,
-                      ),
-                      title: Text(
-                        documentSortOptionLabel(l10n, option.ordering),
-                      ),
-                      onTap: () =>
-                          Navigator.of(context).pop<String>(option.ordering),
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(height: 12),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: Text(l10n.cancelAction),
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),
@@ -337,126 +526,18 @@ class _SortSelectionSheet extends StatelessWidget {
   }
 }
 
-class _FilterDropdown extends StatelessWidget {
-  const _FilterDropdown({
-    required this.label,
-    required this.selectedId,
+class _TagCategoryCard extends StatelessWidget {
+  const _TagCategoryCard({
     required this.options,
-    required this.searchHint,
-    required this.dialogTitle,
-    required this.noResultsMessage,
-    required this.onChanged,
-  });
-
-  final String label;
-  final int? selectedId;
-  final AsyncValue<List<PaperlessFilterOption>> options;
-  final String searchHint;
-  final String dialogTitle;
-  final String noResultsMessage;
-  final ValueChanged<int?> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return options.when(
-      data: (items) {
-        final theme = Theme.of(context);
-        final selectedLabel = items
-            .where((item) => item.id == selectedId)
-            .firstOrNull
-            ?.name;
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (selectedLabel == null)
-              Text(
-                context.l10n.anyOption,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              )
-            else
-              InputChip(
-                label: Text(selectedLabel),
-                onDeleted: () => onChanged(null),
-                deleteIcon: const Icon(Icons.close),
-              ),
-            const SizedBox(height: 12),
-            FilledButton.tonalIcon(
-              onPressed: () async {
-                final result = await showModalBottomSheet<int?>(
-                  context: context,
-                  isScrollControlled: true,
-                  showDragHandle: true,
-                  builder: (dialogContext) => _SingleFilterOptionSheet(
-                    title: dialogTitle,
-                    searchHint: searchHint,
-                    anyLabel: dialogContext.l10n.anyOption,
-                    noResultsMessage: noResultsMessage,
-                    options: items,
-                    selectedId: selectedId,
-                  ),
-                );
-
-                if (result == selectedId) {
-                  return;
-                }
-
-                onChanged(result);
-              },
-              icon: const Icon(Icons.search),
-              label: Text(searchHint),
-            ),
-          ],
-        );
-      },
-      error: (error, stackTrace) {
-        final l10n = context.l10n;
-        return TextFormField(
-          enabled: false,
-          decoration: InputDecoration(
-            labelText: label,
-            hintText: l10n.couldNotLoadStatus,
-          ),
-        );
-      },
-      loading: () {
-        final l10n = context.l10n;
-        return TextFormField(
-          enabled: false,
-          decoration: InputDecoration(
-            labelText: label,
-            hintText: l10n.loadingStatus,
-            suffixIcon: const Padding(
-              padding: EdgeInsets.all(12),
-              child: SizedBox(
-                width: 16,
-                height: 16,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
-
-class _TagFilterSection extends StatelessWidget {
-  const _TagFilterSection({
-    required this.label,
     required this.selectedIds,
-    required this.options,
     required this.searchHint,
     required this.dialogTitle,
     required this.noResultsMessage,
     required this.onChanged,
   });
 
-  final String label;
-  final List<int> selectedIds;
   final AsyncValue<List<PaperlessFilterOption>> options;
+  final List<int> selectedIds;
   final String searchHint;
   final String dialogTitle;
   final String noResultsMessage;
@@ -466,100 +547,279 @@ class _TagFilterSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return options.when(
       data: (items) {
-        final theme = Theme.of(context);
-        final selectedIdSet = selectedIds.toSet();
-        final selectedOptions =
-            items.where((item) => selectedIdSet.contains(item.id)).toList()
-              ..sort(
-                (left, right) =>
-                    left.name.toLowerCase().compareTo(right.name.toLowerCase()),
-              );
+        final selectedNames = items
+            .where((item) => selectedIds.contains(item.id))
+            .map((item) => item.name)
+            .toList(growable: false);
 
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (selectedOptions.isEmpty)
-              Text(
-                context.l10n.anyOption,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              )
-            else
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  for (final option in selectedOptions)
-                    InputChip(
-                      label: Text(option.name),
-                      onDeleted: () => onChanged(
-                        selectedIds
-                            .where((selectedId) => selectedId != option.id)
-                            .toList(growable: false),
-                      ),
-                      deleteIcon: const Icon(Icons.close),
-                    ),
-                ],
+        return _CategoryCard(
+          icon: Icons.local_offer_outlined,
+          iconBackgroundColor: const Color(0xFFA9F0E4),
+          title: context.l10n.filterTagLabel,
+          subtitle: selectedNames.isEmpty
+              ? searchHint
+              : _selectedSummary(selectedNames),
+          badgeLabel: selectedIds.isEmpty
+              ? context.l10n.anyOption.toUpperCase()
+              : '${selectedIds.length}',
+          onTap: () async {
+            final result = await showModalBottomSheet<List<int>>(
+              context: context,
+              isScrollControlled: true,
+              showDragHandle: true,
+              builder: (dialogContext) => _MultiFilterOptionSheet(
+                title: dialogTitle,
+                searchHint: searchHint,
+                noResultsMessage: noResultsMessage,
+                options: items,
+                selectedIds: selectedIds,
               ),
-            const SizedBox(height: 12),
-            FilledButton.tonalIcon(
-              onPressed: () async {
-                final result = await showModalBottomSheet<List<int>>(
-                  context: context,
-                  isScrollControlled: true,
-                  showDragHandle: true,
-                  builder: (dialogContext) => _MultiFilterOptionSheet(
-                    title: dialogTitle,
-                    searchHint: searchHint,
-                    noResultsMessage: noResultsMessage,
-                    options: items,
-                    selectedIds: selectedIds,
-                  ),
-                );
+            );
 
-                if (result == null) {
-                  return;
-                }
+            if (result == null) {
+              return;
+            }
 
-                onChanged(result);
-              },
-              icon: const Icon(Icons.search),
-              label: Text(searchHint),
-            ),
-          ],
+            onChanged(result);
+          },
         );
       },
-      error: (error, stackTrace) {
-        final l10n = context.l10n;
-        return TextFormField(
-          enabled: false,
-          decoration: InputDecoration(
-            labelText: label,
-            hintText: l10n.couldNotLoadStatus,
-          ),
-        );
-      },
-      loading: () {
-        final l10n = context.l10n;
-        return TextFormField(
-          enabled: false,
-          decoration: InputDecoration(
-            labelText: label,
-            hintText: l10n.loadingStatus,
-            suffixIcon: const Padding(
-              padding: EdgeInsets.all(12),
-              child: SizedBox(
-                width: 16,
-                height: 16,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
-            ),
-          ),
-        );
-      },
+      error: (error, stackTrace) => _CategoryCard.loading(
+        icon: Icons.local_offer_outlined,
+        iconBackgroundColor: const Color(0xFFA9F0E4),
+        title: context.l10n.filterTagLabel,
+        subtitle: context.l10n.couldNotLoadStatus,
+      ),
+      loading: () => _CategoryCard.loading(
+        icon: Icons.local_offer_outlined,
+        iconBackgroundColor: const Color(0xFFA9F0E4),
+        title: context.l10n.filterTagLabel,
+        subtitle: context.l10n.loadingStatus,
+      ),
     );
   }
+}
+
+class _SingleFilterCategoryCard extends StatelessWidget {
+  const _SingleFilterCategoryCard({
+    required this.title,
+    required this.icon,
+    required this.iconBackgroundColor,
+    required this.options,
+    required this.selectedId,
+    required this.searchHint,
+    required this.dialogTitle,
+    required this.noResultsMessage,
+    required this.onChanged,
+  });
+
+  final String title;
+  final IconData icon;
+  final Color iconBackgroundColor;
+  final AsyncValue<List<PaperlessFilterOption>> options;
+  final int? selectedId;
+  final String searchHint;
+  final String dialogTitle;
+  final String noResultsMessage;
+  final ValueChanged<int?> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return options.when(
+      data: (items) {
+        final selectedName = items
+            .where((item) => item.id == selectedId)
+            .firstOrNull
+            ?.name;
+
+        return _CategoryCard(
+          icon: icon,
+          iconBackgroundColor: iconBackgroundColor,
+          title: title,
+          subtitle: selectedName ?? searchHint,
+          badgeLabel: selectedName == null
+              ? context.l10n.anyOption.toUpperCase()
+              : '1',
+          onTap: () async {
+            final result = await showModalBottomSheet<int?>(
+              context: context,
+              isScrollControlled: true,
+              showDragHandle: true,
+              builder: (dialogContext) => _SingleFilterOptionSheet(
+                title: dialogTitle,
+                searchHint: searchHint,
+                anyLabel: dialogContext.l10n.anyOption,
+                noResultsMessage: noResultsMessage,
+                options: items,
+                selectedId: selectedId,
+              ),
+            );
+
+            if (result == selectedId) {
+              return;
+            }
+
+            onChanged(result);
+          },
+        );
+      },
+      error: (error, stackTrace) => _CategoryCard.loading(
+        icon: icon,
+        iconBackgroundColor: iconBackgroundColor,
+        title: title,
+        subtitle: context.l10n.couldNotLoadStatus,
+      ),
+      loading: () => _CategoryCard.loading(
+        icon: icon,
+        iconBackgroundColor: iconBackgroundColor,
+        title: title,
+        subtitle: context.l10n.loadingStatus,
+      ),
+    );
+  }
+}
+
+class _CategoryCard extends StatelessWidget {
+  const _CategoryCard({
+    required this.icon,
+    required this.iconBackgroundColor,
+    required this.title,
+    required this.subtitle,
+    required this.badgeLabel,
+    required this.onTap,
+  }) : loading = false;
+
+  const _CategoryCard.loading({
+    required this.icon,
+    required this.iconBackgroundColor,
+    required this.title,
+    required this.subtitle,
+  }) : badgeLabel = null,
+       onTap = null,
+       loading = true;
+
+  final IconData icon;
+  final Color iconBackgroundColor;
+  final String title;
+  final String subtitle;
+  final String? badgeLabel;
+  final VoidCallback? onTap;
+  final bool loading;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Material(
+      color: theme.colorScheme.surfaceContainerLowest,
+      borderRadius: BorderRadius.circular(28),
+      elevation: 0,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(28),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
+          child: Row(
+            children: [
+              Container(
+                width: 62,
+                height: 62,
+                decoration: BoxDecoration(
+                  color: iconBackgroundColor,
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: Icon(icon, size: 28, color: theme.colorScheme.primary),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitle,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              if (loading)
+                const SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              else ...[
+                if (badgeLabel != null)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primary,
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      badgeLabel!,
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        fontSize: 13,
+                        color: theme.colorScheme.onPrimary,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.7,
+                      ),
+                    ),
+                  ),
+                const SizedBox(width: 10),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  color: theme.colorScheme.onSurfaceVariant,
+                  size: 30,
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+String _compactSortLabel(BuildContext context, String ordering) {
+  return documentSortOptionLabel(context.l10n, ordering);
+}
+
+String? _resolveOptionLabel(
+  AsyncValue<List<PaperlessFilterOption>> options,
+  int id,
+) {
+  return options.maybeWhen(
+    data: (items) => items.where((item) => item.id == id).firstOrNull?.name,
+    orElse: () => null,
+  );
+}
+
+String _selectedSummary(List<String> names) {
+  if (names.isEmpty) {
+    return '';
+  }
+  if (names.length <= 2) {
+    return names.join(', ');
+  }
+
+  return '${names.take(2).join(', ')} +${names.length - 2}';
 }
 
 class _SingleFilterOptionSheet extends StatefulWidget {

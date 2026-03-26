@@ -5,6 +5,7 @@ import 'package:paperless_ngx_app/src/features/app_shell/domain/models/app_behav
 import 'package:paperless_ngx_app/src/features/app_shell/presentation/controllers/settings_controller.dart';
 import 'package:paperless_ngx_app/src/features/app_shell/presentation/providers/app_behavior_providers.dart';
 import 'package:paperless_ngx_app/src/features/app_shell/presentation/providers/app_security_providers.dart';
+import 'package:paperless_ngx_app/src/features/auth/presentation/controllers/auth_session_controller.dart';
 import 'package:paperless_ngx_app/src/features/auth/presentation/formatters/auth_text.dart';
 
 class SettingsPage extends ConsumerStatefulWidget {
@@ -279,6 +280,24 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   ),
                 ),
               ],
+            ],
+          ),
+          const SizedBox(height: 20),
+          _SectionHeader(label: l10n.signOutAction),
+          _SettingsGroup(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () =>
+                        ref.read(authSessionProvider.notifier).signOut(),
+                    icon: const Icon(Icons.logout),
+                    label: Text(l10n.signOutAction),
+                  ),
+                ),
+              ),
             ],
           ),
         ],
