@@ -1,0 +1,2 @@
+- redesigned document detail screen with a cleaner layout and clearer metadata
+- added in-app preview page selection with real PDF page rendering

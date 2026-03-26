@@ -1,0 +1,2 @@
+- pantalla de detalle del documento redisenada con una estructura mas limpia y metadatos mas claros
+- seleccion de paginas en la vista previa integrada con renderizado real de paginas PDF

@@ -1,0 +1,2 @@
+- ecran de detail du document repense avec une mise en page plus claire et des metadonnees mieux structurees
+- ajout de la selection de page dans l'aperçu integre avec un vrai rendu PDF des pages

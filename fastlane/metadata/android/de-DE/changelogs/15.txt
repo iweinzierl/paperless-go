@@ -1,0 +1,2 @@
+- Dokumentdetailansicht mit saubererem Layout und klareren Metadaten ueberarbeitet
+- Seitenauswahl in der In-App-Vorschau mit echtem PDF-Seitenrendering hinzugefuegt

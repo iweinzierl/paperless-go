@@ -1,0 +1,2 @@
+- schermata dei dettagli del documento ridisegnata con un layout piu pulito e metadati piu chiari
+- aggiunta la selezione delle pagine nell'anteprima integrata con rendering reale delle pagine PDF
