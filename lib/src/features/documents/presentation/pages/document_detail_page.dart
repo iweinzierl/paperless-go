@@ -720,38 +720,25 @@ class _EditDocumentMetadataPageState
             _EditFieldSection(
               label: l10n.documentTypeLabel,
               child: documentTypes.when(
-                data: (items) => _EditChoicePanel(
-                  placeholder: l10n.noDocumentTypeOption,
+                data: (items) => Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (selectedDocumentTypeLabel != null)
-                      _EditSelectionChip(
-                        label: selectedDocumentTypeLabel,
+                    Expanded(
+                      child: _EditSelectionField(
                         icon: Icons.description_outlined,
-                        selected: true,
+                        value: selectedDocumentTypeLabel,
+                        placeholder: l10n.noDocumentTypeOption,
+                        actionIcon: Icons.unfold_more,
                         enabled: !_isBusy,
-                        onPressed: _isBusy
-                            ? null
-                            : () => _openDocumentTypeSelection(items),
-                        onDeleted: _isBusy
-                            ? null
-                            : () => setState(() {
-                                _selectedDocumentTypeId = null;
-                              }),
-                      )
-                    else
-                      _EditActionChip(
-                        label: l10n.chooseDocumentTypeHint,
-                        icon: Icons.find_in_page_outlined,
-                        onPressed: _isBusy
+                        onTap: _isBusy
                             ? null
                             : () => _openDocumentTypeSelection(items),
                       ),
-                    _EditDashedChip(
-                      label: _isCreatingDocumentType
-                          ? l10n.addingAction
-                          : l10n.newDocumentTypeAction,
+                    ),
+                    const SizedBox(width: 12),
+                    _EditSquareActionButton(
                       icon: _isCreatingDocumentType ? null : Icons.add_rounded,
-                      onPressed: _isBusy || _isCreatingDocumentType
+                      onTap: _isBusy || _isCreatingDocumentType
                           ? null
                           : _createDocumentType,
                       isLoading: _isCreatingDocumentType,
@@ -769,27 +756,45 @@ class _EditDocumentMetadataPageState
             _EditFieldSection(
               label: l10n.tagsLabel,
               child: tags.when(
-                data: (items) => _EditChoicePanel(
-                  placeholder: l10n.noTagsSelected,
+                data: (items) => Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    for (final tag in selectedTags)
-                      _EditSelectionChip(
-                        label: tag.value,
-                        icon: Icons.sell_outlined,
-                        selected: true,
-                        enabled: !_isBusy,
-                        onPressed: _isBusy
-                            ? null
-                            : () => _openTagSelection(items),
-                        onDeleted: _isBusy
-                            ? null
-                            : () => _removeSelectedTag(tag.key),
-                      ),
-                    _EditCircleActionChip(
+                    Expanded(
+                      child: selectedTags.isEmpty
+                          ? Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 18),
+                              child: Text(
+                                l10n.noTagsSelected,
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            )
+                          : Wrap(
+                              spacing: 10,
+                              runSpacing: 10,
+                              children: [
+                                for (final tag in selectedTags)
+                                  _EditSelectionChip(
+                                    label: tag.value,
+                                    icon: Icons.sell_outlined,
+                                    selected: true,
+                                    enabled: !_isBusy,
+                                    onPressed: _isBusy
+                                        ? null
+                                        : () => _openTagSelection(items),
+                                    onDeleted: _isBusy
+                                        ? null
+                                        : () => _removeSelectedTag(tag.key),
+                                  ),
+                              ],
+                            ),
+                    ),
+                    const SizedBox(width: 12),
+                    _EditSquareActionButton(
                       icon: Icons.add_rounded,
-                      onPressed: _isBusy
-                          ? null
-                          : () => _openTagSelection(items),
+                      onTap: _isBusy ? null : () => _openTagSelection(items),
+                      isLoading: false,
                     ),
                   ],
                 ),
@@ -891,6 +896,8 @@ class _EditDocumentMetadataPageState
         noResultsMessage: dialogContext.l10n.noCorrespondentsMatchSearch,
         options: correspondents,
         selectedId: _selectedCorrespondentId,
+        createActionLabel: dialogContext.l10n.newCorrespondentAction,
+        onCreateOption: _createCorrespondentOption,
       ),
     );
 
@@ -917,6 +924,8 @@ class _EditDocumentMetadataPageState
         noResultsMessage: dialogContext.l10n.noDocumentTypesMatchSearch,
         options: documentTypes,
         selectedId: _selectedDocumentTypeId,
+        createActionLabel: dialogContext.l10n.newDocumentTypeAction,
+        onCreateOption: _createDocumentTypeOption,
       ),
     );
 
@@ -930,25 +939,13 @@ class _EditDocumentMetadataPageState
   }
 
   Future<void> _createCorrespondent() async {
-    final name = await _promptForNewOption(
-      title: context.l10n.newCorrespondentAction,
-      fieldLabel: context.l10n.correspondentNameLabel,
-    );
-    if (name == null) {
-      return;
-    }
-
     setState(() {
       _isCreatingCorrespondent = true;
     });
 
     try {
-      final created = await ref
-          .read(documentsRepositoryProvider)
-          .createCorrespondent(name: name);
-      final _ = await ref.refresh(correspondentOptionsProvider.future);
-
-      if (!mounted) {
+      final created = await _createCorrespondentOption();
+      if (!mounted || created == null) {
         return;
       }
 
@@ -968,25 +965,13 @@ class _EditDocumentMetadataPageState
   }
 
   Future<void> _createDocumentType() async {
-    final name = await _promptForNewOption(
-      title: context.l10n.newDocumentTypeAction,
-      fieldLabel: context.l10n.documentTypeNameLabel,
-    );
-    if (name == null) {
-      return;
-    }
-
     setState(() {
       _isCreatingDocumentType = true;
     });
 
     try {
-      final created = await ref
-          .read(documentsRepositoryProvider)
-          .createDocumentType(name: name);
-      final _ = await ref.refresh(documentTypeOptionsProvider.future);
-
-      if (!mounted) {
+      final created = await _createDocumentTypeOption();
+      if (!mounted || created == null) {
         return;
       }
 
@@ -1003,6 +988,38 @@ class _EditDocumentMetadataPageState
         });
       }
     }
+  }
+
+  Future<PaperlessFilterOption?> _createCorrespondentOption() async {
+    final name = await _promptForNewOption(
+      title: context.l10n.newCorrespondentAction,
+      fieldLabel: context.l10n.correspondentNameLabel,
+    );
+    if (name == null) {
+      return null;
+    }
+
+    final created = await ref
+        .read(documentsRepositoryProvider)
+        .createCorrespondent(name: name);
+    final _ = await ref.refresh(correspondentOptionsProvider.future);
+    return created;
+  }
+
+  Future<PaperlessFilterOption?> _createDocumentTypeOption() async {
+    final name = await _promptForNewOption(
+      title: context.l10n.newDocumentTypeAction,
+      fieldLabel: context.l10n.documentTypeNameLabel,
+    );
+    if (name == null) {
+      return null;
+    }
+
+    final created = await ref
+        .read(documentsRepositoryProvider)
+        .createDocumentType(name: name);
+    final _ = await ref.refresh(documentTypeOptionsProvider.future);
+    return created;
   }
 
   Future<PaperlessFilterOption?> _createTag() async {
@@ -1453,44 +1470,6 @@ class _EditSquareActionButton extends StatelessWidget {
   }
 }
 
-class _EditChoicePanel extends StatelessWidget {
-  const _EditChoicePanel({required this.placeholder, required this.children});
-
-  final String placeholder;
-  final List<Widget> children;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final hasInteractiveChildren = children.isNotEmpty;
-
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: theme.colorScheme.shadow.withValues(alpha: 0.08),
-            blurRadius: 16,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: hasInteractiveChildren
-            ? Wrap(spacing: 10, runSpacing: 10, children: children)
-            : Text(
-                placeholder,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-      ),
-    );
-  }
-}
-
 class _EditSelectionChip extends StatelessWidget {
   const _EditSelectionChip({
     required this.label,
@@ -1535,125 +1514,6 @@ class _EditSelectionChip extends StatelessWidget {
       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
       visualDensity: VisualDensity.compact,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-    );
-  }
-}
-
-class _EditActionChip extends StatelessWidget {
-  const _EditActionChip({
-    required this.label,
-    required this.icon,
-    required this.onPressed,
-  });
-
-  final String label;
-  final IconData icon;
-  final VoidCallback? onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return ActionChip(
-      label: Text(label),
-      avatar: Icon(icon, size: 16, color: theme.colorScheme.onSurfaceVariant),
-      onPressed: onPressed,
-      side: BorderSide.none,
-      backgroundColor: theme.colorScheme.surfaceContainerHighest,
-      labelStyle: theme.textTheme.labelLarge?.copyWith(
-        fontWeight: FontWeight.w700,
-      ),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-    );
-  }
-}
-
-class _EditDashedChip extends StatelessWidget {
-  const _EditDashedChip({
-    required this.label,
-    required this.icon,
-    required this.onPressed,
-    required this.isLoading,
-  });
-
-  final String label;
-  final IconData? icon;
-  final VoidCallback? onPressed;
-  final bool isLoading;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(14),
-        onTap: onPressed,
-        child: Ink(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: theme.colorScheme.outline.withValues(alpha: 0.45),
-              style: BorderStyle.solid,
-            ),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (isLoading)
-                  const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                else if (icon != null) ...[
-                  Icon(
-                    icon,
-                    size: 16,
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                  const SizedBox(width: 8),
-                ],
-                Text(
-                  label,
-                  style: theme.textTheme.labelLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _EditCircleActionChip extends StatelessWidget {
-  const _EditCircleActionChip({required this.icon, required this.onPressed});
-
-  final IconData icon;
-  final VoidCallback? onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Material(
-      color: theme.colorScheme.surfaceContainerHighest,
-      shape: const CircleBorder(),
-      child: InkWell(
-        customBorder: const CircleBorder(),
-        onTap: onPressed,
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Icon(icon, size: 20, color: theme.colorScheme.onSurface),
-        ),
-      ),
     );
   }
 }
@@ -2283,6 +2143,8 @@ class _SingleOptionSelectionSheet extends StatefulWidget {
     required this.noResultsMessage,
     required this.options,
     required this.selectedId,
+    required this.createActionLabel,
+    required this.onCreateOption,
   });
 
   final String title;
@@ -2291,6 +2153,8 @@ class _SingleOptionSelectionSheet extends StatefulWidget {
   final String noResultsMessage;
   final List<PaperlessFilterOption> options;
   final int? selectedId;
+  final String createActionLabel;
+  final Future<PaperlessFilterOption?> Function() onCreateOption;
 
   @override
   State<_SingleOptionSelectionSheet> createState() =>
@@ -2300,12 +2164,15 @@ class _SingleOptionSelectionSheet extends StatefulWidget {
 class _SingleOptionSelectionSheetState
     extends State<_SingleOptionSelectionSheet> {
   late final TextEditingController _searchController;
+  late List<PaperlessFilterOption> _options;
   String _query = '';
+  bool _isCreatingOption = false;
 
   @override
   void initState() {
     super.initState();
     _searchController = TextEditingController();
+    _options = List<PaperlessFilterOption>.of(widget.options);
     _searchController.addListener(_handleSearchChanged);
   }
 
@@ -2319,7 +2186,7 @@ class _SingleOptionSelectionSheetState
 
   List<PaperlessFilterOption> get _visibleOptions {
     final normalizedQuery = _query.trim().toLowerCase();
-    final filtered = widget.options.where((option) {
+    final filtered = _options.where((option) {
       if (normalizedQuery.isEmpty) {
         return true;
       }
@@ -2346,6 +2213,35 @@ class _SingleOptionSelectionSheetState
     });
   }
 
+  Future<void> _createOption() async {
+    setState(() {
+      _isCreatingOption = true;
+    });
+
+    try {
+      final created = await widget.onCreateOption();
+      if (!mounted || created == null) {
+        return;
+      }
+
+      Navigator.of(context).pop<int?>(created.id);
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(error.toString())));
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isCreatingOption = false;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -2369,6 +2265,25 @@ class _SingleOptionSelectionSheetState
                   widget.title,
                   style: theme.textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    onPressed: _isCreatingOption ? null : _createOption,
+                    icon: _isCreatingOption
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.add_circle_outline),
+                    label: Text(
+                      _isCreatingOption
+                          ? context.l10n.addingAction
+                          : widget.createActionLabel,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 16),

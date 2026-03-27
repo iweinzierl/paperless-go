@@ -1,0 +1,2 @@
+- schermate principali uniformate con titoli, azioni, sfondi e cambio vista coerenti
+- layout di modifica dei metadati ridisegnato e selezione delle pagine nell'anteprima migliorata

@@ -1,0 +1,2 @@
+- Ecrans principaux harmonises avec titres, actions, arriere-plans et changement de vue coherents
+- Edition des metadonnees des documents repensee et selection des pages de previsualisation amelioree

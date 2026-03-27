@@ -1,0 +1,2 @@
+- refreshed the main screens with consistent titles, actions, backgrounds and layout switching
+- redesigned document metadata editing and improved preview page selection behavior

@@ -1,0 +1,2 @@
+- Hauptansichten mit einheitlichen Titeln, Aktionen, Hintergruenden und Layoutumschaltung ueberarbeitet
+- Bearbeitung von Dokumentmetadaten neu gestaltet und Verhalten der Vorschausseiten verbessert

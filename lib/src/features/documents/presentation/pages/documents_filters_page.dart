@@ -151,22 +151,6 @@ class _DocumentsFiltersPageState extends ConsumerState<DocumentsFiltersPage> {
             const SizedBox(height: 28),
             _SectionTitle(title: l10n.filtersTitle),
             const SizedBox(height: 14),
-            _TagCategoryCard(
-              options: tagOptions,
-              selectedIds: _filterState.tagIds,
-              searchHint: l10n.searchTagsHint,
-              dialogTitle: l10n.selectTagsDialogTitle,
-              noResultsMessage: l10n.noTagsMatchSearch,
-              onChanged: (value) {
-                setState(() {
-                  _filterState = _filterState.copyWith(
-                    tagIds: value,
-                    clearTag: value.isEmpty,
-                  );
-                });
-              },
-            ),
-            const SizedBox(height: 16),
             _SingleFilterCategoryCard(
               title: l10n.filterCorrespondentLabel,
               icon: Icons.business_outlined,
@@ -200,6 +184,22 @@ class _DocumentsFiltersPageState extends ConsumerState<DocumentsFiltersPage> {
                   _filterState = _filterState.copyWith(
                     documentTypeId: value,
                     clearDocumentType: value == null,
+                  );
+                });
+              },
+            ),
+            const SizedBox(height: 16),
+            _TagCategoryCard(
+              options: tagOptions,
+              selectedIds: _filterState.tagIds,
+              searchHint: l10n.searchTagsHint,
+              dialogTitle: l10n.selectTagsDialogTitle,
+              noResultsMessage: l10n.noTagsMatchSearch,
+              onChanged: (value) {
+                setState(() {
+                  _filterState = _filterState.copyWith(
+                    tagIds: value,
+                    clearTag: value.isEmpty,
                   );
                 });
               },

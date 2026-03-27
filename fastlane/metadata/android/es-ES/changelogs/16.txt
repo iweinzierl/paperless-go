@@ -1,0 +1,2 @@
+- pantallas principales unificadas con titulos, acciones, fondos y cambio de vista coherentes
+- rediseno de la edicion de metadatos y mejora de la seleccion de paginas en la vista previa
