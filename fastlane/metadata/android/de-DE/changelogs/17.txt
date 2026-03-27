@@ -1,0 +1,2 @@
+- Bearbeitung von Metadaten mit klareren Einzelauswahlfeldern und direkter Erstellung im Auswahlfenster verbessert
+- Reihenfolge der Filter ueberarbeitet und weitere UI-Verbesserungen in der Dokumentverwaltung umgesetzt

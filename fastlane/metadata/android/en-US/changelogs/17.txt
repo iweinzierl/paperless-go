@@ -1,0 +1,2 @@
+- improved the metadata editing flow with cleaner single-selection fields and in-sheet creation
+- refined filter ordering and additional UI polish across document management screens

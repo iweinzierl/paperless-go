@@ -16,9 +16,14 @@ import 'package:paperless_ngx_app/src/features/documents/data/repositories/docum
 enum _DocumentDetailAction { openOriginal, delete }
 
 class DocumentDetailPage extends ConsumerWidget {
-  const DocumentDetailPage({required this.documentId, super.key});
+  const DocumentDetailPage({
+    required this.documentId,
+    this.openEditMetadataOnLoad = false,
+    super.key,
+  });
 
   final int documentId;
+  final bool openEditMetadataOnLoad;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -84,7 +89,10 @@ class DocumentDetailPage extends ConsumerWidget {
         ],
       ),
       body: documentAsync.when(
-        data: (document) => _DocumentDetailBody(document: document),
+        data: (document) => _DocumentDetailBody(
+          document: document,
+          openEditMetadataOnLoad: openEditMetadataOnLoad,
+        ),
         error: (error, stackTrace) => _DocumentDetailError(
           onRetry: () => ref.invalidate(documentDetailProvider(documentId)),
         ),
@@ -172,9 +180,13 @@ class DocumentDetailPage extends ConsumerWidget {
 }
 
 class _DocumentDetailBody extends ConsumerStatefulWidget {
-  const _DocumentDetailBody({required this.document});
+  const _DocumentDetailBody({
+    required this.document,
+    required this.openEditMetadataOnLoad,
+  });
 
   final PaperlessDocument document;
+  final bool openEditMetadataOnLoad;
 
   @override
   ConsumerState<_DocumentDetailBody> createState() =>
@@ -184,16 +196,24 @@ class _DocumentDetailBody extends ConsumerStatefulWidget {
 class _DocumentDetailBodyState extends ConsumerState<_DocumentDetailBody> {
   int _selectedPage = 1;
   late final ScrollController _pageStripScrollController;
+  bool _didAutoOpenMetadataEditor = false;
 
   @override
   void initState() {
     super.initState();
     _pageStripScrollController = ScrollController();
+    _scheduleMetadataEditorOpen();
   }
 
   @override
   void didUpdateWidget(covariant _DocumentDetailBody oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.openEditMetadataOnLoad != widget.openEditMetadataOnLoad ||
+        oldWidget.document.id != widget.document.id) {
+      _didAutoOpenMetadataEditor = false;
+      _scheduleMetadataEditorOpen();
+    }
+
     if (oldWidget.document.id != widget.document.id) {
       _selectedPage = 1;
       if (_pageStripScrollController.hasClients) {
@@ -212,6 +232,21 @@ class _DocumentDetailBodyState extends ConsumerState<_DocumentDetailBody> {
   void dispose() {
     _pageStripScrollController.dispose();
     super.dispose();
+  }
+
+  void _scheduleMetadataEditorOpen() {
+    if (!widget.openEditMetadataOnLoad || _didAutoOpenMetadataEditor) {
+      return;
+    }
+
+    _didAutoOpenMetadataEditor = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+
+      _editMetadata(context, ref, widget.document);
+    });
   }
 
   @override

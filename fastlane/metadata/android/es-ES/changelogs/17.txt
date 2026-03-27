@@ -1,0 +1,2 @@
+- mejora del flujo de edicion de metadatos con campos de seleccion unica mas claros y creacion directa desde las hojas
+- ajuste del orden de filtros y mas mejoras de interfaz en las pantallas de gestion documental

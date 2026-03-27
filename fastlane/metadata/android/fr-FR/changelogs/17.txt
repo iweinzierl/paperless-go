@@ -1,0 +1,2 @@
+- flux de modification des metadonnees ameliore avec des champs a choix unique plus clairs et la creation directe dans les feuilles
+- ordre des filtres affine et autres ameliorations de l'interface dans la gestion des documents

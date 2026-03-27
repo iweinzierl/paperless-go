@@ -51,22 +51,32 @@ class ScreenshotTest {
     }
 
     @Test
-    fun captureHomeScreen() {
-        writeScenario(ScreenshotScenario.HOME, authenticated = true)
-
-        launchMainActivity().use {
-            waitForFlutterToSettle()
-            captureScreenshot("02-home-screen")
-        }
-    }
-
-    @Test
     fun captureDocumentsScreen() {
         writeScenario(ScreenshotScenario.DOCUMENTS, authenticated = true)
 
         launchMainActivity().use {
             waitForFlutterToSettle()
-            captureScreenshot("03-document-list")
+            captureScreenshot("02-document-list")
+        }
+    }
+
+    @Test
+    fun captureCondensedDocumentsScreen() {
+        writeScenario(ScreenshotScenario.DOCUMENTS_LIST, authenticated = true)
+
+        launchMainActivity().use {
+            waitForFlutterToSettle()
+            captureScreenshot("03-document-list-condensed")
+        }
+    }
+
+    @Test
+    fun captureDocumentsFiltersScreen() {
+        writeScenario(ScreenshotScenario.DOCUMENTS_FILTERS, authenticated = true)
+
+        launchMainActivity().use {
+            waitForFlutterToSettle()
+            captureScreenshot("04-filter-sort")
         }
     }
 
@@ -76,7 +86,7 @@ class ScreenshotTest {
 
         launchMainActivity().use {
             waitForFlutterToSettle()
-            captureScreenshot("04-documents-drawer")
+            captureScreenshot("07-documents-drawer")
         }
     }
 
@@ -91,12 +101,22 @@ class ScreenshotTest {
     }
 
     @Test
+    fun captureDocumentMetadataEditScreen() {
+        writeScenario(ScreenshotScenario.DOCUMENT_METADATA_EDIT, authenticated = true)
+
+        launchMainActivity().use {
+            waitForFlutterToSettle()
+            captureScreenshot("06-document-metadata-edit")
+        }
+    }
+
+    @Test
     fun captureSettingsScreen() {
         writeScenario(ScreenshotScenario.SETTINGS, authenticated = true)
 
         launchMainActivity().use {
             waitForFlutterToSettle()
-            captureScreenshot("06-settings-screen")
+            captureScreenshot("08-settings-screen")
         }
     }
 
@@ -122,6 +142,13 @@ class ScreenshotTest {
             putString("flutter.debug.screenshot_scenario", scenario.preferenceValue)
             putString("flutter.app_behavior.app_language", appLanguageForLocale())
             putString("flutter.sync.documents.last_success_at", "2026-03-21T09:30:00.000Z")
+            putString(
+                "flutter.documents.layout_mode",
+                when (scenario) {
+                    ScreenshotScenario.DOCUMENTS_LIST -> "list"
+                    else -> "card"
+                },
+            )
 
             if (authenticated) {
                 putString("flutter.auth.server_url", "https://demo.paperless-ngx.local/")
@@ -184,9 +211,11 @@ private class ExternalFileWritingScreenshotCallback(
 
 private enum class ScreenshotScenario(val preferenceValue: String) {
     LOGIN("login"),
-    HOME("home"),
     DOCUMENTS("documents"),
+    DOCUMENTS_LIST("documents_list"),
+    DOCUMENTS_FILTERS("documents_filters"),
     DOCUMENTS_DRAWER("documents_drawer"),
     DOCUMENT_DETAIL("document_detail"),
+    DOCUMENT_METADATA_EDIT("document_metadata_edit"),
     SETTINGS("settings"),
 }

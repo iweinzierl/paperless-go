@@ -1,0 +1,2 @@
+- migliorato il flusso di modifica dei metadati con campi a selezione singola piu chiari e creazione diretta dai pannelli
+- ordine dei filtri affinato e ulteriori miglioramenti UI nelle schermate di gestione documenti
