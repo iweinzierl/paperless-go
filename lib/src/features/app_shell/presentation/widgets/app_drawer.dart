@@ -91,7 +91,7 @@ class AppDrawer extends ConsumerWidget {
             ) ...[
               _DrawerActionTile(
                 action: primaryDestinations[index],
-                prominent: index == 0,
+                highlighted: false,
               ),
               const SizedBox(height: 4),
             ],
@@ -168,18 +168,18 @@ class _DrawerSectionLabel extends StatelessWidget {
 }
 
 class _DrawerActionTile extends StatelessWidget {
-  const _DrawerActionTile({required this.action, required this.prominent});
+  const _DrawerActionTile({required this.action, required this.highlighted});
 
   final _DrawerAction action;
-  final bool prominent;
+  final bool highlighted;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final backgroundColor = prominent
+    final backgroundColor = highlighted
         ? theme.colorScheme.primary
         : Colors.transparent;
-    final foregroundColor = prominent
+    final foregroundColor = highlighted
         ? theme.colorScheme.onPrimary
         : theme.colorScheme.onSurface.withValues(alpha: 0.85);
 
@@ -200,7 +200,7 @@ class _DrawerActionTile extends StatelessWidget {
                   action.title,
                   style: theme.textTheme.bodyLarge?.copyWith(
                     color: foregroundColor,
-                    fontWeight: prominent ? FontWeight.w800 : FontWeight.w600,
+                    fontWeight: highlighted ? FontWeight.w800 : FontWeight.w600,
                   ),
                 ),
               ),

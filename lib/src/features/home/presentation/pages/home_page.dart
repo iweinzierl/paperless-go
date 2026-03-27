@@ -8,7 +8,6 @@ import 'package:paperless_ngx_app/src/core/providers/sync_status_preferences_pro
 import 'package:paperless_ngx_app/src/core/presentation/widgets/refresh_status_text.dart';
 import 'package:paperless_ngx_app/src/features/app_shell/presentation/providers/app_shell_providers.dart';
 import 'package:paperless_ngx_app/src/features/app_shell/presentation/widgets/app_drawer.dart';
-import 'package:paperless_ngx_app/src/features/auth/presentation/controllers/auth_session_controller.dart';
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_document.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/models/documents_layout_mode.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/pages/document_detail_page.dart';
@@ -17,6 +16,8 @@ import 'package:paperless_ngx_app/src/features/documents/presentation/providers/
 import 'package:paperless_ngx_app/src/features/documents/presentation/widgets/paperless_document_card.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/widgets/paperless_document_list_item.dart';
 
+enum _HomePageAction { refresh }
+
 class HomePage extends ConsumerWidget {
   const HomePage({super.key});
 
@@ -24,28 +25,59 @@ class HomePage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final recentUploads = ref.watch(recentUploadsProvider);
     final l10n = context.l10n;
+    final layoutMode = ref.watch(documentsLayoutModeProvider);
 
     return Scaffold(
       drawer: const AppDrawer(),
       appBar: AppBar(
-        title: Text(l10n.appTitle),
+        title: Text(l10n.navigationRecent),
         actions: [
           IconButton(
-            tooltip: l10n.homeRefreshTooltip,
-            onPressed: recentUploads.isRefreshing
-                ? null
-                : () => _refreshHome(context, ref),
-            icon: const Icon(Icons.refresh),
+            onPressed: () => _updateLayoutMode(
+              ref,
+              layoutMode == DocumentsLayoutMode.card
+                  ? DocumentsLayoutMode.list
+                  : DocumentsLayoutMode.card,
+            ),
+            icon: Icon(
+              layoutMode == DocumentsLayoutMode.card
+                  ? Icons.view_list_rounded
+                  : Icons.dashboard_customize_rounded,
+            ),
           ),
-          IconButton(
-            tooltip: l10n.logoutTooltip,
-            onPressed: () => ref.read(authSessionProvider.notifier).signOut(),
-            icon: const Icon(Icons.logout),
+          PopupMenuButton<_HomePageAction>(
+            tooltip: MaterialLocalizations.of(context).showMenuTooltip,
+            onSelected: (action) {
+              switch (action) {
+                case _HomePageAction.refresh:
+                  _refreshHome(context, ref);
+              }
+            },
+            itemBuilder: (context) => [
+              PopupMenuItem<_HomePageAction>(
+                value: _HomePageAction.refresh,
+                enabled: !recentUploads.isRefreshing,
+                child: Text(
+                  MaterialLocalizations.of(
+                    context,
+                  ).refreshIndicatorSemanticLabel,
+                ),
+              ),
+            ],
           ),
         ],
       ),
       body: const _RecentUploadsTab(),
     );
+  }
+
+  void _updateLayoutMode(WidgetRef ref, DocumentsLayoutMode mode) {
+    if (ref.read(documentsLayoutModeProvider) == mode) {
+      return;
+    }
+
+    ref.read(documentsLayoutModeProvider.notifier).state = mode;
+    unawaited(ref.read(documentsViewPreferencesProvider).saveLayoutMode(mode));
   }
 
   Future<void> _refreshHome(BuildContext context, WidgetRef ref) async {
@@ -95,6 +127,7 @@ class _RecentUploadsTabState extends ConsumerState<_RecentUploadsTab> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final l10n = context.l10n;
     final layoutMode = ref.watch(documentsLayoutModeProvider);
     final openingIds = ref.watch(documentOpenControllerProvider);
@@ -143,54 +176,92 @@ class _RecentUploadsTabState extends ConsumerState<_RecentUploadsTab> {
       });
     }
 
-    return Stack(
-      children: [
-        RefreshIndicator(
-          onRefresh: () => ref.refresh(recentUploadsProvider.future),
-          child: documents != null
-              ? ListView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
-                  children: [
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: RefreshStatusText(
-                        lastUpdatedAt: _lastUpdatedAt,
-                        isRefreshing: recentUploads.isRefreshing,
-                        lastRefreshFailedAt: _lastRefreshFailedAt,
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            theme.colorScheme.surface,
+            theme.colorScheme.surfaceContainerHigh,
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: Stack(
+        children: [
+          RefreshIndicator(
+            onRefresh: () => ref.refresh(recentUploadsProvider.future),
+            child: documents != null
+                ? ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+                    children: [
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: RefreshStatusText(
+                          lastUpdatedAt: _lastUpdatedAt,
+                          isRefreshing: recentUploads.isRefreshing,
+                          lastRefreshFailedAt: _lastRefreshFailedAt,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 12),
-                    if (documents.isEmpty)
-                      _EmptyStateCard(
-                        title: l10n.noUploadsYetTitle,
-                        description: l10n.noUploadsYetDescription,
-                      ),
-                    for (final document in documents) ...[
-                      if (layoutMode == DocumentsLayoutMode.card)
-                        PaperlessDocumentCard(
-                          document: document,
-                          onTap: () =>
-                              _openDocumentDetails(context, ref, document),
-                          footer: Row(
-                            children: [
-                              SizedBox(
-                                width: 148,
-                                child: FilledButton(
-                                  onPressed: openingIds.contains(document.id)
-                                      ? null
-                                      : () => _openDocument(
-                                          context,
-                                          ref,
-                                          document,
-                                        ),
-                                  style: FilledButton.styleFrom(
-                                    minimumSize: const Size.fromHeight(58),
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 18,
-                                      vertical: 12,
+                      const SizedBox(height: 12),
+                      if (documents.isEmpty)
+                        _EmptyStateCard(
+                          title: l10n.noUploadsYetTitle,
+                          description: l10n.noUploadsYetDescription,
+                        ),
+                      for (final document in documents) ...[
+                        if (layoutMode == DocumentsLayoutMode.card)
+                          PaperlessDocumentCard(
+                            document: document,
+                            onTap: () =>
+                                _openDocumentDetails(context, ref, document),
+                            footer: Row(
+                              children: [
+                                SizedBox(
+                                  width: 148,
+                                  child: FilledButton(
+                                    onPressed: openingIds.contains(document.id)
+                                        ? null
+                                        : () => _openDocument(
+                                            context,
+                                            ref,
+                                            document,
+                                          ),
+                                    style: FilledButton.styleFrom(
+                                      minimumSize: const Size.fromHeight(58),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 18,
+                                        vertical: 12,
+                                      ),
+                                      shape: const StadiumBorder(),
+                                      textStyle: Theme.of(context)
+                                          .textTheme
+                                          .labelLarge
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.w800,
+                                            letterSpacing: 1.2,
+                                          ),
                                     ),
-                                    shape: const StadiumBorder(),
+                                    child: Text(
+                                      (openingIds.contains(document.id)
+                                              ? l10n.openingAction
+                                              : l10n.openAction)
+                                          .toUpperCase(),
+                                    ),
+                                  ),
+                                ),
+                                const Spacer(),
+                                TextButton(
+                                  onPressed: () => _openDocumentDetails(
+                                    context,
+                                    ref,
+                                    document,
+                                  ),
+                                  style: TextButton.styleFrom(
+                                    foregroundColor: Theme.of(
+                                      context,
+                                    ).colorScheme.primary,
                                     textStyle: Theme.of(context)
                                         .textTheme
                                         .labelLarge
@@ -199,106 +270,80 @@ class _RecentUploadsTabState extends ConsumerState<_RecentUploadsTab> {
                                           letterSpacing: 1.2,
                                         ),
                                   ),
-                                  child: Text(
-                                    (openingIds.contains(document.id)
-                                            ? l10n.openingAction
-                                            : l10n.openAction)
-                                        .toUpperCase(),
-                                  ),
+                                  child: Text(l10n.detailsAction.toUpperCase()),
                                 ),
-                              ),
-                              const Spacer(),
-                              TextButton(
-                                onPressed: () => _openDocumentDetails(
-                                  context,
-                                  ref,
-                                  document,
-                                ),
-                                style: TextButton.styleFrom(
-                                  foregroundColor: Theme.of(
-                                    context,
-                                  ).colorScheme.primary,
-                                  textStyle: Theme.of(context)
-                                      .textTheme
-                                      .labelLarge
-                                      ?.copyWith(
-                                        fontWeight: FontWeight.w800,
-                                        letterSpacing: 1.2,
-                                      ),
-                                ),
-                                child: Text(l10n.detailsAction.toUpperCase()),
-                              ),
-                            ],
+                              ],
+                            ),
+                          )
+                        else
+                          PaperlessDocumentListItem(
+                            document: document,
+                            onTap: () =>
+                                _openDocumentDetails(context, ref, document),
+                            isOpening: openingIds.contains(document.id),
+                            onOpen: () => _openDocument(context, ref, document),
                           ),
-                        )
-                      else
-                        PaperlessDocumentListItem(
-                          document: document,
-                          onTap: () =>
-                              _openDocumentDetails(context, ref, document),
-                          isOpening: openingIds.contains(document.id),
-                          onOpen: () => _openDocument(context, ref, document),
+                        SizedBox(
+                          height: layoutMode == DocumentsLayoutMode.card
+                              ? 12
+                              : 10,
                         ),
-                      SizedBox(
-                        height: layoutMode == DocumentsLayoutMode.card
-                            ? 12
-                            : 10,
-                      ),
+                      ],
                     ],
-                  ],
-                )
-              : recentUploads.when(
-                  data: (_) => const SizedBox.shrink(),
-                  error: (error, stackTrace) {
-                    return ListView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
-                      children: [
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: RefreshStatusText(
-                            lastUpdatedAt: _lastUpdatedAt,
-                            isRefreshing: recentUploads.isRefreshing,
-                            lastRefreshFailedAt: _lastRefreshFailedAt,
+                  )
+                : recentUploads.when(
+                    data: (_) => const SizedBox.shrink(),
+                    error: (error, stackTrace) {
+                      return ListView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+                        children: [
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: RefreshStatusText(
+                              lastUpdatedAt: _lastUpdatedAt,
+                              isRefreshing: recentUploads.isRefreshing,
+                              lastRefreshFailedAt: _lastRefreshFailedAt,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 12),
-                        _EmptyStateCard(
-                          title: l10n.couldNotLoadRecentUploadsTitle,
-                          description:
-                              l10n.couldNotLoadRecentUploadsDescription,
-                        ),
-                      ],
-                    );
-                  },
-                  loading: () {
-                    return ListView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
-                      children: [
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: RefreshStatusText(
-                            lastUpdatedAt: _lastUpdatedAt,
-                            isRefreshing: recentUploads.isRefreshing,
-                            lastRefreshFailedAt: _lastRefreshFailedAt,
+                          const SizedBox(height: 12),
+                          _EmptyStateCard(
+                            title: l10n.couldNotLoadRecentUploadsTitle,
+                            description:
+                                l10n.couldNotLoadRecentUploadsDescription,
                           ),
-                        ),
-                        const SizedBox(height: 12),
-                        const _LoadingCard(),
-                      ],
-                    );
-                  },
-                ),
-        ),
-        if (recentUploads.isRefreshing && documents != null)
-          const Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: LinearProgressIndicator(minHeight: 2),
+                        ],
+                      );
+                    },
+                    loading: () {
+                      return ListView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+                        children: [
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: RefreshStatusText(
+                              lastUpdatedAt: _lastUpdatedAt,
+                              isRefreshing: recentUploads.isRefreshing,
+                              lastRefreshFailedAt: _lastRefreshFailedAt,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          const _LoadingCard(),
+                        ],
+                      );
+                    },
+                  ),
           ),
-      ],
+          if (recentUploads.isRefreshing && documents != null)
+            const Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: LinearProgressIndicator(minHeight: 2),
+            ),
+        ],
+      ),
     );
   }
 

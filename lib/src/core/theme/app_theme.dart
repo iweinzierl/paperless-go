@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-const _seedColor = Color(0xFF0D7A6A);
+const _seedColor = Color(0xFF1D5FD3);
 
 ThemeData buildAppTheme({Brightness brightness = Brightness.light}) {
   final isDark = brightness == Brightness.dark;
@@ -13,35 +13,35 @@ ThemeData buildAppTheme({Brightness brightness = Brightness.light}) {
   );
   final colorScheme = isDark
       ? baseScheme.copyWith(
-          primary: const Color(0xFF48B4A2),
-          onPrimary: const Color(0xFF032D28),
-          secondary: const Color(0xFFB7D7D1),
-          onSecondary: const Color(0xFF062A25),
-          surface: const Color(0xFF0F1B1A),
-          surfaceContainerLowest: const Color(0xFF0B1413),
-          surfaceContainerLow: const Color(0xFF122120),
-          surfaceContainer: const Color(0xFF172827),
-          surfaceContainerHigh: const Color(0xFF1C302F),
-          surfaceContainerHighest: const Color(0xFF244140),
-          onSurface: const Color(0xFFF2F6F4),
-          onSurfaceVariant: const Color(0xFFB5C8C3),
-          outline: const Color(0xFF4F6662),
+          primary: const Color(0xFF8CB8FF),
+          onPrimary: const Color(0xFF062C68),
+          secondary: const Color(0xFFD9E6FF),
+          onSecondary: const Color(0xFF132B54),
+          surface: const Color(0xFF0F1724),
+          surfaceContainerLowest: const Color(0xFF080F18),
+          surfaceContainerLow: const Color(0xFF182235),
+          surfaceContainer: const Color(0xFF1E2A40),
+          surfaceContainerHigh: const Color(0xFF25324A),
+          surfaceContainerHighest: const Color(0xFF31415F),
+          onSurface: const Color(0xFFF2F5FB),
+          onSurfaceVariant: const Color(0xFFC6D3EA),
+          outline: const Color(0xFF6C7EA1),
           shadow: Colors.black,
         )
       : baseScheme.copyWith(
-          primary: const Color(0xFF0D7A6A),
+          primary: const Color(0xFF1D5FD3),
           onPrimary: Colors.white,
-          secondary: const Color(0xFFCFE5E0),
-          onSecondary: const Color(0xFF113632),
-          surface: const Color(0xFFF5FAF8),
+          secondary: const Color(0xFFD9E6FF),
+          onSecondary: const Color(0xFF1D335F),
+          surface: const Color(0xFFF5F8FE),
           surfaceContainerLowest: const Color(0xFFFFFFFF),
           surfaceContainerLow: const Color(0xFFFFFFFF),
-          surfaceContainer: const Color(0xFFF2F7F5),
-          surfaceContainerHigh: const Color(0xFFEAF2EF),
-          surfaceContainerHighest: const Color(0xFFE2ECE8),
-          onSurface: const Color(0xFF0F1D1A),
-          onSurfaceVariant: const Color(0xFF60746E),
-          outline: const Color(0xFFCBD8D3),
+          surfaceContainer: const Color(0xFFF0F5FD),
+          surfaceContainerHigh: const Color(0xFFE8EFFA),
+          surfaceContainerHighest: const Color(0xFFDEE7F6),
+          onSurface: const Color(0xFF121A29),
+          onSurfaceVariant: const Color(0xFF66748E),
+          outline: const Color(0xFFCCD6E6),
           shadow: const Color(0xFF0F172A),
         );
   final cardShape = RoundedRectangleBorder(
@@ -78,8 +78,8 @@ ThemeData buildAppTheme({Brightness brightness = Brightness.light}) {
     primaryTextTheme: textTheme,
     colorScheme: colorScheme,
     scaffoldBackgroundColor: isDark
-        ? const Color(0xFF091312)
-        : const Color(0xFFF7FBFA),
+        ? const Color(0xFF070D16)
+        : const Color(0xFFF7FAFF),
     useMaterial3: true,
     appBarTheme: AppBarTheme(
       backgroundColor: Colors.transparent,
@@ -95,7 +95,7 @@ ThemeData buildAppTheme({Brightness brightness = Brightness.light}) {
     cardTheme: CardThemeData(
       color: colorScheme.surfaceContainerLow,
       shadowColor: isDark
-          ? Colors.black.withValues(alpha: 0.24)
+          ? Colors.black.withValues(alpha: 0.34)
           : colorScheme.shadow.withValues(alpha: 0.08),
       surfaceTintColor: colorScheme.surfaceTint,
       shape: cardShape,
@@ -115,8 +115,8 @@ ThemeData buildAppTheme({Brightness brightness = Brightness.light}) {
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
       fillColor: isDark
-          ? colorScheme.surfaceContainerHigh
-          : const Color(0xFFEFF3F2),
+          ? colorScheme.surfaceContainer
+          : const Color(0xFFEEF3FB),
       hintStyle: textTheme.bodyLarge?.copyWith(
         color: colorScheme.onSurfaceVariant,
       ),
@@ -188,10 +188,14 @@ ThemeData buildAppTheme({Brightness brightness = Brightness.light}) {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
     ),
     navigationBarTheme: NavigationBarThemeData(
-      backgroundColor: colorScheme.surfaceContainerLow,
+      backgroundColor: isDark
+          ? colorScheme.surface
+          : colorScheme.surfaceContainerLow,
       elevation: 0,
       height: 78,
-      indicatorColor: colorScheme.secondaryContainer.withValues(alpha: 0.5),
+      indicatorColor: colorScheme.secondaryContainer.withValues(
+        alpha: isDark ? 0.78 : 0.5,
+      ),
       labelTextStyle: WidgetStateProperty.resolveWith((states) {
         final isSelected = states.contains(WidgetState.selected);
         return textTheme.labelSmall?.copyWith(
@@ -204,7 +208,9 @@ ThemeData buildAppTheme({Brightness brightness = Brightness.light}) {
       }),
     ),
     navigationDrawerTheme: NavigationDrawerThemeData(
-      backgroundColor: colorScheme.surfaceContainerLow,
+      backgroundColor: isDark
+          ? colorScheme.surface
+          : colorScheme.surfaceContainerLow,
       indicatorColor: colorScheme.secondaryContainer,
       indicatorShape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(28),
@@ -213,7 +219,7 @@ ThemeData buildAppTheme({Brightness brightness = Brightness.light}) {
     ),
     chipTheme: ChipThemeData(
       backgroundColor: isDark
-          ? colorScheme.surfaceContainerHighest
+          ? colorScheme.surfaceContainer
           : colorScheme.surfaceContainerLow,
       selectedColor: colorScheme.secondaryContainer,
       side: BorderSide.none,

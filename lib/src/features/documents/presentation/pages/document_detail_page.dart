@@ -183,12 +183,22 @@ class _DocumentDetailBody extends ConsumerStatefulWidget {
 
 class _DocumentDetailBodyState extends ConsumerState<_DocumentDetailBody> {
   int _selectedPage = 1;
+  late final ScrollController _pageStripScrollController;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageStripScrollController = ScrollController();
+  }
 
   @override
   void didUpdateWidget(covariant _DocumentDetailBody oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.document.id != widget.document.id) {
       _selectedPage = 1;
+      if (_pageStripScrollController.hasClients) {
+        _pageStripScrollController.jumpTo(0);
+      }
       return;
     }
 
@@ -196,6 +206,12 @@ class _DocumentDetailBodyState extends ConsumerState<_DocumentDetailBody> {
     if (_selectedPage > maxPage) {
       _selectedPage = maxPage;
     }
+  }
+
+  @override
+  void dispose() {
+    _pageStripScrollController.dispose();
+    super.dispose();
   }
 
   @override
@@ -314,6 +330,7 @@ class _DocumentDetailBodyState extends ConsumerState<_DocumentDetailBody> {
             document: document,
             pageCount: effectivePageCount,
             selectedPage: selectedPage,
+            pageStripScrollController: _pageStripScrollController,
             thumbnailWidget: thumbnailWidget,
             thumbnailImageProvider: thumbnailImageProvider,
             repository: repository,
@@ -563,6 +580,7 @@ class _EditDocumentMetadataPageState
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = context.l10n;
+    final repository = ref.watch(documentsRepositoryProvider);
     final correspondents = ref.watch(correspondentOptionsProvider);
     final documentTypes = ref.watch(documentTypeOptionsProvider);
     final tags = ref.watch(tagOptionsProvider);
@@ -601,6 +619,17 @@ class _EditDocumentMetadataPageState
         (left, right) =>
             left.value.toLowerCase().compareTo(right.value.toLowerCase()),
       );
+    final heroEyebrow =
+        (selectedCorrespondentLabel ??
+                selectedDocumentTypeLabel ??
+                l10n.metadataTitle)
+            .toUpperCase();
+    final heroBadges = <String>[
+      if (widget.document.mimeType?.trim().isNotEmpty == true)
+        widget.document.mimeType!.toUpperCase(),
+      if (widget.document.pageCount != null)
+        l10n.documentPages(widget.document.pageCount!),
+    ];
 
     return Scaffold(
       appBar: AppBar(
@@ -612,206 +641,190 @@ class _EditDocumentMetadataPageState
           ),
         ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-        children: [
-          _DetailSection(
-            title: l10n.editableFieldsTitle,
-            children: [
-              TextField(
+      body: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              theme.colorScheme.surfaceContainerLowest,
+              theme.colorScheme.surface,
+            ],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+          children: [
+            _EditFieldSection(
+              label: l10n.titleLabel,
+              child: _EditMetadataTextField(
                 controller: _titleController,
+                enabled: !_isBusy,
+                hintText: l10n.titleLabel,
                 textInputAction: TextInputAction.next,
-                decoration: InputDecoration(
-                  labelText: l10n.titleLabel,
-                  errorText: _titleError,
-                ),
+                errorText: _titleError,
               ),
-              const SizedBox(height: 16),
-              TextField(
+            ),
+            const SizedBox(height: 18),
+            _EditFieldSection(
+              label: l10n.createdDateLabel,
+              child: _EditMetadataTextField(
                 controller: _createdController,
-                decoration: InputDecoration(
-                  labelText: l10n.createdDateLabel,
-                  hintText: l10n.createdDateHint,
-                  errorText: _createdError,
-                  suffixIcon: IconButton(
-                    onPressed: _isBusy ? null : _pickCreatedDate,
-                    icon: const Icon(Icons.calendar_today_outlined),
-                  ),
+                enabled: !_isBusy,
+                hintText: l10n.createdDateHint,
+                keyboardType: TextInputType.datetime,
+                errorText: _createdError,
+                suffix: IconButton(
+                  onPressed: _isBusy ? null : _pickCreatedDate,
+                  icon: const Icon(Icons.calendar_today_outlined),
                 ),
               ),
-              const SizedBox(height: 16),
-              _FieldActionHeader(
-                title: l10n.correspondentLabel,
-                actionLabel: _isCreatingCorrespondent
-                    ? l10n.addingAction
-                    : l10n.newCorrespondentAction,
-                actionIcon: _isCreatingCorrespondent
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.add_circle_outline),
-                onActionPressed: _isBusy || _isCreatingCorrespondent
-                    ? null
-                    : _createCorrespondent,
-              ),
-              const SizedBox(height: 8),
-              correspondents.when(
-                data: (items) => Column(
+            ),
+            const SizedBox(height: 18),
+            _EditFieldSection(
+              label: l10n.correspondentLabel,
+              child: correspondents.when(
+                data: (items) => Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (selectedCorrespondentLabel != null)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: InputChip(
-                          label: Text(selectedCorrespondentLabel),
-                          onDeleted: _isBusy
-                              ? null
-                              : () => setState(() {
-                                  _selectedCorrespondentId = null;
-                                }),
-                          deleteIcon: const Icon(Icons.close),
-                        ),
-                      )
-                    else
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: Text(
-                          l10n.noCorrespondentOption,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
+                    Expanded(
+                      child: _EditSelectionField(
+                        icon: Icons.business_outlined,
+                        value: selectedCorrespondentLabel,
+                        placeholder: l10n.noCorrespondentOption,
+                        actionIcon: Icons.unfold_more,
+                        enabled: !_isBusy,
+                        onTap: _isBusy
+                            ? null
+                            : () => _openCorrespondentSelection(items),
                       ),
-                    FilledButton.tonalIcon(
-                      onPressed: _isBusy
+                    ),
+                    const SizedBox(width: 12),
+                    _EditSquareActionButton(
+                      icon: _isCreatingCorrespondent ? null : Icons.add_rounded,
+                      onTap: _isBusy || _isCreatingCorrespondent
                           ? null
-                          : () => _openCorrespondentSelection(items),
-                      icon: const Icon(Icons.person_search_outlined),
-                      label: Text(l10n.chooseCorrespondentHint),
+                          : _createCorrespondent,
+                      isLoading: _isCreatingCorrespondent,
                     ),
                   ],
                 ),
-                error: (error, stackTrace) => Text(
-                  l10n.couldNotLoadCorrespondents,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.error,
-                  ),
+                error: (error, stackTrace) => _EditInlineStatusCard(
+                  message: l10n.couldNotLoadCorrespondents,
+                  isError: true,
                 ),
-                loading: () => const LinearProgressIndicator(),
+                loading: () => const _EditLoadingCard(),
               ),
-              const SizedBox(height: 16),
-              _FieldActionHeader(
-                title: l10n.documentTypeLabel,
-                actionLabel: _isCreatingDocumentType
-                    ? l10n.addingAction
-                    : l10n.newDocumentTypeAction,
-                actionIcon: _isCreatingDocumentType
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.add_circle_outline),
-                onActionPressed: _isBusy || _isCreatingDocumentType
-                    ? null
-                    : _createDocumentType,
-              ),
-              const SizedBox(height: 8),
-              documentTypes.when(
-                data: (items) => Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+            ),
+            const SizedBox(height: 18),
+            _EditFieldSection(
+              label: l10n.documentTypeLabel,
+              child: documentTypes.when(
+                data: (items) => _EditChoicePanel(
+                  placeholder: l10n.noDocumentTypeOption,
                   children: [
                     if (selectedDocumentTypeLabel != null)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: InputChip(
-                          label: Text(selectedDocumentTypeLabel),
-                          onDeleted: _isBusy
-                              ? null
-                              : () => setState(() {
-                                  _selectedDocumentTypeId = null;
-                                }),
-                          deleteIcon: const Icon(Icons.close),
-                        ),
+                      _EditSelectionChip(
+                        label: selectedDocumentTypeLabel,
+                        icon: Icons.description_outlined,
+                        selected: true,
+                        enabled: !_isBusy,
+                        onPressed: _isBusy
+                            ? null
+                            : () => _openDocumentTypeSelection(items),
+                        onDeleted: _isBusy
+                            ? null
+                            : () => setState(() {
+                                _selectedDocumentTypeId = null;
+                              }),
                       )
                     else
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: Text(
-                          l10n.noDocumentTypeOption,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
+                      _EditActionChip(
+                        label: l10n.chooseDocumentTypeHint,
+                        icon: Icons.find_in_page_outlined,
+                        onPressed: _isBusy
+                            ? null
+                            : () => _openDocumentTypeSelection(items),
                       ),
-                    FilledButton.tonalIcon(
-                      onPressed: _isBusy
+                    _EditDashedChip(
+                      label: _isCreatingDocumentType
+                          ? l10n.addingAction
+                          : l10n.newDocumentTypeAction,
+                      icon: _isCreatingDocumentType ? null : Icons.add_rounded,
+                      onPressed: _isBusy || _isCreatingDocumentType
                           ? null
-                          : () => _openDocumentTypeSelection(items),
-                      icon: const Icon(Icons.find_in_page_outlined),
-                      label: Text(l10n.chooseDocumentTypeHint),
+                          : _createDocumentType,
+                      isLoading: _isCreatingDocumentType,
                     ),
                   ],
                 ),
-                error: (error, stackTrace) => Text(
-                  l10n.couldNotLoadDocumentTypes,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.error,
-                  ),
+                error: (error, stackTrace) => _EditInlineStatusCard(
+                  message: l10n.couldNotLoadDocumentTypes,
+                  isError: true,
                 ),
-                loading: () => const LinearProgressIndicator(),
+                loading: () => const _EditLoadingCard(),
               ),
-              const SizedBox(height: 20),
-              Text(
-                l10n.tagsLabel,
-                style: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 8),
-              if (selectedTags.isEmpty)
-                Text(
-                  l10n.noTagsSelected,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                )
-              else
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
+            ),
+            const SizedBox(height: 18),
+            _EditFieldSection(
+              label: l10n.tagsLabel,
+              child: tags.when(
+                data: (items) => _EditChoicePanel(
+                  placeholder: l10n.noTagsSelected,
                   children: [
                     for (final tag in selectedTags)
-                      InputChip(
-                        label: Text(tag.value),
+                      _EditSelectionChip(
+                        label: tag.value,
+                        icon: Icons.sell_outlined,
+                        selected: true,
+                        enabled: !_isBusy,
+                        onPressed: _isBusy
+                            ? null
+                            : () => _openTagSelection(items),
                         onDeleted: _isBusy
                             ? null
                             : () => _removeSelectedTag(tag.key),
-                        deleteIcon: const Icon(Icons.close),
                       ),
+                    _EditCircleActionChip(
+                      icon: Icons.add_rounded,
+                      onPressed: _isBusy
+                          ? null
+                          : () => _openTagSelection(items),
+                    ),
                   ],
                 ),
-              const SizedBox(height: 12),
-              tags.when(
-                data: (items) => FilledButton.tonalIcon(
-                  onPressed: _isBusy ? null : () => _openTagSelection(items),
-                  icon: const Icon(Icons.sell_outlined),
-                  label: Text(l10n.editTagsAction),
-                ),
-                error: (error, stackTrace) => OutlinedButton.icon(
-                  onPressed: _isBusy
+                error: (error, stackTrace) => _EditInlineStatusCard(
+                  message: l10n.retryTagLoadingAction,
+                  isError: true,
+                  actionLabel: l10n.retryAction,
+                  onAction: _isBusy
                       ? null
                       : () => ref.invalidate(tagOptionsProvider),
-                  icon: const Icon(Icons.refresh),
-                  label: Text(l10n.retryTagLoadingAction),
                 ),
-                loading: () => const LinearProgressIndicator(),
+                loading: () => const _EditLoadingCard(),
               ),
-            ],
-          ),
-        ],
+            ),
+            const SizedBox(height: 30),
+            _EditMetadataHero(
+              document: widget.document,
+              repository: repository,
+              eyebrow: heroEyebrow,
+              badges: heroBadges,
+            ),
+            const SizedBox(height: 30),
+            Text(
+              'END OF ARCHIVE METADATA',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant.withValues(
+                  alpha: 0.7,
+                ),
+                fontWeight: FontWeight.w700,
+                letterSpacing: 3,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1126,6 +1139,624 @@ class _EditDocumentMetadataPageState
   }
 }
 
+class _EditMetadataHero extends StatelessWidget {
+  const _EditMetadataHero({
+    required this.document,
+    required this.repository,
+    required this.eyebrow,
+    required this.badges,
+  });
+
+  final PaperlessDocument document;
+  final DocumentsRepository repository;
+  final String eyebrow;
+  final List<String> badges;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        DecoratedBox(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(28),
+            boxShadow: [
+              BoxShadow(
+                color: theme.colorScheme.shadow.withValues(alpha: 0.18),
+                blurRadius: 30,
+                offset: const Offset(0, 18),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(28),
+            child: AspectRatio(
+              aspectRatio: 0.74,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  _DocumentThumbnailImage(
+                    imageUri: repository.buildDocumentThumbnailUri(document.id),
+                    headers: repository.buildAuthenticatedHeaders(),
+                  ),
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.black.withValues(alpha: 0.1),
+                          Colors.black.withValues(alpha: 0.48),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 18),
+        Text(
+          eyebrow,
+          style: theme.textTheme.labelMedium?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 3,
+          ),
+        ),
+        const SizedBox(height: 10),
+        Text(
+          document.preferredFileName,
+          style: theme.textTheme.headlineMedium?.copyWith(
+            fontWeight: FontWeight.w900,
+            letterSpacing: -1.1,
+            height: 1.05,
+          ),
+        ),
+        if (badges.isNotEmpty) ...[
+          const SizedBox(height: 14),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: badges
+                .map((badge) => _EditMetaBadge(label: badge))
+                .toList(growable: false),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _EditFieldSection extends StatelessWidget {
+  const _EditFieldSection({required this.label, required this.child});
+
+  final String label;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label.toUpperCase(),
+          style: theme.textTheme.labelMedium?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 2.2,
+          ),
+        ),
+        const SizedBox(height: 10),
+        child,
+      ],
+    );
+  }
+}
+
+class _EditMetadataTextField extends StatelessWidget {
+  const _EditMetadataTextField({
+    required this.controller,
+    required this.enabled,
+    this.hintText,
+    this.textInputAction,
+    this.keyboardType,
+    this.errorText,
+    this.suffix,
+  });
+
+  final TextEditingController controller;
+  final bool enabled;
+  final String? hintText;
+  final TextInputAction? textInputAction;
+  final TextInputType? keyboardType;
+  final String? errorText;
+  final Widget? suffix;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        DecoratedBox(
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: TextField(
+            controller: controller,
+            enabled: enabled,
+            textInputAction: textInputAction,
+            keyboardType: keyboardType,
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+            decoration: InputDecoration(
+              hintText: hintText,
+              suffixIcon: suffix,
+              filled: true,
+              fillColor: Colors.transparent,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 18,
+                vertical: 18,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(20),
+                borderSide: BorderSide.none,
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(20),
+                borderSide: BorderSide(
+                  color: theme.colorScheme.primary.withValues(alpha: 0.65),
+                  width: 1.5,
+                ),
+              ),
+              errorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(20),
+                borderSide: BorderSide(
+                  color: theme.colorScheme.error.withValues(alpha: 0.8),
+                ),
+              ),
+              focusedErrorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(20),
+                borderSide: BorderSide(
+                  color: theme.colorScheme.error,
+                  width: 1.5,
+                ),
+              ),
+              disabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(20),
+                borderSide: BorderSide.none,
+              ),
+              errorStyle: const TextStyle(height: 0, fontSize: 0),
+            ),
+          ),
+        ),
+        if (errorText != null) ...[
+          const SizedBox(height: 8),
+          Text(
+            errorText!,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.error,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _EditSelectionField extends StatelessWidget {
+  const _EditSelectionField({
+    required this.icon,
+    required this.value,
+    required this.placeholder,
+    required this.actionIcon,
+    required this.enabled,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String? value;
+  final String placeholder;
+  final IconData actionIcon;
+  final bool enabled;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Material(
+      color: theme.colorScheme.surfaceContainerLow,
+      borderRadius: BorderRadius.circular(20),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: enabled ? onTap : null,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  value?.trim().isNotEmpty == true ? value! : placeholder,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: value?.trim().isNotEmpty == true
+                        ? theme.colorScheme.onSurface
+                        : theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Icon(icon, color: theme.colorScheme.onSurfaceVariant, size: 20),
+              const SizedBox(width: 10),
+              Icon(
+                actionIcon,
+                color: theme.colorScheme.onSurfaceVariant,
+                size: 20,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _EditSquareActionButton extends StatelessWidget {
+  const _EditSquareActionButton({
+    required this.icon,
+    required this.onTap,
+    required this.isLoading,
+  });
+
+  final IconData? icon;
+  final VoidCallback? onTap;
+  final bool isLoading;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return SizedBox(
+      width: 56,
+      height: 56,
+      child: Material(
+        color: theme.colorScheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(18),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(18),
+          onTap: onTap,
+          child: Center(
+            child: isLoading
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2.2),
+                  )
+                : Icon(icon, color: theme.colorScheme.onSurface, size: 24),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _EditChoicePanel extends StatelessWidget {
+  const _EditChoicePanel({required this.placeholder, required this.children});
+
+  final String placeholder;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final hasInteractiveChildren = children.isNotEmpty;
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: theme.colorScheme.shadow.withValues(alpha: 0.08),
+            blurRadius: 16,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: hasInteractiveChildren
+            ? Wrap(spacing: 10, runSpacing: 10, children: children)
+            : Text(
+                placeholder,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+      ),
+    );
+  }
+}
+
+class _EditSelectionChip extends StatelessWidget {
+  const _EditSelectionChip({
+    required this.label,
+    required this.icon,
+    required this.selected,
+    required this.enabled,
+    this.onPressed,
+    this.onDeleted,
+  });
+
+  final String label;
+  final IconData icon;
+  final bool selected;
+  final bool enabled;
+  final VoidCallback? onPressed;
+  final VoidCallback? onDeleted;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final backgroundColor = selected
+        ? theme.colorScheme.primary.withValues(alpha: 0.22)
+        : theme.colorScheme.surfaceContainerHighest;
+    final foregroundColor = selected
+        ? theme.colorScheme.primary
+        : theme.colorScheme.onSurface;
+
+    return InputChip(
+      label: Text(label),
+      avatar: Icon(icon, size: 16, color: foregroundColor),
+      selected: selected,
+      onPressed: enabled ? onPressed : null,
+      onDeleted: enabled ? onDeleted : null,
+      deleteIcon: Icon(Icons.close_rounded, size: 16, color: foregroundColor),
+      side: BorderSide.none,
+      backgroundColor: backgroundColor,
+      selectedColor: backgroundColor,
+      labelStyle: theme.textTheme.labelLarge?.copyWith(
+        color: foregroundColor,
+        fontWeight: FontWeight.w700,
+      ),
+      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      visualDensity: VisualDensity.compact,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+    );
+  }
+}
+
+class _EditActionChip extends StatelessWidget {
+  const _EditActionChip({
+    required this.label,
+    required this.icon,
+    required this.onPressed,
+  });
+
+  final String label;
+  final IconData icon;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return ActionChip(
+      label: Text(label),
+      avatar: Icon(icon, size: 16, color: theme.colorScheme.onSurfaceVariant),
+      onPressed: onPressed,
+      side: BorderSide.none,
+      backgroundColor: theme.colorScheme.surfaceContainerHighest,
+      labelStyle: theme.textTheme.labelLarge?.copyWith(
+        fontWeight: FontWeight.w700,
+      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+    );
+  }
+}
+
+class _EditDashedChip extends StatelessWidget {
+  const _EditDashedChip({
+    required this.label,
+    required this.icon,
+    required this.onPressed,
+    required this.isLoading,
+  });
+
+  final String label;
+  final IconData? icon;
+  final VoidCallback? onPressed;
+  final bool isLoading;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: onPressed,
+        child: Ink(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: theme.colorScheme.outline.withValues(alpha: 0.45),
+              style: BorderStyle.solid,
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (isLoading)
+                  const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                else if (icon != null) ...[
+                  Icon(
+                    icon,
+                    size: 16,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(width: 8),
+                ],
+                Text(
+                  label,
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _EditCircleActionChip extends StatelessWidget {
+  const _EditCircleActionChip({required this.icon, required this.onPressed});
+
+  final IconData icon;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Material(
+      color: theme.colorScheme.surfaceContainerHighest,
+      shape: const CircleBorder(),
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: onPressed,
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Icon(icon, size: 20, color: theme.colorScheme.onSurface),
+        ),
+      ),
+    );
+  }
+}
+
+class _EditMetaBadge extends StatelessWidget {
+  const _EditMetaBadge({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        child: Text(
+          label,
+          style: theme.textTheme.labelMedium?.copyWith(
+            fontWeight: FontWeight.w800,
+            color: theme.colorScheme.onSurface,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _EditInlineStatusCard extends StatelessWidget {
+  const _EditInlineStatusCard({
+    required this.message,
+    required this.isError,
+    this.actionLabel,
+    this.onAction,
+  });
+
+  final String message;
+  final bool isError;
+  final String? actionLabel;
+  final VoidCallback? onAction;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final color = isError
+        ? theme.colorScheme.error.withValues(alpha: 0.14)
+        : theme.colorScheme.surfaceContainerLow;
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                message,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: isError
+                      ? theme.colorScheme.error
+                      : theme.colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            if (actionLabel != null) ...[
+              const SizedBox(width: 12),
+              TextButton(onPressed: onAction, child: Text(actionLabel!)),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _EditLoadingCard extends StatelessWidget {
+  const _EditLoadingCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: const Padding(
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+        child: LinearProgressIndicator(),
+      ),
+    );
+  }
+}
+
 String? _formatMetadataTimestamp(BuildContext context, String? value) {
   final trimmed = value?.trim();
   if (trimmed == null || trimmed.isEmpty) {
@@ -1404,6 +2035,7 @@ class _PreviewCard extends StatelessWidget {
     required this.document,
     required this.pageCount,
     required this.selectedPage,
+    required this.pageStripScrollController,
     required this.thumbnailWidget,
     required this.thumbnailImageProvider,
     required this.repository,
@@ -1415,6 +2047,7 @@ class _PreviewCard extends StatelessWidget {
   final PaperlessDocument document;
   final int pageCount;
   final int selectedPage;
+  final ScrollController pageStripScrollController;
   final Widget? thumbnailWidget;
   final ImageProvider<Object>? thumbnailImageProvider;
   final DocumentsRepository repository;
@@ -1489,6 +2122,7 @@ class _PreviewCard extends StatelessWidget {
                       pageCount: effectivePageCount,
                       selectedPage: effectiveSelectedPage,
                       pdfDocument: pdfDocument,
+                      scrollController: pageStripScrollController,
                       onPageSelected: onSelectPage,
                     ),
                     const SizedBox(height: 12),
@@ -1556,45 +2190,6 @@ class _ResolvedOptionRow extends StatelessWidget {
       ),
       loading: () =>
           _MetadataInfoRow(label: label, value: context.l10n.loadingStatus),
-    );
-  }
-}
-
-class _FieldActionHeader extends StatelessWidget {
-  const _FieldActionHeader({
-    required this.title,
-    required this.actionLabel,
-    required this.actionIcon,
-    required this.onActionPressed,
-  });
-
-  final String title;
-  final String actionLabel;
-  final Widget actionIcon;
-  final VoidCallback? onActionPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Wrap(
-      alignment: WrapAlignment.spaceBetween,
-      crossAxisAlignment: WrapCrossAlignment.center,
-      spacing: 12,
-      runSpacing: 8,
-      children: [
-        Text(
-          title,
-          style: theme.textTheme.titleSmall?.copyWith(
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        TextButton.icon(
-          onPressed: onActionPressed,
-          icon: actionIcon,
-          label: Text(actionLabel),
-        ),
-      ],
     );
   }
 }
@@ -2329,12 +2924,14 @@ class _PagePreviewStrip extends StatelessWidget {
     required this.pageCount,
     required this.selectedPage,
     required this.pdfDocument,
+    required this.scrollController,
     required this.onPageSelected,
   });
 
   final int pageCount;
   final int selectedPage;
   final PdfDocument pdfDocument;
+  final ScrollController scrollController;
   final ValueChanged<int> onPageSelected;
 
   @override
@@ -2342,6 +2939,7 @@ class _PagePreviewStrip extends StatelessWidget {
     return SizedBox(
       height: 142,
       child: ListView.separated(
+        controller: scrollController,
         scrollDirection: Axis.horizontal,
         itemCount: pageCount,
         separatorBuilder: (context, index) => const SizedBox(width: 12),

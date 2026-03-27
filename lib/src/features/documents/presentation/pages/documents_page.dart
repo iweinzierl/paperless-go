@@ -21,6 +21,8 @@ import 'package:paperless_ngx_app/src/features/documents/presentation/providers/
 import 'package:paperless_ngx_app/src/features/documents/presentation/widgets/paperless_document_card.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/widgets/paperless_document_list_item.dart';
 
+enum _DocumentsPageAction { refresh }
+
 class DocumentsPage extends ConsumerStatefulWidget {
   const DocumentsPage({this.openDrawerOnLoad = false, super.key});
 
@@ -112,14 +114,40 @@ class _DocumentsPageState extends ConsumerState<DocumentsPage> {
       drawer: const AppDrawer(),
       appBar: AppBar(
         titleSpacing: 0,
-        title: Text(l10n.appTitle),
+        title: Text(l10n.navigationDocuments),
         actions: [
           IconButton(
-            tooltip: l10n.searchByTitleHint,
-            onPressed: () => _searchFocusNode.requestFocus(),
-            icon: const Icon(Icons.search),
+            onPressed: () => _updateLayoutMode(
+              layoutMode == DocumentsLayoutMode.card
+                  ? DocumentsLayoutMode.list
+                  : DocumentsLayoutMode.card,
+            ),
+            icon: Icon(
+              layoutMode == DocumentsLayoutMode.card
+                  ? Icons.view_list_rounded
+                  : Icons.dashboard_customize_rounded,
+            ),
           ),
-          const SizedBox(width: 8),
+          PopupMenuButton<_DocumentsPageAction>(
+            tooltip: MaterialLocalizations.of(context).showMenuTooltip,
+            onSelected: (action) {
+              switch (action) {
+                case _DocumentsPageAction.refresh:
+                  _refreshDocumentsPage();
+              }
+            },
+            itemBuilder: (context) => [
+              PopupMenuItem<_DocumentsPageAction>(
+                value: _DocumentsPageAction.refresh,
+                enabled: !documentsPage.isRefreshing,
+                child: Text(
+                  MaterialLocalizations.of(
+                    context,
+                  ).refreshIndicatorSemanticLabel,
+                ),
+              ),
+            ],
+          ),
         ],
       ),
       body: DecoratedBox(
@@ -161,25 +189,6 @@ class _DocumentsPageState extends ConsumerState<DocumentsPage> {
                                     )
                                   : null,
                             ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        IconButton.filledTonal(
-                          onPressed: () => _updateLayoutMode(
-                            layoutMode == DocumentsLayoutMode.card
-                                ? DocumentsLayoutMode.list
-                                : DocumentsLayoutMode.card,
-                          ),
-                          style: IconButton.styleFrom(
-                            minimumSize: const Size(56, 56),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                          ),
-                          icon: Icon(
-                            layoutMode == DocumentsLayoutMode.card
-                                ? Icons.view_list_rounded
-                                : Icons.dashboard_customize_rounded,
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -233,10 +242,13 @@ class _DocumentsPageState extends ConsumerState<DocumentsPage> {
                       ),
                     ],
                     const SizedBox(height: 12),
-                    RefreshStatusText(
-                      lastUpdatedAt: _lastUpdatedAt,
-                      isRefreshing: documentsPage.isRefreshing,
-                      lastRefreshFailedAt: _lastRefreshFailedAt,
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: RefreshStatusText(
+                        lastUpdatedAt: _lastUpdatedAt,
+                        isRefreshing: documentsPage.isRefreshing,
+                        lastRefreshFailedAt: _lastRefreshFailedAt,
+                      ),
                     ),
                   ],
                 ),

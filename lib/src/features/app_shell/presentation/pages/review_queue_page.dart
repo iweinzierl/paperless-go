@@ -16,6 +16,8 @@ import 'package:paperless_ngx_app/src/features/documents/presentation/providers/
 import 'package:paperless_ngx_app/src/features/documents/presentation/widgets/paperless_document_card.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/widgets/paperless_document_list_item.dart';
 
+enum _ReviewQueuePageAction { refresh }
+
 class ReviewQueuePage extends ConsumerStatefulWidget {
   const ReviewQueuePage({super.key});
 
@@ -88,7 +90,44 @@ class _ReviewQueuePageState extends ConsumerState<ReviewQueuePage> {
 
     return Scaffold(
       drawer: const AppDrawer(),
-      appBar: AppBar(titleSpacing: 0, title: Text(l10n.navigationInbox)),
+      appBar: AppBar(
+        titleSpacing: 0,
+        title: Text(l10n.navigationInbox),
+        actions: [
+          IconButton(
+            onPressed: () => _updateLayoutMode(
+              layoutMode == DocumentsLayoutMode.card
+                  ? DocumentsLayoutMode.list
+                  : DocumentsLayoutMode.card,
+            ),
+            icon: Icon(
+              layoutMode == DocumentsLayoutMode.card
+                  ? Icons.view_list_rounded
+                  : Icons.dashboard_customize_rounded,
+            ),
+          ),
+          PopupMenuButton<_ReviewQueuePageAction>(
+            tooltip: MaterialLocalizations.of(context).showMenuTooltip,
+            onSelected: (action) {
+              switch (action) {
+                case _ReviewQueuePageAction.refresh:
+                  _refreshReviewQueue();
+              }
+            },
+            itemBuilder: (context) => [
+              PopupMenuItem<_ReviewQueuePageAction>(
+                value: _ReviewQueuePageAction.refresh,
+                enabled: !reviewDocuments.isRefreshing,
+                child: Text(
+                  MaterialLocalizations.of(
+                    context,
+                  ).refreshIndicatorSemanticLabel,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
       body: DecoratedBox(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -109,10 +148,13 @@ class _ReviewQueuePageState extends ConsumerState<ReviewQueuePage> {
                       physics: const AlwaysScrollableScrollPhysics(),
                       padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
                       children: [
-                        RefreshStatusText(
-                          lastUpdatedAt: _lastUpdatedAt,
-                          isRefreshing: reviewDocuments.isRefreshing,
-                          lastRefreshFailedAt: _lastRefreshFailedAt,
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: RefreshStatusText(
+                            lastUpdatedAt: _lastUpdatedAt,
+                            isRefreshing: reviewDocuments.isRefreshing,
+                            lastRefreshFailedAt: _lastRefreshFailedAt,
+                          ),
                         ),
                         const SizedBox(height: 12),
                         if (documents.isEmpty)
@@ -207,10 +249,13 @@ class _ReviewQueuePageState extends ConsumerState<ReviewQueuePage> {
                           physics: const AlwaysScrollableScrollPhysics(),
                           padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
                           children: [
-                            RefreshStatusText(
-                              lastUpdatedAt: _lastUpdatedAt,
-                              isRefreshing: reviewDocuments.isRefreshing,
-                              lastRefreshFailedAt: _lastRefreshFailedAt,
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: RefreshStatusText(
+                                lastUpdatedAt: _lastUpdatedAt,
+                                isRefreshing: reviewDocuments.isRefreshing,
+                                lastRefreshFailedAt: _lastRefreshFailedAt,
+                              ),
                             ),
                             const SizedBox(height: 12),
                             _ReviewEmptyStateCard(
@@ -226,10 +271,13 @@ class _ReviewQueuePageState extends ConsumerState<ReviewQueuePage> {
                           physics: const AlwaysScrollableScrollPhysics(),
                           padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
                           children: [
-                            RefreshStatusText(
-                              lastUpdatedAt: _lastUpdatedAt,
-                              isRefreshing: reviewDocuments.isRefreshing,
-                              lastRefreshFailedAt: _lastRefreshFailedAt,
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: RefreshStatusText(
+                                lastUpdatedAt: _lastUpdatedAt,
+                                isRefreshing: reviewDocuments.isRefreshing,
+                                lastRefreshFailedAt: _lastRefreshFailedAt,
+                              ),
                             ),
                             const SizedBox(height: 12),
                             const _ReviewLoadingCard(),
@@ -283,6 +331,19 @@ class _ReviewQueuePageState extends ConsumerState<ReviewQueuePage> {
         ..hideCurrentSnackBar()
         ..showSnackBar(SnackBar(content: Text(error.toString())));
     }
+  }
+
+  Future<void> _refreshReviewQueue() async {
+    final _ = await ref.refresh(reviewDocumentsProvider.future);
+  }
+
+  void _updateLayoutMode(DocumentsLayoutMode mode) {
+    if (ref.read(documentsLayoutModeProvider) == mode) {
+      return;
+    }
+
+    ref.read(documentsLayoutModeProvider.notifier).state = mode;
+    unawaited(ref.read(documentsViewPreferencesProvider).saveLayoutMode(mode));
   }
 }
 

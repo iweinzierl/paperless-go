@@ -18,13 +18,27 @@ class RefreshStatusText extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final hasRefreshFailure = _hasRefreshFailure();
+    final backgroundColor = hasRefreshFailure
+        ? theme.colorScheme.errorContainer.withValues(alpha: 0.42)
+        : theme.colorScheme.surfaceContainerLow.withValues(alpha: 0.78);
+    final foregroundColor = hasRefreshFailure
+        ? theme.colorScheme.error
+        : theme.colorScheme.onSurfaceVariant;
 
-    return Text(
-      _buildLabel(context),
-      style: theme.textTheme.bodySmall?.copyWith(
-        color: hasRefreshFailure
-            ? theme.colorScheme.error
-            : theme.colorScheme.onSurfaceVariant,
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+        child: Text(
+          _buildLabel(context),
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: foregroundColor,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
       ),
     );
   }
