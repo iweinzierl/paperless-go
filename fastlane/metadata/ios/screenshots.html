@@ -1,0 +1,916 @@
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <title>fastlane/snapshot</title>
+        <meta charset="UTF-8">
+        <style type="text/css">
+          * {
+            font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+            font-weight: 300;
+          }
+          #sortMenu {
+            overflow: hidden;
+            border: 1px solid #ccc;
+            background-color: #f1f1f1;
+            display: none;
+          }
+          #sortMenu button {
+            background-color: inherit;
+            float: left;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            padding: 14px 16px;
+            font-size: 17px;
+          }
+          #sortMenu button:hover {
+            background-color: #ddd;
+          }
+          #sortMenu button.active {
+            background-color: #ccc;
+          }
+          .deviceName {
+            display: block;
+            font-size: 30px;
+            padding-bottom: 24px;
+            padding-top: 45px;
+          }
+          .screenshot {
+            cursor: pointer;
+            border: 1px #EEE solid;
+            z-index: 0;
+          }
+          .caption {
+            font-size: 18px;
+            padding-bottom: 24px;
+            padding-top: 16px;
+          }
+          h1, h2 {
+            font-weight: bold;
+          }
+          th {
+            text-align: left;
+          }
+          td {
+            text-align: center;
+            min-width: 200px;
+            vertical-align: top;
+          }
+          #overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 5;
+            width: 100%;
+            height: 100%;
+            display: none;
+            cursor: zoom-out;
+            text-align: center;
+          }
+          #imageDisplay {
+            height: auto;
+            width: auto;
+            z-index: 10;
+            cursor: pointer;
+          }
+          #imageInfo {
+            background: none repeat scroll 0 0 rgba(0, 0, 0, 0.2);
+            border-radius: 5px;
+            color: white;
+            margin: 20px;
+            padding: 10px;
+            position: absolute;
+            right: 0;
+            top: 0;
+            width: 250px;
+            z-index: -1;
+          }
+          #imageInfo:hover {
+            z-index: 20;
+          }
+        </style>
+      </head>
+      <body>
+        <div id="sortMenu">
+          <button id="defaultTab" class="tabLink" onclick="openTab(event, 'byLanguage')">By Language</button>
+          <button class="tabLink" onclick="openTab(event, 'byScreen')">By Screen</button>
+        </div>
+        <div id="byLanguage" class="tabContent"><h1 class="tabTitle">By Language:</h1>
+      <h1 id="de-DE" class="language">de-DE</h1>
+      <hr>
+      <table>
+        <tr>
+          <th colspan="8">
+            <a id="de-DE-phoneScreenshots" class="deviceName" href="#de-DE-phoneScreenshots">phoneScreenshots</a>
+          </th>
+        </tr>
+        <tr>
+<td>
+  <a href="./de-DE/images/phoneScreenshots/iPhone%2016%20Pro-01-login-screen.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./de-DE/images/phoneScreenshots/iPhone%2016%20Pro-01-login-screen.png" style="width: 100%;" alt="de-DE phoneScreenshots" data-tab="1" data-counter="1">
+  </a>
+</td>
+<td>
+  <a href="./de-DE/images/phoneScreenshots/iPhone%2016%20Pro-02-document-list.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./de-DE/images/phoneScreenshots/iPhone%2016%20Pro-02-document-list.png" style="width: 100%;" alt="de-DE phoneScreenshots" data-tab="1" data-counter="2">
+  </a>
+</td>
+<td>
+  <a href="./de-DE/images/phoneScreenshots/iPhone%2016%20Pro-03-document-list-condensed.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./de-DE/images/phoneScreenshots/iPhone%2016%20Pro-03-document-list-condensed.png" style="width: 100%;" alt="de-DE phoneScreenshots" data-tab="1" data-counter="3">
+  </a>
+</td>
+<td>
+  <a href="./de-DE/images/phoneScreenshots/iPhone%2016%20Pro-04-filter-sort.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./de-DE/images/phoneScreenshots/iPhone%2016%20Pro-04-filter-sort.png" style="width: 100%;" alt="de-DE phoneScreenshots" data-tab="1" data-counter="4">
+  </a>
+</td>
+<td>
+  <a href="./de-DE/images/phoneScreenshots/iPhone%2016%20Pro-05-document-detail.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./de-DE/images/phoneScreenshots/iPhone%2016%20Pro-05-document-detail.png" style="width: 100%;" alt="de-DE phoneScreenshots" data-tab="1" data-counter="5">
+  </a>
+</td>
+<td>
+  <a href="./de-DE/images/phoneScreenshots/iPhone%2016%20Pro-06-document-metadata-edit.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./de-DE/images/phoneScreenshots/iPhone%2016%20Pro-06-document-metadata-edit.png" style="width: 100%;" alt="de-DE phoneScreenshots" data-tab="1" data-counter="6">
+  </a>
+</td>
+<td>
+  <a href="./de-DE/images/phoneScreenshots/iPhone%2016%20Pro-07-documents-drawer.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./de-DE/images/phoneScreenshots/iPhone%2016%20Pro-07-documents-drawer.png" style="width: 100%;" alt="de-DE phoneScreenshots" data-tab="1" data-counter="7">
+  </a>
+</td>
+<td>
+  <a href="./de-DE/images/phoneScreenshots/iPhone%2016%20Pro-08-settings-screen.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./de-DE/images/phoneScreenshots/iPhone%2016%20Pro-08-settings-screen.png" style="width: 100%;" alt="de-DE phoneScreenshots" data-tab="1" data-counter="8">
+  </a>
+</td>
+
+        </tr>
+      </table>
+
+      <h1 id="en-GB" class="language">en-GB</h1>
+      <hr>
+      <table>
+        <tr>
+          <th colspan="8">
+            <a id="en-GB-phoneScreenshots" class="deviceName" href="#en-GB-phoneScreenshots">phoneScreenshots</a>
+          </th>
+        </tr>
+        <tr>
+<td>
+  <a href="./en-GB/images/phoneScreenshots/iPhone%2016%20Pro-01-login-screen.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./en-GB/images/phoneScreenshots/iPhone%2016%20Pro-01-login-screen.png" style="width: 100%;" alt="en-GB phoneScreenshots" data-tab="1" data-counter="1">
+  </a>
+</td>
+<td>
+  <a href="./en-GB/images/phoneScreenshots/iPhone%2016%20Pro-02-document-list.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./en-GB/images/phoneScreenshots/iPhone%2016%20Pro-02-document-list.png" style="width: 100%;" alt="en-GB phoneScreenshots" data-tab="1" data-counter="2">
+  </a>
+</td>
+<td>
+  <a href="./en-GB/images/phoneScreenshots/iPhone%2016%20Pro-03-document-list-condensed.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./en-GB/images/phoneScreenshots/iPhone%2016%20Pro-03-document-list-condensed.png" style="width: 100%;" alt="en-GB phoneScreenshots" data-tab="1" data-counter="3">
+  </a>
+</td>
+<td>
+  <a href="./en-GB/images/phoneScreenshots/iPhone%2016%20Pro-04-filter-sort.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./en-GB/images/phoneScreenshots/iPhone%2016%20Pro-04-filter-sort.png" style="width: 100%;" alt="en-GB phoneScreenshots" data-tab="1" data-counter="4">
+  </a>
+</td>
+<td>
+  <a href="./en-GB/images/phoneScreenshots/iPhone%2016%20Pro-05-document-detail.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./en-GB/images/phoneScreenshots/iPhone%2016%20Pro-05-document-detail.png" style="width: 100%;" alt="en-GB phoneScreenshots" data-tab="1" data-counter="5">
+  </a>
+</td>
+<td>
+  <a href="./en-GB/images/phoneScreenshots/iPhone%2016%20Pro-06-document-metadata-edit.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./en-GB/images/phoneScreenshots/iPhone%2016%20Pro-06-document-metadata-edit.png" style="width: 100%;" alt="en-GB phoneScreenshots" data-tab="1" data-counter="6">
+  </a>
+</td>
+<td>
+  <a href="./en-GB/images/phoneScreenshots/iPhone%2016%20Pro-07-documents-drawer.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./en-GB/images/phoneScreenshots/iPhone%2016%20Pro-07-documents-drawer.png" style="width: 100%;" alt="en-GB phoneScreenshots" data-tab="1" data-counter="7">
+  </a>
+</td>
+<td>
+  <a href="./en-GB/images/phoneScreenshots/iPhone%2016%20Pro-08-settings-screen.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./en-GB/images/phoneScreenshots/iPhone%2016%20Pro-08-settings-screen.png" style="width: 100%;" alt="en-GB phoneScreenshots" data-tab="1" data-counter="8">
+  </a>
+</td>
+
+        </tr>
+      </table>
+
+      <h1 id="en-US" class="language">en-US</h1>
+      <hr>
+      <table>
+        <tr>
+          <th colspan="8">
+            <a id="en-US-phoneScreenshots" class="deviceName" href="#en-US-phoneScreenshots">phoneScreenshots</a>
+          </th>
+        </tr>
+        <tr>
+<td>
+  <a href="./en-US/images/phoneScreenshots/iPhone%2016%20Pro-01-login-screen.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./en-US/images/phoneScreenshots/iPhone%2016%20Pro-01-login-screen.png" style="width: 100%;" alt="en-US phoneScreenshots" data-tab="1" data-counter="1">
+  </a>
+</td>
+<td>
+  <a href="./en-US/images/phoneScreenshots/iPhone%2016%20Pro-02-document-list.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./en-US/images/phoneScreenshots/iPhone%2016%20Pro-02-document-list.png" style="width: 100%;" alt="en-US phoneScreenshots" data-tab="1" data-counter="2">
+  </a>
+</td>
+<td>
+  <a href="./en-US/images/phoneScreenshots/iPhone%2016%20Pro-03-document-list-condensed.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./en-US/images/phoneScreenshots/iPhone%2016%20Pro-03-document-list-condensed.png" style="width: 100%;" alt="en-US phoneScreenshots" data-tab="1" data-counter="3">
+  </a>
+</td>
+<td>
+  <a href="./en-US/images/phoneScreenshots/iPhone%2016%20Pro-04-filter-sort.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./en-US/images/phoneScreenshots/iPhone%2016%20Pro-04-filter-sort.png" style="width: 100%;" alt="en-US phoneScreenshots" data-tab="1" data-counter="4">
+  </a>
+</td>
+<td>
+  <a href="./en-US/images/phoneScreenshots/iPhone%2016%20Pro-05-document-detail.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./en-US/images/phoneScreenshots/iPhone%2016%20Pro-05-document-detail.png" style="width: 100%;" alt="en-US phoneScreenshots" data-tab="1" data-counter="5">
+  </a>
+</td>
+<td>
+  <a href="./en-US/images/phoneScreenshots/iPhone%2016%20Pro-06-document-metadata-edit.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./en-US/images/phoneScreenshots/iPhone%2016%20Pro-06-document-metadata-edit.png" style="width: 100%;" alt="en-US phoneScreenshots" data-tab="1" data-counter="6">
+  </a>
+</td>
+<td>
+  <a href="./en-US/images/phoneScreenshots/iPhone%2016%20Pro-07-documents-drawer.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./en-US/images/phoneScreenshots/iPhone%2016%20Pro-07-documents-drawer.png" style="width: 100%;" alt="en-US phoneScreenshots" data-tab="1" data-counter="7">
+  </a>
+</td>
+<td>
+  <a href="./en-US/images/phoneScreenshots/iPhone%2016%20Pro-08-settings-screen.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./en-US/images/phoneScreenshots/iPhone%2016%20Pro-08-settings-screen.png" style="width: 100%;" alt="en-US phoneScreenshots" data-tab="1" data-counter="8">
+  </a>
+</td>
+
+        </tr>
+      </table>
+
+      <h1 id="es-ES" class="language">es-ES</h1>
+      <hr>
+      <table>
+        <tr>
+          <th colspan="8">
+            <a id="es-ES-phoneScreenshots" class="deviceName" href="#es-ES-phoneScreenshots">phoneScreenshots</a>
+          </th>
+        </tr>
+        <tr>
+<td>
+  <a href="./es-ES/images/phoneScreenshots/iPhone%2016%20Pro-01-login-screen.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./es-ES/images/phoneScreenshots/iPhone%2016%20Pro-01-login-screen.png" style="width: 100%;" alt="es-ES phoneScreenshots" data-tab="1" data-counter="1">
+  </a>
+</td>
+<td>
+  <a href="./es-ES/images/phoneScreenshots/iPhone%2016%20Pro-02-document-list.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./es-ES/images/phoneScreenshots/iPhone%2016%20Pro-02-document-list.png" style="width: 100%;" alt="es-ES phoneScreenshots" data-tab="1" data-counter="2">
+  </a>
+</td>
+<td>
+  <a href="./es-ES/images/phoneScreenshots/iPhone%2016%20Pro-03-document-list-condensed.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./es-ES/images/phoneScreenshots/iPhone%2016%20Pro-03-document-list-condensed.png" style="width: 100%;" alt="es-ES phoneScreenshots" data-tab="1" data-counter="3">
+  </a>
+</td>
+<td>
+  <a href="./es-ES/images/phoneScreenshots/iPhone%2016%20Pro-04-filter-sort.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./es-ES/images/phoneScreenshots/iPhone%2016%20Pro-04-filter-sort.png" style="width: 100%;" alt="es-ES phoneScreenshots" data-tab="1" data-counter="4">
+  </a>
+</td>
+<td>
+  <a href="./es-ES/images/phoneScreenshots/iPhone%2016%20Pro-05-document-detail.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./es-ES/images/phoneScreenshots/iPhone%2016%20Pro-05-document-detail.png" style="width: 100%;" alt="es-ES phoneScreenshots" data-tab="1" data-counter="5">
+  </a>
+</td>
+<td>
+  <a href="./es-ES/images/phoneScreenshots/iPhone%2016%20Pro-06-document-metadata-edit.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./es-ES/images/phoneScreenshots/iPhone%2016%20Pro-06-document-metadata-edit.png" style="width: 100%;" alt="es-ES phoneScreenshots" data-tab="1" data-counter="6">
+  </a>
+</td>
+<td>
+  <a href="./es-ES/images/phoneScreenshots/iPhone%2016%20Pro-07-documents-drawer.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./es-ES/images/phoneScreenshots/iPhone%2016%20Pro-07-documents-drawer.png" style="width: 100%;" alt="es-ES phoneScreenshots" data-tab="1" data-counter="7">
+  </a>
+</td>
+<td>
+  <a href="./es-ES/images/phoneScreenshots/iPhone%2016%20Pro-08-settings-screen.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./es-ES/images/phoneScreenshots/iPhone%2016%20Pro-08-settings-screen.png" style="width: 100%;" alt="es-ES phoneScreenshots" data-tab="1" data-counter="8">
+  </a>
+</td>
+
+        </tr>
+      </table>
+
+      <h1 id="fr-FR" class="language">fr-FR</h1>
+      <hr>
+      <table>
+        <tr>
+          <th colspan="8">
+            <a id="fr-FR-phoneScreenshots" class="deviceName" href="#fr-FR-phoneScreenshots">phoneScreenshots</a>
+          </th>
+        </tr>
+        <tr>
+<td>
+  <a href="./fr-FR/images/phoneScreenshots/iPhone%2016%20Pro-01-login-screen.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./fr-FR/images/phoneScreenshots/iPhone%2016%20Pro-01-login-screen.png" style="width: 100%;" alt="fr-FR phoneScreenshots" data-tab="1" data-counter="1">
+  </a>
+</td>
+<td>
+  <a href="./fr-FR/images/phoneScreenshots/iPhone%2016%20Pro-02-document-list.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./fr-FR/images/phoneScreenshots/iPhone%2016%20Pro-02-document-list.png" style="width: 100%;" alt="fr-FR phoneScreenshots" data-tab="1" data-counter="2">
+  </a>
+</td>
+<td>
+  <a href="./fr-FR/images/phoneScreenshots/iPhone%2016%20Pro-03-document-list-condensed.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./fr-FR/images/phoneScreenshots/iPhone%2016%20Pro-03-document-list-condensed.png" style="width: 100%;" alt="fr-FR phoneScreenshots" data-tab="1" data-counter="3">
+  </a>
+</td>
+<td>
+  <a href="./fr-FR/images/phoneScreenshots/iPhone%2016%20Pro-04-filter-sort.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./fr-FR/images/phoneScreenshots/iPhone%2016%20Pro-04-filter-sort.png" style="width: 100%;" alt="fr-FR phoneScreenshots" data-tab="1" data-counter="4">
+  </a>
+</td>
+<td>
+  <a href="./fr-FR/images/phoneScreenshots/iPhone%2016%20Pro-05-document-detail.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./fr-FR/images/phoneScreenshots/iPhone%2016%20Pro-05-document-detail.png" style="width: 100%;" alt="fr-FR phoneScreenshots" data-tab="1" data-counter="5">
+  </a>
+</td>
+<td>
+  <a href="./fr-FR/images/phoneScreenshots/iPhone%2016%20Pro-06-document-metadata-edit.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./fr-FR/images/phoneScreenshots/iPhone%2016%20Pro-06-document-metadata-edit.png" style="width: 100%;" alt="fr-FR phoneScreenshots" data-tab="1" data-counter="6">
+  </a>
+</td>
+<td>
+  <a href="./fr-FR/images/phoneScreenshots/iPhone%2016%20Pro-07-documents-drawer.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./fr-FR/images/phoneScreenshots/iPhone%2016%20Pro-07-documents-drawer.png" style="width: 100%;" alt="fr-FR phoneScreenshots" data-tab="1" data-counter="7">
+  </a>
+</td>
+<td>
+  <a href="./fr-FR/images/phoneScreenshots/iPhone%2016%20Pro-08-settings-screen.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./fr-FR/images/phoneScreenshots/iPhone%2016%20Pro-08-settings-screen.png" style="width: 100%;" alt="fr-FR phoneScreenshots" data-tab="1" data-counter="8">
+  </a>
+</td>
+
+        </tr>
+      </table>
+
+      <h1 id="it-IT" class="language">it-IT</h1>
+      <hr>
+      <table>
+        <tr>
+          <th colspan="8">
+            <a id="it-IT-phoneScreenshots" class="deviceName" href="#it-IT-phoneScreenshots">phoneScreenshots</a>
+          </th>
+        </tr>
+        <tr>
+<td>
+  <a href="./it-IT/images/phoneScreenshots/iPhone%2016%20Pro-01-login-screen.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./it-IT/images/phoneScreenshots/iPhone%2016%20Pro-01-login-screen.png" style="width: 100%;" alt="it-IT phoneScreenshots" data-tab="1" data-counter="1">
+  </a>
+</td>
+<td>
+  <a href="./it-IT/images/phoneScreenshots/iPhone%2016%20Pro-02-document-list.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./it-IT/images/phoneScreenshots/iPhone%2016%20Pro-02-document-list.png" style="width: 100%;" alt="it-IT phoneScreenshots" data-tab="1" data-counter="2">
+  </a>
+</td>
+<td>
+  <a href="./it-IT/images/phoneScreenshots/iPhone%2016%20Pro-03-document-list-condensed.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./it-IT/images/phoneScreenshots/iPhone%2016%20Pro-03-document-list-condensed.png" style="width: 100%;" alt="it-IT phoneScreenshots" data-tab="1" data-counter="3">
+  </a>
+</td>
+<td>
+  <a href="./it-IT/images/phoneScreenshots/iPhone%2016%20Pro-04-filter-sort.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./it-IT/images/phoneScreenshots/iPhone%2016%20Pro-04-filter-sort.png" style="width: 100%;" alt="it-IT phoneScreenshots" data-tab="1" data-counter="4">
+  </a>
+</td>
+<td>
+  <a href="./it-IT/images/phoneScreenshots/iPhone%2016%20Pro-05-document-detail.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./it-IT/images/phoneScreenshots/iPhone%2016%20Pro-05-document-detail.png" style="width: 100%;" alt="it-IT phoneScreenshots" data-tab="1" data-counter="5">
+  </a>
+</td>
+<td>
+  <a href="./it-IT/images/phoneScreenshots/iPhone%2016%20Pro-06-document-metadata-edit.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./it-IT/images/phoneScreenshots/iPhone%2016%20Pro-06-document-metadata-edit.png" style="width: 100%;" alt="it-IT phoneScreenshots" data-tab="1" data-counter="6">
+  </a>
+</td>
+<td>
+  <a href="./it-IT/images/phoneScreenshots/iPhone%2016%20Pro-07-documents-drawer.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./it-IT/images/phoneScreenshots/iPhone%2016%20Pro-07-documents-drawer.png" style="width: 100%;" alt="it-IT phoneScreenshots" data-tab="1" data-counter="7">
+  </a>
+</td>
+<td>
+  <a href="./it-IT/images/phoneScreenshots/iPhone%2016%20Pro-08-settings-screen.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./it-IT/images/phoneScreenshots/iPhone%2016%20Pro-08-settings-screen.png" style="width: 100%;" alt="it-IT phoneScreenshots" data-tab="1" data-counter="8">
+  </a>
+</td>
+
+        </tr>
+      </table>
+
+        </div>
+        <div id="byScreen" class="tabContent"><h1 class="tabTitle">By Screen:</h1>
+      <h2 id="01-login-screen" class="screenName">01 login screen</h2>
+      <table>
+        <tr>
+<td>
+  <a href="./de-DE/images/phoneScreenshots/iPhone%2016%20Pro-01-login-screen.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./de-DE/images/phoneScreenshots/iPhone%2016%20Pro-01-login-screen.png" style="width: 100%;" alt="de-DE 01 login screen" data-tab="2" data-counter="1">
+  </a>
+  <div class="caption">de-DE</div>
+</td>
+<td>
+  <a href="./en-GB/images/phoneScreenshots/iPhone%2016%20Pro-01-login-screen.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./en-GB/images/phoneScreenshots/iPhone%2016%20Pro-01-login-screen.png" style="width: 100%;" alt="en-GB 01 login screen" data-tab="2" data-counter="2">
+  </a>
+  <div class="caption">en-GB</div>
+</td>
+<td>
+  <a href="./en-US/images/phoneScreenshots/iPhone%2016%20Pro-01-login-screen.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./en-US/images/phoneScreenshots/iPhone%2016%20Pro-01-login-screen.png" style="width: 100%;" alt="en-US 01 login screen" data-tab="2" data-counter="3">
+  </a>
+  <div class="caption">en-US</div>
+</td>
+<td>
+  <a href="./es-ES/images/phoneScreenshots/iPhone%2016%20Pro-01-login-screen.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./es-ES/images/phoneScreenshots/iPhone%2016%20Pro-01-login-screen.png" style="width: 100%;" alt="es-ES 01 login screen" data-tab="2" data-counter="4">
+  </a>
+  <div class="caption">es-ES</div>
+</td>
+<td>
+  <a href="./fr-FR/images/phoneScreenshots/iPhone%2016%20Pro-01-login-screen.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./fr-FR/images/phoneScreenshots/iPhone%2016%20Pro-01-login-screen.png" style="width: 100%;" alt="fr-FR 01 login screen" data-tab="2" data-counter="5">
+  </a>
+  <div class="caption">fr-FR</div>
+</td>
+<td>
+  <a href="./it-IT/images/phoneScreenshots/iPhone%2016%20Pro-01-login-screen.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./it-IT/images/phoneScreenshots/iPhone%2016%20Pro-01-login-screen.png" style="width: 100%;" alt="it-IT 01 login screen" data-tab="2" data-counter="6">
+  </a>
+  <div class="caption">it-IT</div>
+</td>
+
+        </tr>
+      </table>
+
+      <h2 id="02-document-list" class="screenName">02 document list</h2>
+      <table>
+        <tr>
+<td>
+  <a href="./de-DE/images/phoneScreenshots/iPhone%2016%20Pro-02-document-list.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./de-DE/images/phoneScreenshots/iPhone%2016%20Pro-02-document-list.png" style="width: 100%;" alt="de-DE 02 document list" data-tab="2" data-counter="1">
+  </a>
+  <div class="caption">de-DE</div>
+</td>
+<td>
+  <a href="./en-GB/images/phoneScreenshots/iPhone%2016%20Pro-02-document-list.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./en-GB/images/phoneScreenshots/iPhone%2016%20Pro-02-document-list.png" style="width: 100%;" alt="en-GB 02 document list" data-tab="2" data-counter="2">
+  </a>
+  <div class="caption">en-GB</div>
+</td>
+<td>
+  <a href="./en-US/images/phoneScreenshots/iPhone%2016%20Pro-02-document-list.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./en-US/images/phoneScreenshots/iPhone%2016%20Pro-02-document-list.png" style="width: 100%;" alt="en-US 02 document list" data-tab="2" data-counter="3">
+  </a>
+  <div class="caption">en-US</div>
+</td>
+<td>
+  <a href="./es-ES/images/phoneScreenshots/iPhone%2016%20Pro-02-document-list.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./es-ES/images/phoneScreenshots/iPhone%2016%20Pro-02-document-list.png" style="width: 100%;" alt="es-ES 02 document list" data-tab="2" data-counter="4">
+  </a>
+  <div class="caption">es-ES</div>
+</td>
+<td>
+  <a href="./fr-FR/images/phoneScreenshots/iPhone%2016%20Pro-02-document-list.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./fr-FR/images/phoneScreenshots/iPhone%2016%20Pro-02-document-list.png" style="width: 100%;" alt="fr-FR 02 document list" data-tab="2" data-counter="5">
+  </a>
+  <div class="caption">fr-FR</div>
+</td>
+<td>
+  <a href="./it-IT/images/phoneScreenshots/iPhone%2016%20Pro-02-document-list.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./it-IT/images/phoneScreenshots/iPhone%2016%20Pro-02-document-list.png" style="width: 100%;" alt="it-IT 02 document list" data-tab="2" data-counter="6">
+  </a>
+  <div class="caption">it-IT</div>
+</td>
+
+        </tr>
+      </table>
+
+      <h2 id="03-document-list-condensed" class="screenName">03 document list condensed</h2>
+      <table>
+        <tr>
+<td>
+  <a href="./de-DE/images/phoneScreenshots/iPhone%2016%20Pro-03-document-list-condensed.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./de-DE/images/phoneScreenshots/iPhone%2016%20Pro-03-document-list-condensed.png" style="width: 100%;" alt="de-DE 03 document list condensed" data-tab="2" data-counter="1">
+  </a>
+  <div class="caption">de-DE</div>
+</td>
+<td>
+  <a href="./en-GB/images/phoneScreenshots/iPhone%2016%20Pro-03-document-list-condensed.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./en-GB/images/phoneScreenshots/iPhone%2016%20Pro-03-document-list-condensed.png" style="width: 100%;" alt="en-GB 03 document list condensed" data-tab="2" data-counter="2">
+  </a>
+  <div class="caption">en-GB</div>
+</td>
+<td>
+  <a href="./en-US/images/phoneScreenshots/iPhone%2016%20Pro-03-document-list-condensed.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./en-US/images/phoneScreenshots/iPhone%2016%20Pro-03-document-list-condensed.png" style="width: 100%;" alt="en-US 03 document list condensed" data-tab="2" data-counter="3">
+  </a>
+  <div class="caption">en-US</div>
+</td>
+<td>
+  <a href="./es-ES/images/phoneScreenshots/iPhone%2016%20Pro-03-document-list-condensed.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./es-ES/images/phoneScreenshots/iPhone%2016%20Pro-03-document-list-condensed.png" style="width: 100%;" alt="es-ES 03 document list condensed" data-tab="2" data-counter="4">
+  </a>
+  <div class="caption">es-ES</div>
+</td>
+<td>
+  <a href="./fr-FR/images/phoneScreenshots/iPhone%2016%20Pro-03-document-list-condensed.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./fr-FR/images/phoneScreenshots/iPhone%2016%20Pro-03-document-list-condensed.png" style="width: 100%;" alt="fr-FR 03 document list condensed" data-tab="2" data-counter="5">
+  </a>
+  <div class="caption">fr-FR</div>
+</td>
+<td>
+  <a href="./it-IT/images/phoneScreenshots/iPhone%2016%20Pro-03-document-list-condensed.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./it-IT/images/phoneScreenshots/iPhone%2016%20Pro-03-document-list-condensed.png" style="width: 100%;" alt="it-IT 03 document list condensed" data-tab="2" data-counter="6">
+  </a>
+  <div class="caption">it-IT</div>
+</td>
+
+        </tr>
+      </table>
+
+      <h2 id="04-filter-sort" class="screenName">04 filter sort</h2>
+      <table>
+        <tr>
+<td>
+  <a href="./de-DE/images/phoneScreenshots/iPhone%2016%20Pro-04-filter-sort.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./de-DE/images/phoneScreenshots/iPhone%2016%20Pro-04-filter-sort.png" style="width: 100%;" alt="de-DE 04 filter sort" data-tab="2" data-counter="1">
+  </a>
+  <div class="caption">de-DE</div>
+</td>
+<td>
+  <a href="./en-GB/images/phoneScreenshots/iPhone%2016%20Pro-04-filter-sort.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./en-GB/images/phoneScreenshots/iPhone%2016%20Pro-04-filter-sort.png" style="width: 100%;" alt="en-GB 04 filter sort" data-tab="2" data-counter="2">
+  </a>
+  <div class="caption">en-GB</div>
+</td>
+<td>
+  <a href="./en-US/images/phoneScreenshots/iPhone%2016%20Pro-04-filter-sort.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./en-US/images/phoneScreenshots/iPhone%2016%20Pro-04-filter-sort.png" style="width: 100%;" alt="en-US 04 filter sort" data-tab="2" data-counter="3">
+  </a>
+  <div class="caption">en-US</div>
+</td>
+<td>
+  <a href="./es-ES/images/phoneScreenshots/iPhone%2016%20Pro-04-filter-sort.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./es-ES/images/phoneScreenshots/iPhone%2016%20Pro-04-filter-sort.png" style="width: 100%;" alt="es-ES 04 filter sort" data-tab="2" data-counter="4">
+  </a>
+  <div class="caption">es-ES</div>
+</td>
+<td>
+  <a href="./fr-FR/images/phoneScreenshots/iPhone%2016%20Pro-04-filter-sort.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./fr-FR/images/phoneScreenshots/iPhone%2016%20Pro-04-filter-sort.png" style="width: 100%;" alt="fr-FR 04 filter sort" data-tab="2" data-counter="5">
+  </a>
+  <div class="caption">fr-FR</div>
+</td>
+<td>
+  <a href="./it-IT/images/phoneScreenshots/iPhone%2016%20Pro-04-filter-sort.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./it-IT/images/phoneScreenshots/iPhone%2016%20Pro-04-filter-sort.png" style="width: 100%;" alt="it-IT 04 filter sort" data-tab="2" data-counter="6">
+  </a>
+  <div class="caption">it-IT</div>
+</td>
+
+        </tr>
+      </table>
+
+      <h2 id="05-document-detail" class="screenName">05 document detail</h2>
+      <table>
+        <tr>
+<td>
+  <a href="./de-DE/images/phoneScreenshots/iPhone%2016%20Pro-05-document-detail.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./de-DE/images/phoneScreenshots/iPhone%2016%20Pro-05-document-detail.png" style="width: 100%;" alt="de-DE 05 document detail" data-tab="2" data-counter="1">
+  </a>
+  <div class="caption">de-DE</div>
+</td>
+<td>
+  <a href="./en-GB/images/phoneScreenshots/iPhone%2016%20Pro-05-document-detail.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./en-GB/images/phoneScreenshots/iPhone%2016%20Pro-05-document-detail.png" style="width: 100%;" alt="en-GB 05 document detail" data-tab="2" data-counter="2">
+  </a>
+  <div class="caption">en-GB</div>
+</td>
+<td>
+  <a href="./en-US/images/phoneScreenshots/iPhone%2016%20Pro-05-document-detail.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./en-US/images/phoneScreenshots/iPhone%2016%20Pro-05-document-detail.png" style="width: 100%;" alt="en-US 05 document detail" data-tab="2" data-counter="3">
+  </a>
+  <div class="caption">en-US</div>
+</td>
+<td>
+  <a href="./es-ES/images/phoneScreenshots/iPhone%2016%20Pro-05-document-detail.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./es-ES/images/phoneScreenshots/iPhone%2016%20Pro-05-document-detail.png" style="width: 100%;" alt="es-ES 05 document detail" data-tab="2" data-counter="4">
+  </a>
+  <div class="caption">es-ES</div>
+</td>
+<td>
+  <a href="./fr-FR/images/phoneScreenshots/iPhone%2016%20Pro-05-document-detail.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./fr-FR/images/phoneScreenshots/iPhone%2016%20Pro-05-document-detail.png" style="width: 100%;" alt="fr-FR 05 document detail" data-tab="2" data-counter="5">
+  </a>
+  <div class="caption">fr-FR</div>
+</td>
+<td>
+  <a href="./it-IT/images/phoneScreenshots/iPhone%2016%20Pro-05-document-detail.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./it-IT/images/phoneScreenshots/iPhone%2016%20Pro-05-document-detail.png" style="width: 100%;" alt="it-IT 05 document detail" data-tab="2" data-counter="6">
+  </a>
+  <div class="caption">it-IT</div>
+</td>
+
+        </tr>
+      </table>
+
+      <h2 id="06-document-metadata-edit" class="screenName">06 document metadata edit</h2>
+      <table>
+        <tr>
+<td>
+  <a href="./de-DE/images/phoneScreenshots/iPhone%2016%20Pro-06-document-metadata-edit.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./de-DE/images/phoneScreenshots/iPhone%2016%20Pro-06-document-metadata-edit.png" style="width: 100%;" alt="de-DE 06 document metadata edit" data-tab="2" data-counter="1">
+  </a>
+  <div class="caption">de-DE</div>
+</td>
+<td>
+  <a href="./en-GB/images/phoneScreenshots/iPhone%2016%20Pro-06-document-metadata-edit.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./en-GB/images/phoneScreenshots/iPhone%2016%20Pro-06-document-metadata-edit.png" style="width: 100%;" alt="en-GB 06 document metadata edit" data-tab="2" data-counter="2">
+  </a>
+  <div class="caption">en-GB</div>
+</td>
+<td>
+  <a href="./en-US/images/phoneScreenshots/iPhone%2016%20Pro-06-document-metadata-edit.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./en-US/images/phoneScreenshots/iPhone%2016%20Pro-06-document-metadata-edit.png" style="width: 100%;" alt="en-US 06 document metadata edit" data-tab="2" data-counter="3">
+  </a>
+  <div class="caption">en-US</div>
+</td>
+<td>
+  <a href="./es-ES/images/phoneScreenshots/iPhone%2016%20Pro-06-document-metadata-edit.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./es-ES/images/phoneScreenshots/iPhone%2016%20Pro-06-document-metadata-edit.png" style="width: 100%;" alt="es-ES 06 document metadata edit" data-tab="2" data-counter="4">
+  </a>
+  <div class="caption">es-ES</div>
+</td>
+<td>
+  <a href="./fr-FR/images/phoneScreenshots/iPhone%2016%20Pro-06-document-metadata-edit.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./fr-FR/images/phoneScreenshots/iPhone%2016%20Pro-06-document-metadata-edit.png" style="width: 100%;" alt="fr-FR 06 document metadata edit" data-tab="2" data-counter="5">
+  </a>
+  <div class="caption">fr-FR</div>
+</td>
+<td>
+  <a href="./it-IT/images/phoneScreenshots/iPhone%2016%20Pro-06-document-metadata-edit.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./it-IT/images/phoneScreenshots/iPhone%2016%20Pro-06-document-metadata-edit.png" style="width: 100%;" alt="it-IT 06 document metadata edit" data-tab="2" data-counter="6">
+  </a>
+  <div class="caption">it-IT</div>
+</td>
+
+        </tr>
+      </table>
+
+      <h2 id="07-documents-drawer" class="screenName">07 documents drawer</h2>
+      <table>
+        <tr>
+<td>
+  <a href="./de-DE/images/phoneScreenshots/iPhone%2016%20Pro-07-documents-drawer.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./de-DE/images/phoneScreenshots/iPhone%2016%20Pro-07-documents-drawer.png" style="width: 100%;" alt="de-DE 07 documents drawer" data-tab="2" data-counter="1">
+  </a>
+  <div class="caption">de-DE</div>
+</td>
+<td>
+  <a href="./en-GB/images/phoneScreenshots/iPhone%2016%20Pro-07-documents-drawer.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./en-GB/images/phoneScreenshots/iPhone%2016%20Pro-07-documents-drawer.png" style="width: 100%;" alt="en-GB 07 documents drawer" data-tab="2" data-counter="2">
+  </a>
+  <div class="caption">en-GB</div>
+</td>
+<td>
+  <a href="./en-US/images/phoneScreenshots/iPhone%2016%20Pro-07-documents-drawer.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./en-US/images/phoneScreenshots/iPhone%2016%20Pro-07-documents-drawer.png" style="width: 100%;" alt="en-US 07 documents drawer" data-tab="2" data-counter="3">
+  </a>
+  <div class="caption">en-US</div>
+</td>
+<td>
+  <a href="./es-ES/images/phoneScreenshots/iPhone%2016%20Pro-07-documents-drawer.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./es-ES/images/phoneScreenshots/iPhone%2016%20Pro-07-documents-drawer.png" style="width: 100%;" alt="es-ES 07 documents drawer" data-tab="2" data-counter="4">
+  </a>
+  <div class="caption">es-ES</div>
+</td>
+<td>
+  <a href="./fr-FR/images/phoneScreenshots/iPhone%2016%20Pro-07-documents-drawer.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./fr-FR/images/phoneScreenshots/iPhone%2016%20Pro-07-documents-drawer.png" style="width: 100%;" alt="fr-FR 07 documents drawer" data-tab="2" data-counter="5">
+  </a>
+  <div class="caption">fr-FR</div>
+</td>
+<td>
+  <a href="./it-IT/images/phoneScreenshots/iPhone%2016%20Pro-07-documents-drawer.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./it-IT/images/phoneScreenshots/iPhone%2016%20Pro-07-documents-drawer.png" style="width: 100%;" alt="it-IT 07 documents drawer" data-tab="2" data-counter="6">
+  </a>
+  <div class="caption">it-IT</div>
+</td>
+
+        </tr>
+      </table>
+
+      <h2 id="08-settings-screen" class="screenName">08 settings screen</h2>
+      <table>
+        <tr>
+<td>
+  <a href="./de-DE/images/phoneScreenshots/iPhone%2016%20Pro-08-settings-screen.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./de-DE/images/phoneScreenshots/iPhone%2016%20Pro-08-settings-screen.png" style="width: 100%;" alt="de-DE 08 settings screen" data-tab="2" data-counter="1">
+  </a>
+  <div class="caption">de-DE</div>
+</td>
+<td>
+  <a href="./en-GB/images/phoneScreenshots/iPhone%2016%20Pro-08-settings-screen.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./en-GB/images/phoneScreenshots/iPhone%2016%20Pro-08-settings-screen.png" style="width: 100%;" alt="en-GB 08 settings screen" data-tab="2" data-counter="2">
+  </a>
+  <div class="caption">en-GB</div>
+</td>
+<td>
+  <a href="./en-US/images/phoneScreenshots/iPhone%2016%20Pro-08-settings-screen.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./en-US/images/phoneScreenshots/iPhone%2016%20Pro-08-settings-screen.png" style="width: 100%;" alt="en-US 08 settings screen" data-tab="2" data-counter="3">
+  </a>
+  <div class="caption">en-US</div>
+</td>
+<td>
+  <a href="./es-ES/images/phoneScreenshots/iPhone%2016%20Pro-08-settings-screen.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./es-ES/images/phoneScreenshots/iPhone%2016%20Pro-08-settings-screen.png" style="width: 100%;" alt="es-ES 08 settings screen" data-tab="2" data-counter="4">
+  </a>
+  <div class="caption">es-ES</div>
+</td>
+<td>
+  <a href="./fr-FR/images/phoneScreenshots/iPhone%2016%20Pro-08-settings-screen.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./fr-FR/images/phoneScreenshots/iPhone%2016%20Pro-08-settings-screen.png" style="width: 100%;" alt="fr-FR 08 settings screen" data-tab="2" data-counter="5">
+  </a>
+  <div class="caption">fr-FR</div>
+</td>
+<td>
+  <a href="./it-IT/images/phoneScreenshots/iPhone%2016%20Pro-08-settings-screen.png" target="_blank" class="screenshotLink">
+    <img class="screenshot" src="./it-IT/images/phoneScreenshots/iPhone%2016%20Pro-08-settings-screen.png" style="width: 100%;" alt="it-IT 08 settings screen" data-tab="2" data-counter="6">
+  </a>
+  <div class="caption">it-IT</div>
+</td>
+
+        </tr>
+      </table>
+
+        </div>
+        <div id="overlay">
+          <img id="imageDisplay" src="" alt="" />
+          <div id="imageInfo"></div>
+        </div>
+        <script type="text/javascript">
+          var overlay = document.getElementById('overlay');
+          var imageDisplay = document.getElementById('imageDisplay');
+          var imageInfo = document.getElementById('imageInfo');
+          var screenshotLink = document.getElementsByClassName('screenshotLink');
+
+          window.onload = setup();
+
+          function setup() {
+            var i, menu, tabTitles;
+
+            menu = document.getElementById("sortMenu");
+            menu.style.display = "block";
+
+            tabTitles = document.getElementsByClassName("tabTitle");
+            for (i = 0; i < tabTitles.length; i++) {
+              tabTitles[i].style.display = "none";
+            }
+
+            doClick(document.getElementById("defaultTab"));
+          }
+
+          function getCurrentTab() {
+            var i, tabs;
+            tabs = document.getElementsByClassName("tabContent");
+            for (i = 0; i < tabs.length; i++) {
+              if (tabs[i].style.display != "none") {
+                return i + 1;
+              }
+            }
+            return 1;
+          }
+
+          function openTab(evt, tabName) {
+            var i, tabs, tabLinks;
+            tabs = document.getElementsByClassName("tabContent");
+            for (i = 0; i < tabs.length; i++) {
+              tabs[i].style.display = "none";
+            }
+            tabLinks = document.getElementsByClassName("tabLink");
+            for (i = 0; i < tabLinks.length; i++) {
+              tabLinks[i].className = tabLinks[i].className.replace(" active", "");
+            }
+            document.getElementById(tabName).style.display = "block";
+            evt.currentTarget.className += " active";
+          }
+
+          function doClick(el) {
+            if (document.createEvent) {
+              var evObj = document.createEvent('MouseEvents', true);
+              evObj.initMouseEvent("click", false, true, window, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
+              el.dispatchEvent(evObj);
+            } else if (document.createEventObject) {
+              var legacyEvent = document.createEventObject();
+              el.fireEvent('onclick', legacyEvent);
+            }
+          }
+
+          for (var index = 0; index < screenshotLink.length; ++index) {
+            screenshotLink[index].addEventListener('click', function(e) {
+              e.preventDefault();
+
+              var img = e.target;
+              if (e.target.tagName == 'A') {
+                img = e.target.children[0];
+              }
+
+              var tmpImg = new Image();
+              tmpImg.src = img.src;
+              imageDisplay.style.height = 'auto';
+              imageDisplay.style.width = 'auto';
+              imageDisplay.style.paddingTop = 0;
+              if (window.innerHeight < tmpImg.height) {
+                imageDisplay.style.height = document.documentElement.clientHeight + 'px';
+              } else if (window.innerWidth < tmpImg.width) {
+                imageDisplay.style.width = document.documentElement.clientWidth + 'px';
+              } else {
+                imageDisplay.style.paddingTop = parseInt((window.innerHeight - tmpImg.height) / 2) + 'px';
+              }
+
+              imageDisplay.src = img.src;
+              imageDisplay.alt = img.alt;
+              imageDisplay.dataset.counter = img.dataset.counter;
+              imageDisplay.dataset.tab = img.dataset.tab;
+
+              imageInfo.innerHTML = '<h3>' + img.alt + '</h3>';
+              imageInfo.innerHTML += decodeURI(img.src.split("/").pop());
+              imageInfo.innerHTML += '<br />' + tmpImg.height + '&times;' + tmpImg.width + 'px';
+
+              overlay.style.display = "block";
+            });
+          }
+
+          imageDisplay.addEventListener('click', function(e) {
+            e.stopPropagation();
+
+            overlay.style.display = "none";
+
+            var imgTab = parseInt(e.target.dataset.tab || getCurrentTab());
+            var imgCounter = parseInt(e.target.dataset.counter) + 1;
+            try {
+              var link = document.body.querySelector('img[data-tab="' + imgTab + '"][data-counter="' + imgCounter + '"]').parentNode;
+              doClick(link);
+            } catch (error) {
+              try {
+                var firstLink = document.body.querySelector('img[data-tab="' + imgTab + '"][data-counter="1"]').parentNode;
+                doClick(firstLink);
+              } catch (ignoredError) {
+                return false;
+              }
+            }
+          });
+
+          overlay.addEventListener('click', function() {
+            overlay.style.display = "none";
+          });
+
+          function keyPressed(e) {
+            e = e || window.event;
+            var charCode = e.keyCode || e.which;
+            switch (charCode) {
+              case 27:
+                overlay.style.display = "none";
+                break;
+              case 34:
+              case 39:
+              case 54:
+              case 76:
+              case 102:
+                e.preventDefault();
+                doClick(imageDisplay);
+                break;
+              case 33:
+              case 37:
+              case 52:
+              case 72:
+              case 100:
+                e.preventDefault();
+                imageDisplay.dataset.counter = parseInt(imageDisplay.dataset.counter || "1") - 2;
+                doClick(imageDisplay);
+                break;
+            }
+          }
+
+          document.body.addEventListener('keydown', keyPressed);
+        </script>
+      </body>
+    </html>

@@ -1,0 +1,13 @@
+Paperless Go bringt dein paperless-ngx Archiv auf dein Smartphone.
+
+Behalte neue Eingange im Blick, finde wichtige Unterlagen schneller und pflege Metadaten auch unterwegs.
+
+Wichtige Funktionen:
+- Anmeldung an deinem eigenen paperless-ngx Server mittels Benutzername/Passwort
+- Uberblick uber aktuelle Uploads und Dokumente mit Handlungsbedarf
+- Suche und Filter fur Tags, Korrespondenten und Dokumenttypen
+- Anzeigen von Dokumentdetails und Bearbeiten von Metadaten
+- Anzeigen und Download der Originaldokumente
+- Papierdokumente mit der Kamera scannen und als PDF hochladen
+
+Paperless Go richtet sich an alle, die paperless-ngx bereits nutzen und eine fokussierte mobile Begleitung fur ihr Archiv suchen.

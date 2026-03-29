@@ -1,0 +1,12 @@
+Paperless Go lleva tu archivo de paperless-ngx al movil.
+
+Manten el control de los documentos entrantes, encuentra lo que necesitas mas rapido y organiza los metadatos tambien fuera de la oficina.
+
+Funciones principales:
+- inicio de sesion en tu propio servidor paperless-ngx
+- vista de cargas recientes y documentos que aun requieren revision
+- busqueda en el archivo y filtros por etiquetas, corresponsales y tipos de documento
+- apertura de detalles del documento y edicion de metadatos
+- escaneo de documentos en papel con la camara y subida como PDF
+
+Paperless Go esta pensado para quienes ya usan paperless-ngx y quieren un complemento movil centrado en su archivo.

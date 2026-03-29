@@ -1,3 +1,5 @@
+require "cgi"
+require "fileutils"
 require "json"
 require "shellwords"
 
@@ -16,12 +18,19 @@ IOS_IPA_DIRECTORY = File.expand_path("../build/ios/ipa", FASTLANE_DIR)
 IOS_APP_IDENTIFIER = ENV["IOS_APP_IDENTIFIER"] || "com.github.iweinzierl.paperlessgo"
 IOS_CHANGELOGS_DIRECTORY = File.expand_path("metadata/ios/changelogs", FASTLANE_DIR)
 IOS_METADATA_DIRECTORY = File.expand_path("metadata/ios", FASTLANE_DIR)
-IOS_SCREENSHOTS_DIRECTORY = File.expand_path("screenshots/ios", FASTLANE_DIR)
+IOS_SCREENSHOTS_DIRECTORY = File.expand_path("metadata/ios", FASTLANE_DIR)
+IOS_SNAPSHOT_RAW_DIRECTORY = File.expand_path(".generated/ios/screenshots", FASTLANE_DIR)
+IOS_METADATA_UPLOAD_DIRECTORY = File.expand_path("../build/fastlane/ios-metadata-upload", FASTLANE_DIR)
+IOS_SCREENSHOTS_UPLOAD_DIRECTORY = File.expand_path("../build/fastlane/ios-screenshots-upload", FASTLANE_DIR)
 IOS_PROJECT_FILE = File.expand_path("../ios/Runner.xcodeproj/project.pbxproj", FASTLANE_DIR)
 APP_STORE_CONNECT_API_KEY_CONFIG = File.expand_path(
   ENV["APP_STORE_CONNECT_API_KEY_JSON_PATH"] || "app-store-connect-api-key.json",
   FASTLANE_DIR,
 )
+IOS_SCREENSHOT_DEVICE_DIR = "phoneScreenshots"
+IOS_DELIVER_LOCALE_ALIASES = {
+  "it-IT" => "it",
+}.freeze
 
 def current_version_line
   pubspec_contents = File.read(PUBSPEC_FILE)
@@ -182,6 +191,459 @@ def ensure_ios_metadata_inputs!(options)
   end
 end
 
+def ios_structured_screenshot_paths(root_path)
+  Dir[File.join(root_path, "*", "images", IOS_SCREENSHOT_DEVICE_DIR)]
+end
+
+def clear_ios_structured_screenshots!(root_path)
+  ios_structured_screenshot_paths(root_path).each do |directory|
+    FileUtils.rm_rf(directory)
+  end
+
+  report_path = File.join(root_path, "screenshots.html")
+  FileUtils.rm_f(report_path)
+end
+
+def ios_collect_structured_screenshots(root_path)
+  screenshots_by_language = {}
+
+  Dir.children(root_path).sort.each do |locale|
+    locale_path = File.join(root_path, locale)
+    next unless File.directory?(locale_path)
+
+    screenshot_directory = File.join(locale_path, "images", IOS_SCREENSHOT_DEVICE_DIR)
+    next unless Dir.exist?(screenshot_directory)
+
+    screenshot_files = Dir[File.join(screenshot_directory, "*.png")].sort
+    next if screenshot_files.empty?
+
+    screenshots_by_language[locale] = screenshot_files
+  end
+
+  screenshots_by_language
+end
+
+def ios_screenshot_screen_key(file_path)
+  file_name = File.basename(file_path, ".png")
+  match = file_name.match(/-(\d{2}-.+)$/)
+  return match[1] unless match.nil?
+
+  file_name
+end
+
+def ios_screenshot_screen_title(screen_key)
+  parts = screen_key.split("-", 2)
+  return screen_key.tr("-", " ") if parts.length < 2
+
+  "#{parts[0]} #{parts[1].tr("-", " ")}"
+end
+
+def html_relative_path(pathname, from_root)
+  relative_path = pathname.delete_prefix("#{from_root}/")
+  relative_path.split(File::SEPARATOR).map { |segment| CGI.escape(segment).gsub("+", "%20") }.join("/")
+end
+
+def generate_ios_screenshot_report!(root_path)
+  screenshots_by_language = ios_collect_structured_screenshots(root_path)
+  UI.user_error!("No iOS screenshots found in #{root_path}") if screenshots_by_language.empty?
+
+  screens = screenshots_by_language.values.flatten.each_with_object({}) do |file_path, grouped|
+    screen_key = ios_screenshot_screen_key(file_path)
+    grouped[screen_key] ||= []
+    grouped[screen_key] << file_path
+  end
+
+  by_language_html = []
+  screenshots_by_language.each do |locale, files|
+    image_cells = files.each_with_index.map do |file_path, index|
+      relative_path = html_relative_path(file_path, root_path)
+      <<~HTML
+        <td>
+          <a href="./#{relative_path}" target="_blank" class="screenshotLink">
+            <img class="screenshot" src="./#{relative_path}" style="width: 100%;" alt="#{CGI.escapeHTML(locale)} #{IOS_SCREENSHOT_DEVICE_DIR}" data-tab="1" data-counter="#{index + 1}">
+          </a>
+        </td>
+      HTML
+    end.join
+
+    by_language_html << <<~HTML
+      <h1 id="#{CGI.escapeHTML(locale)}" class="language">#{CGI.escapeHTML(locale)}</h1>
+      <hr>
+      <table>
+        <tr>
+          <th colspan="#{files.length}">
+            <a id="#{CGI.escapeHTML(locale)}-#{IOS_SCREENSHOT_DEVICE_DIR}" class="deviceName" href="##{CGI.escapeHTML(locale)}-#{IOS_SCREENSHOT_DEVICE_DIR}">#{IOS_SCREENSHOT_DEVICE_DIR}</a>
+          </th>
+        </tr>
+        <tr>
+#{image_cells}
+        </tr>
+      </table>
+    HTML
+  end
+
+  by_screen_html = []
+  screens.sort.each do |screen_key, files|
+    sorted_files = files.sort_by do |file_path|
+      file_path.split(File::SEPARATOR)[-4]
+    end
+
+    image_cells = sorted_files.each_with_index.map do |file_path, index|
+      relative_path = html_relative_path(file_path, root_path)
+      locale = file_path.split(File::SEPARATOR)[-4]
+      <<~HTML
+        <td>
+          <a href="./#{relative_path}" target="_blank" class="screenshotLink">
+            <img class="screenshot" src="./#{relative_path}" style="width: 100%;" alt="#{CGI.escapeHTML(locale)} #{CGI.escapeHTML(ios_screenshot_screen_title(screen_key))}" data-tab="2" data-counter="#{index + 1}">
+          </a>
+          <div class="caption">#{CGI.escapeHTML(locale)}</div>
+        </td>
+      HTML
+    end.join
+
+    by_screen_html << <<~HTML
+      <h2 id="#{CGI.escapeHTML(screen_key)}" class="screenName">#{CGI.escapeHTML(ios_screenshot_screen_title(screen_key))}</h2>
+      <table>
+        <tr>
+#{image_cells}
+        </tr>
+      </table>
+    HTML
+  end
+
+  report_html = <<~HTML
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <title>fastlane/snapshot</title>
+        <meta charset="UTF-8">
+        <style type="text/css">
+          * {
+            font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+            font-weight: 300;
+          }
+          #sortMenu {
+            overflow: hidden;
+            border: 1px solid #ccc;
+            background-color: #f1f1f1;
+            display: none;
+          }
+          #sortMenu button {
+            background-color: inherit;
+            float: left;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            padding: 14px 16px;
+            font-size: 17px;
+          }
+          #sortMenu button:hover {
+            background-color: #ddd;
+          }
+          #sortMenu button.active {
+            background-color: #ccc;
+          }
+          .deviceName {
+            display: block;
+            font-size: 30px;
+            padding-bottom: 24px;
+            padding-top: 45px;
+          }
+          .screenshot {
+            cursor: pointer;
+            border: 1px #EEE solid;
+            z-index: 0;
+          }
+          .caption {
+            font-size: 18px;
+            padding-bottom: 24px;
+            padding-top: 16px;
+          }
+          h1, h2 {
+            font-weight: bold;
+          }
+          th {
+            text-align: left;
+          }
+          td {
+            text-align: center;
+            min-width: 200px;
+            vertical-align: top;
+          }
+          #overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 5;
+            width: 100%;
+            height: 100%;
+            display: none;
+            cursor: zoom-out;
+            text-align: center;
+          }
+          #imageDisplay {
+            height: auto;
+            width: auto;
+            z-index: 10;
+            cursor: pointer;
+          }
+          #imageInfo {
+            background: none repeat scroll 0 0 rgba(0, 0, 0, 0.2);
+            border-radius: 5px;
+            color: white;
+            margin: 20px;
+            padding: 10px;
+            position: absolute;
+            right: 0;
+            top: 0;
+            width: 250px;
+            z-index: -1;
+          }
+          #imageInfo:hover {
+            z-index: 20;
+          }
+        </style>
+      </head>
+      <body>
+        <div id="sortMenu">
+          <button id="defaultTab" class="tabLink" onclick="openTab(event, 'byLanguage')">By Language</button>
+          <button class="tabLink" onclick="openTab(event, 'byScreen')">By Screen</button>
+        </div>
+        <div id="byLanguage" class="tabContent"><h1 class="tabTitle">By Language:</h1>
+#{by_language_html.join("\n")}
+        </div>
+        <div id="byScreen" class="tabContent"><h1 class="tabTitle">By Screen:</h1>
+#{by_screen_html.join("\n")}
+        </div>
+        <div id="overlay">
+          <img id="imageDisplay" src="" alt="" />
+          <div id="imageInfo"></div>
+        </div>
+        <script type="text/javascript">
+          var overlay = document.getElementById('overlay');
+          var imageDisplay = document.getElementById('imageDisplay');
+          var imageInfo = document.getElementById('imageInfo');
+          var screenshotLink = document.getElementsByClassName('screenshotLink');
+
+          window.onload = setup();
+
+          function setup() {
+            var i, menu, tabTitles;
+
+            menu = document.getElementById("sortMenu");
+            menu.style.display = "block";
+
+            tabTitles = document.getElementsByClassName("tabTitle");
+            for (i = 0; i < tabTitles.length; i++) {
+              tabTitles[i].style.display = "none";
+            }
+
+            doClick(document.getElementById("defaultTab"));
+          }
+
+          function getCurrentTab() {
+            var i, tabs;
+            tabs = document.getElementsByClassName("tabContent");
+            for (i = 0; i < tabs.length; i++) {
+              if (tabs[i].style.display != "none") {
+                return i + 1;
+              }
+            }
+            return 1;
+          }
+
+          function openTab(evt, tabName) {
+            var i, tabs, tabLinks;
+            tabs = document.getElementsByClassName("tabContent");
+            for (i = 0; i < tabs.length; i++) {
+              tabs[i].style.display = "none";
+            }
+            tabLinks = document.getElementsByClassName("tabLink");
+            for (i = 0; i < tabLinks.length; i++) {
+              tabLinks[i].className = tabLinks[i].className.replace(" active", "");
+            }
+            document.getElementById(tabName).style.display = "block";
+            evt.currentTarget.className += " active";
+          }
+
+          function doClick(el) {
+            if (document.createEvent) {
+              var evObj = document.createEvent('MouseEvents', true);
+              evObj.initMouseEvent("click", false, true, window, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
+              el.dispatchEvent(evObj);
+            } else if (document.createEventObject) {
+              var legacyEvent = document.createEventObject();
+              el.fireEvent('onclick', legacyEvent);
+            }
+          }
+
+          for (var index = 0; index < screenshotLink.length; ++index) {
+            screenshotLink[index].addEventListener('click', function(e) {
+              e.preventDefault();
+
+              var img = e.target;
+              if (e.target.tagName == 'A') {
+                img = e.target.children[0];
+              }
+
+              var tmpImg = new Image();
+              tmpImg.src = img.src;
+              imageDisplay.style.height = 'auto';
+              imageDisplay.style.width = 'auto';
+              imageDisplay.style.paddingTop = 0;
+              if (window.innerHeight < tmpImg.height) {
+                imageDisplay.style.height = document.documentElement.clientHeight + 'px';
+              } else if (window.innerWidth < tmpImg.width) {
+                imageDisplay.style.width = document.documentElement.clientWidth + 'px';
+              } else {
+                imageDisplay.style.paddingTop = parseInt((window.innerHeight - tmpImg.height) / 2) + 'px';
+              }
+
+              imageDisplay.src = img.src;
+              imageDisplay.alt = img.alt;
+              imageDisplay.dataset.counter = img.dataset.counter;
+              imageDisplay.dataset.tab = img.dataset.tab;
+
+              imageInfo.innerHTML = '<h3>' + img.alt + '</h3>';
+              imageInfo.innerHTML += decodeURI(img.src.split("/").pop());
+              imageInfo.innerHTML += '<br />' + tmpImg.height + '&times;' + tmpImg.width + 'px';
+
+              overlay.style.display = "block";
+            });
+          }
+
+          imageDisplay.addEventListener('click', function(e) {
+            e.stopPropagation();
+
+            overlay.style.display = "none";
+
+            var imgTab = parseInt(e.target.dataset.tab || getCurrentTab());
+            var imgCounter = parseInt(e.target.dataset.counter) + 1;
+            try {
+              var link = document.body.querySelector('img[data-tab="' + imgTab + '"][data-counter="' + imgCounter + '"]').parentNode;
+              doClick(link);
+            } catch (error) {
+              try {
+                var firstLink = document.body.querySelector('img[data-tab="' + imgTab + '"][data-counter="1"]').parentNode;
+                doClick(firstLink);
+              } catch (ignoredError) {
+                return false;
+              }
+            }
+          });
+
+          overlay.addEventListener('click', function() {
+            overlay.style.display = "none";
+          });
+
+          function keyPressed(e) {
+            e = e || window.event;
+            var charCode = e.keyCode || e.which;
+            switch (charCode) {
+              case 27:
+                overlay.style.display = "none";
+                break;
+              case 34:
+              case 39:
+              case 54:
+              case 76:
+              case 102:
+                e.preventDefault();
+                doClick(imageDisplay);
+                break;
+              case 33:
+              case 37:
+              case 52:
+              case 72:
+              case 100:
+                e.preventDefault();
+                imageDisplay.dataset.counter = parseInt(imageDisplay.dataset.counter || "1") - 2;
+                doClick(imageDisplay);
+                break;
+            }
+          }
+
+          document.body.addEventListener('keydown', keyPressed);
+        </script>
+      </body>
+    </html>
+  HTML
+
+  File.write(File.join(root_path, "screenshots.html"), report_html)
+end
+
+def sync_ios_screenshots_from_snapshot!(raw_root:, structured_root:, clear_previous: true)
+  raw_screenshots = Dir[File.join(raw_root, "*", "*.png")]
+  UI.user_error!("No iOS screenshots were generated in #{raw_root}") if raw_screenshots.empty?
+
+  clear_ios_structured_screenshots!(structured_root) if clear_previous
+
+  raw_screenshots.each do |file_path|
+    locale = File.basename(File.dirname(file_path))
+    target_directory = File.join(structured_root, locale, "images", IOS_SCREENSHOT_DEVICE_DIR)
+    FileUtils.mkdir_p(target_directory)
+    FileUtils.cp(file_path, File.join(target_directory, File.basename(file_path)))
+  end
+
+  generate_ios_screenshot_report!(structured_root)
+end
+
+def prepare_ios_screenshots_for_deliver(source_root)
+  structured_screenshots = ios_collect_structured_screenshots(source_root)
+  return source_root if structured_screenshots.empty?
+
+  FileUtils.rm_rf(IOS_SCREENSHOTS_UPLOAD_DIRECTORY)
+  FileUtils.mkdir_p(IOS_SCREENSHOTS_UPLOAD_DIRECTORY)
+
+  structured_screenshots.each do |locale, files|
+    deliver_locale = IOS_DELIVER_LOCALE_ALIASES.fetch(locale, locale)
+    locale_directory = File.join(IOS_SCREENSHOTS_UPLOAD_DIRECTORY, deliver_locale)
+    FileUtils.mkdir_p(locale_directory)
+
+    files.each do |file_path|
+      FileUtils.cp(file_path, File.join(locale_directory, File.basename(file_path)))
+    end
+  end
+
+  IOS_SCREENSHOTS_UPLOAD_DIRECTORY
+end
+
+def prepare_ios_metadata_for_deliver(source_root)
+  FileUtils.rm_rf(IOS_METADATA_UPLOAD_DIRECTORY)
+  FileUtils.mkdir_p(IOS_METADATA_UPLOAD_DIRECTORY)
+
+  Dir.children(source_root).sort.each do |locale|
+    locale_source = File.join(source_root, locale)
+    next unless File.directory?(locale_source)
+    next if locale == "changelogs"
+
+    deliver_locale = IOS_DELIVER_LOCALE_ALIASES.fetch(locale, locale)
+    locale_target = File.join(IOS_METADATA_UPLOAD_DIRECTORY, deliver_locale)
+    copied_any_metadata_file = false
+
+    Dir[File.join(locale_source, "**", "*")].sort.each do |file_path|
+      next unless File.file?(file_path)
+
+      relative_path = file_path.delete_prefix("#{locale_source}/")
+      next if relative_path.start_with?("images/")
+
+      target_path = File.join(locale_target, relative_path)
+      FileUtils.mkdir_p(File.dirname(target_path))
+      FileUtils.cp(file_path, target_path)
+      copied_any_metadata_file = true
+    end
+
+    FileUtils.rm_rf(locale_target) unless copied_any_metadata_file
+  end
+
+  IOS_METADATA_UPLOAD_DIRECTORY
+end
+
+def directory_contains_files?(root_path)
+  Dir.exist?(root_path) && !Dir[File.join(root_path, "**", "*")].grep(File.method(:file?)).empty?
+end
+
 def default_ios_ipa_path
   ipa_paths = Dir[File.join(IOS_IPA_DIRECTORY, "*.ipa")].sort
   UI.user_error!("Missing iOS IPA in #{IOS_IPA_DIRECTORY}. Run the iOS build lane first.") if ipa_paths.empty?
@@ -330,7 +792,7 @@ platform :android do
   end
 
   desc "Build screenshot artifacts and capture Play Store screenshots with Screengrab"
-  lane :generate_screenshots do
+  lane :screenshots do
     gradle(
       project_dir: "android",
       task: "app:assembleDebug",
@@ -342,6 +804,10 @@ platform :android do
     )
 
     screengrab
+  end
+
+  lane :generate_screenshots do
+    screenshots
   end
 
   private_lane :build_release_bundle do
@@ -381,10 +847,12 @@ platform :ios do
     configure_ios_build_environment
     ensure_ios_screenshot_setup!(options)
 
+    raw_output_directory = File.expand_path(options[:output_directory] || IOS_SNAPSHOT_RAW_DIRECTORY, PROJECT_ROOT)
+
     snapshot_options = {
       workspace: IOS_WORKSPACE,
       scheme: options[:scheme] || ENV["IOS_SNAPSHOT_SCHEME"] || "RunnerScreenshots",
-      output_directory: File.expand_path(options[:output_directory] || IOS_SCREENSHOTS_DIRECTORY, PROJECT_ROOT),
+      output_directory: raw_output_directory,
       clear_previous_screenshots: options.key?(:clear_previous_screenshots) ? options[:clear_previous_screenshots] : true,
       reinstall_app: options.key?(:reinstall_app) ? options[:reinstall_app] : true,
       erase_simulator: options.key?(:erase_simulator) ? options[:erase_simulator] : true,
@@ -395,6 +863,12 @@ platform :ios do
     snapshot_options[:ios_version] = options[:ios_version] if options[:ios_version]
 
     snapshot(**snapshot_options)
+
+    sync_ios_screenshots_from_snapshot!(
+      raw_root: raw_output_directory,
+      structured_root: IOS_SCREENSHOTS_DIRECTORY,
+      clear_previous: snapshot_options[:clear_previous_screenshots],
+    )
   end
 
   desc "Upload App Store metadata and screenshots without uploading a new binary"
@@ -403,14 +877,21 @@ platform :ios do
     ensure_ios_metadata_inputs!(options)
 
     api_key = app_store_connect_api_key(**app_store_connect_api_key_options)
+    metadata_path = File.expand_path(options[:metadata_path] || IOS_METADATA_DIRECTORY, PROJECT_ROOT)
+    screenshots_path = File.expand_path(options[:screenshots_path] || IOS_SCREENSHOTS_DIRECTORY, PROJECT_ROOT)
+    prepared_metadata_path = prepare_ios_metadata_for_deliver(metadata_path)
+    prepared_screenshots_path = prepare_ios_screenshots_for_deliver(screenshots_path)
+    skip_metadata = options.key?(:skip_metadata) ? options[:skip_metadata] : !directory_contains_files?(prepared_metadata_path)
+
+    UI.message("No iOS metadata files detected. Skipping metadata upload and uploading screenshots only.") if skip_metadata
 
     deliver_options = {
       api_key: api_key,
       app_identifier: IOS_APP_IDENTIFIER,
-      metadata_path: File.expand_path(options[:metadata_path] || IOS_METADATA_DIRECTORY, PROJECT_ROOT),
-      screenshots_path: File.expand_path(options[:screenshots_path] || IOS_SCREENSHOTS_DIRECTORY, PROJECT_ROOT),
+      metadata_path: prepared_metadata_path,
+      screenshots_path: prepared_screenshots_path,
       skip_binary_upload: true,
-      skip_metadata: options.key?(:skip_metadata) ? options[:skip_metadata] : false,
+      skip_metadata: skip_metadata,
       skip_screenshots: options.key?(:skip_screenshots) ? options[:skip_screenshots] : false,
       overwrite_screenshots: options.key?(:overwrite_screenshots) ? options[:overwrite_screenshots] : true,
       skip_app_version_update: options.key?(:skip_app_version_update) ? options[:skip_app_version_update] : true,

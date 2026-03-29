@@ -67,7 +67,7 @@
 			"command": "sh",
 			"args": [
 				"./scripts/android/run_fastlane.sh",
-				"generate_screenshots"
+				"screenshots"
 			],
 			"isBackground": false,
 			"group": "build"
@@ -78,7 +78,7 @@
 			"command": "fastlane",
 			"args": [
 				"android",
-				"generate_screenshots"
+				"screenshots"
 			],
 			"isBackground": false,
 			"group": "build"

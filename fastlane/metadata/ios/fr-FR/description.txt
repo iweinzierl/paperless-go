@@ -1,0 +1,12 @@
+Paperless Go met votre archive paperless-ngx dans votre poche.
+
+Gardez un oeil sur les nouveaux documents, retrouvez plus vite les pieces importantes et organisez les metadonnees meme loin de votre bureau.
+
+Fonctionnalites principales :
+- connexion a votre propre serveur paperless-ngx
+- consultation des imports recents et des documents qui demandent encore une action
+- recherche dans l'archive avec filtres par etiquettes, correspondants et types de documents
+- ouverture des details d'un document et modification des metadonnees
+- numerisation de documents papier avec l'appareil photo et import en PDF
+
+Paperless Go s'adresse aux utilisateurs de paperless-ngx qui veulent un compagnon mobile simple et efficace pour leur archive.

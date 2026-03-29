@@ -20,11 +20,11 @@ The agent should automate the creation of Android app screenshots using Fastlane
     * **Important:** The test must call `Screengrab.screenshot("name")` at strategic points such as the login screen, document list, and document details.
 
 3.  **Fastlane Integration:**
-    * Create a new lane in the `Fastfile` named `generate_screenshots`.
+    * Create a new lane in the `Fastfile` named `screenshots`.
     * This lane must run `gradle(task: 'assembleDebug assembleAndroidTest')`, followed by the `screengrab` command.
 
 4.  **Execution & Verification:**
-    * Run `bundle exec fastlane generate_screenshots` in the terminal.
+    * Run `bundle exec fastlane android screenshots` in the terminal.
     * After completion, verify that the images are located in `fastlane/metadata/android/[LOCALE]/images/phoneScreenshots/`.
 
 ---

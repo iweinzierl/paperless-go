@@ -4,7 +4,7 @@
             "approve": true,
             "matchCommandLine": true
         },
-        "/^fastlane android generate_screenshots$/": {
+        "/^fastlane android screenshots$/": {
             "approve": true,
             "matchCommandLine": true
         },

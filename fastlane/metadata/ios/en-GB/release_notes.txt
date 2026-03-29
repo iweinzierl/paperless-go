@@ -1,0 +1,2 @@
+- added full-screen PDF preview from document details for easier reading
+- document details now show the created date more clearly

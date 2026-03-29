@@ -14,4 +14,6 @@ Add locale folders such as `en-US/` and provide the metadata files App Store Con
 - `marketing_url.txt`
 - `privacy_url.txt`
 
-`fastlane ios metadata` uploads the files from this directory together with screenshots from `fastlane/screenshots/ios`.
+`fastlane ios screenshots` stores generated screenshots under locale-specific folders in this directory, for example `fastlane/metadata/ios/en-US/images/phoneScreenshots/`.
+
+`fastlane ios metadata` uploads the files from this directory together with the generated screenshots.

@@ -63,13 +63,21 @@ Build a release app bundle and upload it with metadata/assets to the internal tr
 
 Validate a Play upload without publishing it
 
+### android screenshots
+
+```sh
+[bundle exec] fastlane android screenshots
+```
+
+Build screenshot artifacts and capture Play Store screenshots with Screengrab
+
 ### android generate_screenshots
 
 ```sh
 [bundle exec] fastlane android generate_screenshots
 ```
 
-Build screenshot artifacts and capture Play Store screenshots with Screengrab
+
 
 ----
 

@@ -1,6 +1,6 @@
 workspace("./ios/Runner.xcworkspace")
 scheme("RunnerScreenshots")
-output_directory("./fastlane/screenshots/ios")
+output_directory("./fastlane/.generated/ios/screenshots")
 clear_previous_screenshots(true)
 override_status_bar(true)
 localize_simulator(true)

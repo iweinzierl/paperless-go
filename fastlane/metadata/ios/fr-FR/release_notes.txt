@@ -1,0 +1,2 @@
+- ajout d un apercu PDF en plein ecran depuis les details du document pour une lecture plus facile
+- les details du document affichent maintenant plus clairement la date de creation

@@ -1,0 +1,1 @@
+paperless,paperless-ngx,documenti,scanner,pdf,archivio,metadati,ricerca

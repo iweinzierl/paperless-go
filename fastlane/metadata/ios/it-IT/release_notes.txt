@@ -1,0 +1,2 @@
+- aggiunta anteprima PDF a schermo intero dai dettagli del documento per leggere meglio il contenuto
+- i dettagli del documento mostrano ora piu chiaramente la data di creazione
