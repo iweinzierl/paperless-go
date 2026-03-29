@@ -73,6 +73,35 @@ Build screenshot artifacts and capture Play Store screenshots with Screengrab
 
 ----
 
+
+## iOS
+
+### ios check_app_store_setup
+
+```sh
+[bundle exec] fastlane ios check_app_store_setup
+```
+
+Check that App Store Connect/TestFlight release prerequisites are available
+
+### ios binary
+
+```sh
+[bundle exec] fastlane ios binary
+```
+
+Build a signed iOS IPA for App Store Connect/TestFlight
+
+### ios internal
+
+```sh
+[bundle exec] fastlane ios internal
+```
+
+Build a signed iOS IPA and upload it to TestFlight for internal testing
+
+----
+
 This README.md is auto-generated and will be re-generated every time [_fastlane_](https://fastlane.tools) is run.
 
 More information about _fastlane_ can be found on [fastlane.tools](https://fastlane.tools).

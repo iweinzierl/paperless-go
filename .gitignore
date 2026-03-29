@@ -50,6 +50,8 @@ app.*.map.json
 /android/key.properties
 /android/*.jks
 /android/*.keystore
+/fastlane/app-store-connect-api-key.p8
+/fastlane/app-store-connect-api-key.json
 /fastlane/play-store-service-account.json
 
 # Fastlane metadata and screenshots

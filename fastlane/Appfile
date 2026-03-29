@@ -2,3 +2,8 @@ json_key_file(
 	ENV["SUPPLY_JSON_KEY"] || File.expand_path("play-store-service-account.json", __dir__),
 )
 package_name("com.github.iweinzierl.paperlessgo")
+app_identifier(ENV["IOS_APP_IDENTIFIER"] || "com.github.iweinzierl.paperlessgo")
+team_id(ENV["APPLE_DEVELOPER_TEAM_ID"] || "4NW6U8AW48")
+
+app_store_connect_team_id = ENV["APP_STORE_CONNECT_TEAM_ID"].to_s.strip
+itc_team_id(app_store_connect_team_id) unless app_store_connect_team_id.empty?

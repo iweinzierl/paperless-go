@@ -32,6 +32,24 @@
 			"problemMatcher": []
 		},
 		{
+			"label": "iOS: Validate App Store setup",
+			"type": "shell",
+			"command": "${workspaceFolder}/scripts/ios/run_fastlane.sh check_app_store_setup",
+			"problemMatcher": []
+		},
+		{
+			"label": "iOS: Build signed IPA",
+			"type": "shell",
+			"command": "${workspaceFolder}/scripts/ios/run_fastlane.sh binary",
+			"problemMatcher": []
+		},
+		{
+			"label": "iOS: Upload internal test",
+			"type": "shell",
+			"command": "${workspaceFolder}/scripts/ios/run_fastlane.sh internal",
+			"problemMatcher": []
+		},
+		{
 			"label": "generate screenshots",
 			"type": "shell",
 			"command": "sh",

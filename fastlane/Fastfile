@@ -1,23 +1,183 @@
-(:android)
+require "json"
+require "shellwords"
+
+default_platform(:android)
 
 FASTLANE_DIR = __dir__
+PROJECT_ROOT = File.expand_path("..", FASTLANE_DIR)
 PLAY_SERVICE_ACCOUNT_JSON = File.expand_path(
   ENV["SUPPLY_JSON_KEY"] || "play-store-service-account.json",
   FASTLANE_DIR,
 )
 ANDROID_KEY_PROPERTIES = File.expand_path("../android/key.properties", FASTLANE_DIR)
 PUBSPEC_FILE = File.expand_path("../pubspec.yaml", FASTLANE_DIR)
+IOS_WORKSPACE = File.expand_path("../ios/Runner.xcworkspace", FASTLANE_DIR)
+IOS_IPA_DIRECTORY = File.expand_path("../build/ios/ipa", FASTLANE_DIR)
+IOS_APP_IDENTIFIER = ENV["IOS_APP_IDENTIFIER"] || "com.github.iweinzierl.paperlessgo"
+IOS_CHANGELOGS_DIRECTORY = File.expand_path("metadata/ios/changelogs", FASTLANE_DIR)
+APP_STORE_CONNECT_API_KEY_CONFIG = File.expand_path(
+  ENV["APP_STORE_CONNECT_API_KEY_JSON_PATH"] || "app-store-connect-api-key.json",
+  FASTLANE_DIR,
+)
 
-def current_version_code
+def current_version_line
   pubspec_contents = File.read(PUBSPEC_FILE)
   version_line = pubspec_contents.each_line.find { |line| line.start_with?("version:") }
-
   UI.user_error!("Missing version in #{PUBSPEC_FILE}") if version_line.nil?
 
-  version_code = version_line.split("+", 2)[1]&.strip
+  version_line
+end
+
+def current_version_name
+  version_name = current_version_line.split(":", 2)[1]&.strip&.split("+", 2)&.first
+  UI.user_error!("Missing version name in #{PUBSPEC_FILE}") if version_name.to_s.empty?
+
+  version_name
+end
+
+def current_version_code
+  version_code = current_version_line.split("+", 2)[1]&.strip
   UI.user_error!("Missing build number in #{PUBSPEC_FILE}") if version_code.to_s.empty?
 
   version_code
+end
+
+def app_store_connect_api_key_path
+  File.expand_path(
+    ENV["APP_STORE_CONNECT_API_KEY_PATH"] || "app-store-connect-api-key.p8",
+    FASTLANE_DIR,
+  )
+end
+
+def app_store_connect_api_key_file_config
+  return {} unless File.exist?(APP_STORE_CONNECT_API_KEY_CONFIG)
+
+  JSON.parse(File.read(APP_STORE_CONNECT_API_KEY_CONFIG))
+rescue JSON::ParserError => error
+  UI.user_error!("Invalid App Store Connect API key JSON config at #{APP_STORE_CONNECT_API_KEY_CONFIG}: #{error.message}")
+end
+
+def app_store_connect_api_key_options
+  file_config = app_store_connect_api_key_file_config
+  key_id = ENV["APP_STORE_CONNECT_KEY_ID"].to_s.strip
+  key_id = file_config["key_id"].to_s.strip if key_id.empty?
+  issuer_id = ENV["APP_STORE_CONNECT_ISSUER_ID"].to_s.strip
+  issuer_id = file_config["issuer_id"].to_s.strip if issuer_id.empty?
+  key_content = ENV["APP_STORE_CONNECT_API_KEY_CONTENT"].to_s.strip
+  key_base64 = ENV["APP_STORE_CONNECT_API_KEY_BASE64"].to_s.strip
+
+  key_filepath = ENV["APP_STORE_CONNECT_API_KEY_PATH"].to_s.strip
+  key_filepath = file_config["key_filepath"].to_s.strip if key_filepath.empty?
+  key_filepath = app_store_connect_api_key_path if key_filepath.empty?
+
+  return nil if key_id.empty? || issuer_id.empty?
+
+  options = {
+    key_id: key_id,
+    issuer_id: issuer_id,
+    duration: 1200,
+    in_house: false,
+  }
+
+  if !key_base64.empty?
+    options[:key_content] = key_base64
+    options[:is_key_content_base64] = true
+  elsif !key_content.empty?
+    options[:key_content] = key_content
+  else
+    options[:key_filepath] = File.expand_path(key_filepath, FASTLANE_DIR)
+  end
+
+  options
+end
+
+def configure_ios_build_environment
+  pod_candidates = [
+    "/opt/homebrew/bin/pod",
+    "/usr/local/bin/pod",
+  ]
+  pod_path = pod_candidates.find { |candidate| File.exist?(candidate) }
+
+  if !pod_path.nil?
+    pod_bin_dir = File.dirname(pod_path)
+    path_entries = ENV.fetch("PATH", "").split(":")
+    ENV["PATH"] = ([pod_bin_dir] + path_entries).uniq.join(":")
+  end
+
+  ENV["LANG"] = "en_US.UTF-8"
+  ENV["LC_ALL"] = "en_US.UTF-8"
+end
+
+def with_clean_ios_shell_environment
+  env_keys = %w[
+    BUNDLE_BIN_PATH
+    BUNDLE_GEMFILE
+    GEM_HOME
+    GEM_PATH
+    RUBYLIB
+    RUBYOPT
+  ]
+  original_values = env_keys.to_h { |key| [key, ENV[key]] }
+
+  env_keys.each do |key|
+    ENV.delete(key)
+  end
+
+  yield
+ensure
+  original_values.each do |key, value|
+    if value.nil?
+      ENV.delete(key)
+    else
+      ENV[key] = value
+    end
+  end
+end
+
+def verify_cocoapods_available
+  sh("command -v pod")
+  sh("pod --version")
+end
+
+def default_ios_ipa_path
+  ipa_paths = Dir[File.join(IOS_IPA_DIRECTORY, "*.ipa")].sort
+  UI.user_error!("Missing iOS IPA in #{IOS_IPA_DIRECTORY}. Run the iOS build lane first.") if ipa_paths.empty?
+
+  ipa_paths.last
+end
+
+def ios_changelog_path_for(build_number)
+  specific_path = File.join(IOS_CHANGELOGS_DIRECTORY, "#{build_number}.txt")
+  return specific_path if File.exist?(specific_path)
+
+  default_path = File.join(IOS_CHANGELOGS_DIRECTORY, "default.txt")
+  return default_path if File.exist?(default_path)
+
+  nil
+end
+
+def resolved_ios_changelog(options, build_number)
+  inline_changelog = options[:changelog].to_s.strip
+  return inline_changelog unless inline_changelog.empty?
+
+  explicit_path = options[:changelog_path].to_s.strip
+  if !explicit_path.empty?
+    changelog_path = File.expand_path(explicit_path, PROJECT_ROOT)
+    UI.user_error!("Missing iOS changelog file: #{changelog_path}") unless File.exist?(changelog_path)
+
+    changelog_contents = File.read(changelog_path).strip
+    UI.user_error!("iOS changelog file is empty: #{changelog_path}") if changelog_contents.empty?
+
+    return changelog_contents
+  end
+
+  changelog_path = ios_changelog_path_for(build_number)
+  return nil if changelog_path.nil?
+
+  changelog_contents = File.read(changelog_path).strip
+  return nil if changelog_contents.empty?
+
+  changelog_contents
 end
 
 platform :android do
@@ -142,6 +302,86 @@ platform :android do
   end
 
   private_lane :build_release_bundle do
-    sh("flutter build appbundle --release")
+    Dir.chdir(PROJECT_ROOT) do
+      sh("flutter build appbundle --release")
+    end
+  end
+end
+
+platform :ios do
+  desc "Check that App Store Connect/TestFlight release prerequisites are available"
+  lane :check_app_store_setup do
+    configure_ios_build_environment
+    api_key_options = app_store_connect_api_key_options
+
+    UI.user_error!("Missing iOS workspace: #{IOS_WORKSPACE}") unless File.exist?(IOS_WORKSPACE)
+
+    if api_key_options.nil?
+      UI.user_error!(
+        "Missing App Store Connect API key metadata. Provide APP_STORE_CONNECT_KEY_ID and APP_STORE_CONNECT_ISSUER_ID via environment variables or #{APP_STORE_CONNECT_API_KEY_CONFIG}. The private key can come from APP_STORE_CONNECT_API_KEY_PATH, APP_STORE_CONNECT_API_KEY_CONTENT, APP_STORE_CONNECT_API_KEY_BASE64, or the default fastlane/app-store-connect-api-key.p8 file.",
+      )
+    end
+
+    if api_key_options[:key_filepath] && !File.exist?(api_key_options[:key_filepath])
+      UI.user_error!("Missing App Store Connect API key file: #{api_key_options[:key_filepath]}")
+    end
+  end
+
+  desc "Build a signed iOS IPA for App Store Connect/TestFlight"
+  lane :binary do |options|
+    check_app_store_setup
+    build_release_ipa(options)
+  end
+
+  desc "Build a signed iOS IPA and upload it to TestFlight for internal testing"
+  lane :internal do |options|
+    check_app_store_setup
+
+    api_key = app_store_connect_api_key(**app_store_connect_api_key_options)
+    ipa_path = options[:ipa].to_s.strip
+    build_number = options[:build_number] || current_version_code
+
+    if ipa_path.empty?
+      build_release_ipa(options)
+      ipa_path = default_ios_ipa_path
+    end
+
+    upload_options = {
+      api_key: api_key,
+      ipa: ipa_path,
+      app_identifier: IOS_APP_IDENTIFIER,
+      skip_waiting_for_build_processing: options.key?(:skip_waiting_for_build_processing) ? options[:skip_waiting_for_build_processing] : true,
+      distribute_external: false,
+      notify_external_testers: false,
+    }
+    changelog = resolved_ios_changelog(options, build_number)
+    upload_options[:changelog] = changelog unless changelog.nil?
+    upload_options[:groups] = Array(options[:groups]) if options[:groups]
+
+    upload_to_testflight(**upload_options)
+  end
+
+  private_lane :build_release_ipa do |options|
+    configure_ios_build_environment
+    export_method = options[:export_method] || "app-store"
+    build_name = options[:build_name] || current_version_name
+    build_number = options[:build_number] || current_version_code
+
+    build_args = [
+      "flutter",
+      "build",
+      "ipa",
+      "--release",
+      "--export-method=#{export_method}",
+      "--build-name=#{build_name}",
+      "--build-number=#{build_number}",
+    ]
+
+    with_clean_ios_shell_environment do
+      verify_cocoapods_available
+      Dir.chdir(PROJECT_ROOT) do
+        sh(build_args.shelljoin)
+      end
+    end
   end
 end
