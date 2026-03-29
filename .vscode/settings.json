@@ -7,6 +7,8 @@
         "/^fastlane android generate_screenshots$/": {
             "approve": true,
             "matchCommandLine": true
-        }
+        },
+        "setopt": true,
+        "/usr/bin/wc": true
     }
 }

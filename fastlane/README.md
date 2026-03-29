@@ -92,6 +92,22 @@ Check that App Store Connect/TestFlight release prerequisites are available
 
 Build a signed iOS IPA for App Store Connect/TestFlight
 
+### ios screenshots
+
+```sh
+[bundle exec] fastlane ios screenshots
+```
+
+Capture App Store screenshots with snapshot
+
+### ios metadata
+
+```sh
+[bundle exec] fastlane ios metadata
+```
+
+Upload App Store metadata and screenshots without uploading a new binary
+
 ### ios internal
 
 ```sh

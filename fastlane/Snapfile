@@ -1,0 +1,17 @@
+workspace("./ios/Runner.xcworkspace")
+scheme("RunnerScreenshots")
+output_directory("./fastlane/screenshots/ios")
+clear_previous_screenshots(true)
+override_status_bar(true)
+localize_simulator(true)
+devices([
+  "iPhone 16 Pro",
+])
+languages([
+  "de-DE",
+  "en-GB",
+  "en-US",
+  "es-ES",
+  "fr-FR",
+  "it-IT",
+])

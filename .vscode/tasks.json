@@ -50,6 +50,18 @@
 			"problemMatcher": []
 		},
 		{
+			"label": "iOS: Capture App Store screenshots",
+			"type": "shell",
+			"command": "${workspaceFolder}/scripts/ios/run_fastlane.sh screenshots",
+			"problemMatcher": []
+		},
+		{
+			"label": "iOS: Upload App Store metadata",
+			"type": "shell",
+			"command": "${workspaceFolder}/scripts/ios/run_fastlane.sh metadata",
+			"problemMatcher": []
+		},
+		{
 			"label": "generate screenshots",
 			"type": "shell",
 			"command": "sh",

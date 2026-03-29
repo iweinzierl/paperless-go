@@ -12,6 +12,7 @@ import UIKit
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
+    applyScreenshotLaunchConfigurationIfNeeded()
     GeneratedPluginRegistrant.register(with: self)
     if let flutterViewController = window?.rootViewController as? FlutterViewController {
       let methodChannel = FlutterMethodChannel(
@@ -41,6 +42,66 @@ import UIKit
     }
 
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+  }
+
+  private func applyScreenshotLaunchConfigurationIfNeeded() {
+    let environment = ProcessInfo.processInfo.environment
+    guard environment["PAPERLESS_SCREENSHOT_MODE"] == "1" else {
+      return
+    }
+
+    let defaults = UserDefaults.standard
+    let managedKeys = [
+      "flutter.debug.screenshot_scenario",
+      "flutter.app_behavior.app_language",
+      "flutter.sync.documents.last_success_at",
+      "flutter.documents.layout_mode",
+      "flutter.auth.server_url",
+      "flutter.auth.username",
+      "flutter.auth.password",
+      "flutter.auth.token",
+      "flutter.auth.display_name",
+    ]
+    managedKeys.forEach { defaults.removeObject(forKey: $0) }
+
+    if let scenario = environment["PAPERLESS_SCREENSHOT_SCENARIO"], !scenario.isEmpty {
+      defaults.set(scenario, forKey: "flutter.debug.screenshot_scenario")
+    }
+    if let language = environment["PAPERLESS_SCREENSHOT_LANGUAGE"], !language.isEmpty {
+      defaults.set(language, forKey: "flutter.app_behavior.app_language")
+    }
+
+    defaults.set(
+      environment["PAPERLESS_SCREENSHOT_LAST_SUCCESS_AT"] ?? "2026-03-21T09:30:00.000Z",
+      forKey: "flutter.sync.documents.last_success_at"
+    )
+    defaults.set(
+      environment["PAPERLESS_SCREENSHOT_LAYOUT_MODE"] ?? "card",
+      forKey: "flutter.documents.layout_mode"
+    )
+
+    if environment["PAPERLESS_SCREENSHOT_AUTHENTICATED"] == "1" {
+      defaults.set(
+        environment["PAPERLESS_SCREENSHOT_SERVER_URL"] ?? "https://demo.paperless-ngx.local/",
+        forKey: "flutter.auth.server_url"
+      )
+      defaults.set(
+        environment["PAPERLESS_SCREENSHOT_USERNAME"] ?? "demo.user",
+        forKey: "flutter.auth.username"
+      )
+      defaults.set(
+        environment["PAPERLESS_SCREENSHOT_PASSWORD"] ?? "not-used",
+        forKey: "flutter.auth.password"
+      )
+      defaults.set(
+        environment["PAPERLESS_SCREENSHOT_TOKEN"] ?? "demo-token",
+        forKey: "flutter.auth.token"
+      )
+      defaults.set(
+        environment["PAPERLESS_SCREENSHOT_DISPLAY_NAME"] ?? "Demo User",
+        forKey: "flutter.auth.display_name"
+      )
+    }
   }
 
   override func application(

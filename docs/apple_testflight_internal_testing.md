@@ -27,6 +27,12 @@ This project now includes Fastlane-based tooling for iOS uploads to App Store Co
 
 - `scripts/ios/run_fastlane.sh`
 
+### App Store listing inputs
+
+- `fastlane/Snapfile`
+- `fastlane/screenshots/ios/`
+- `fastlane/metadata/ios/`
+
 ### Optional TestFlight changelog files
 
 - `fastlane/metadata/ios/changelogs/default.txt`
@@ -123,6 +129,23 @@ All commands are run from the project root.
 ./scripts/ios/run_fastlane.sh internal
 ```
 
+### Capture App Store screenshots
+
+```bash
+./scripts/ios/run_fastlane.sh screenshots
+```
+
+This lane uses `snapshot` and writes screenshots to `fastlane/screenshots/ios`.
+The current project still needs a dedicated iOS UI test target plus `SnapshotHelper.swift` before screenshot capture will run successfully.
+
+### Upload App Store metadata and screenshots
+
+```bash
+./scripts/ios/run_fastlane.sh metadata
+```
+
+This lane uploads App Store listing metadata and screenshots without uploading a new binary.
+
 If a changelog file exists, the lane uses it automatically.
 
 - `fastlane/metadata/ios/changelogs/19.txt` for build `19`
@@ -148,10 +171,16 @@ Useful optional Fastlane parameters:
 - `changelog_path:fastlane/metadata/ios/changelogs/19.txt`
 - `groups:["Internal QA"]`
 - `skip_waiting_for_build_processing:false`
+- `devices:["iPhone 16 Pro"]`
+- `languages:["en-US"]`
+- `skip_metadata:true`
+- `skip_screenshots:true`
 
 ## Notes
 
 - The iOS lane uploads to TestFlight for internal testing. It does not submit the app for App Store review.
+- `fastlane ios metadata` uses `deliver` with `skip_binary_upload:true`, so it only updates listing content.
+- `fastlane ios screenshots` is ready to call `snapshot`, but it will intentionally stop with a clear error until the repo has an iOS UI-test screenshot flow.
 - The build step uses `flutter build ipa --release --export-method app-store`.
 - Flutter version metadata comes from `pubspec.yaml` unless you override `build_name` or `build_number`.
 - Inline `changelog:` still works, but file-based changelogs are preferred for repeatable releases.

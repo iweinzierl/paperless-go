@@ -15,6 +15,9 @@ IOS_WORKSPACE = File.expand_path("../ios/Runner.xcworkspace", FASTLANE_DIR)
 IOS_IPA_DIRECTORY = File.expand_path("../build/ios/ipa", FASTLANE_DIR)
 IOS_APP_IDENTIFIER = ENV["IOS_APP_IDENTIFIER"] || "com.github.iweinzierl.paperlessgo"
 IOS_CHANGELOGS_DIRECTORY = File.expand_path("metadata/ios/changelogs", FASTLANE_DIR)
+IOS_METADATA_DIRECTORY = File.expand_path("metadata/ios", FASTLANE_DIR)
+IOS_SCREENSHOTS_DIRECTORY = File.expand_path("screenshots/ios", FASTLANE_DIR)
+IOS_PROJECT_FILE = File.expand_path("../ios/Runner.xcodeproj/project.pbxproj", FASTLANE_DIR)
 APP_STORE_CONNECT_API_KEY_CONFIG = File.expand_path(
   ENV["APP_STORE_CONNECT_API_KEY_JSON_PATH"] || "app-store-connect-api-key.json",
   FASTLANE_DIR,
@@ -137,6 +140,46 @@ end
 def verify_cocoapods_available
   sh("command -v pod")
   sh("pod --version")
+end
+
+def ios_has_ui_test_target?
+  return false unless File.exist?(IOS_PROJECT_FILE)
+
+  File.read(IOS_PROJECT_FILE).include?("com.apple.product-type.bundle.ui-testing")
+end
+
+def ios_snapshot_helper_present?
+  snapshot_helper_files = Dir[File.expand_path("../ios/**/*SnapshotHelper.swift", FASTLANE_DIR)]
+  !snapshot_helper_files.empty?
+end
+
+def ensure_ios_screenshot_setup!(options)
+  UI.user_error!("Missing iOS workspace: #{IOS_WORKSPACE}") unless File.exist?(IOS_WORKSPACE)
+
+  unless ios_has_ui_test_target?
+    UI.user_error!(
+      "Missing iOS UI test target for App Store screenshots. Add a UITest target before running 'fastlane ios screenshots'.",
+    )
+  end
+
+  return if ios_snapshot_helper_present? || options[:skip_snapshot_helper_check]
+
+  UI.user_error!(
+    "Missing SnapshotHelper.swift in the iOS UI tests. Add the snapshot helper before running 'fastlane ios screenshots', or pass skip_snapshot_helper_check:true if your tests already handle snapshot setup differently.",
+  )
+end
+
+def ensure_ios_metadata_inputs!(options)
+  metadata_path = File.expand_path(options[:metadata_path] || IOS_METADATA_DIRECTORY, PROJECT_ROOT)
+  screenshots_path = File.expand_path(options[:screenshots_path] || IOS_SCREENSHOTS_DIRECTORY, PROJECT_ROOT)
+
+  if !options[:skip_metadata] && !Dir.exist?(metadata_path)
+    UI.user_error!("Missing iOS metadata directory: #{metadata_path}")
+  end
+
+  if !options[:skip_screenshots] && !Dir.exist?(screenshots_path)
+    UI.user_error!("Missing iOS screenshots directory: #{screenshots_path}")
+  end
 end
 
 def default_ios_ipa_path
@@ -331,6 +374,53 @@ platform :ios do
   lane :binary do |options|
     check_app_store_setup
     build_release_ipa(options)
+  end
+
+  desc "Capture App Store screenshots with snapshot"
+  lane :screenshots do |options|
+    configure_ios_build_environment
+    ensure_ios_screenshot_setup!(options)
+
+    snapshot_options = {
+      workspace: IOS_WORKSPACE,
+      scheme: options[:scheme] || ENV["IOS_SNAPSHOT_SCHEME"] || "RunnerScreenshots",
+      output_directory: File.expand_path(options[:output_directory] || IOS_SCREENSHOTS_DIRECTORY, PROJECT_ROOT),
+      clear_previous_screenshots: options.key?(:clear_previous_screenshots) ? options[:clear_previous_screenshots] : true,
+      reinstall_app: options.key?(:reinstall_app) ? options[:reinstall_app] : true,
+      erase_simulator: options.key?(:erase_simulator) ? options[:erase_simulator] : true,
+      stop_after_first_error: options.key?(:stop_after_first_error) ? options[:stop_after_first_error] : true,
+    }
+    snapshot_options[:devices] = Array(options[:devices]) if options[:devices]
+    snapshot_options[:languages] = Array(options[:languages]) if options[:languages]
+    snapshot_options[:ios_version] = options[:ios_version] if options[:ios_version]
+
+    snapshot(**snapshot_options)
+  end
+
+  desc "Upload App Store metadata and screenshots without uploading a new binary"
+  lane :metadata do |options|
+    check_app_store_setup
+    ensure_ios_metadata_inputs!(options)
+
+    api_key = app_store_connect_api_key(**app_store_connect_api_key_options)
+
+    deliver_options = {
+      api_key: api_key,
+      app_identifier: IOS_APP_IDENTIFIER,
+      metadata_path: File.expand_path(options[:metadata_path] || IOS_METADATA_DIRECTORY, PROJECT_ROOT),
+      screenshots_path: File.expand_path(options[:screenshots_path] || IOS_SCREENSHOTS_DIRECTORY, PROJECT_ROOT),
+      skip_binary_upload: true,
+      skip_metadata: options.key?(:skip_metadata) ? options[:skip_metadata] : false,
+      skip_screenshots: options.key?(:skip_screenshots) ? options[:skip_screenshots] : false,
+      overwrite_screenshots: options.key?(:overwrite_screenshots) ? options[:overwrite_screenshots] : true,
+      skip_app_version_update: options.key?(:skip_app_version_update) ? options[:skip_app_version_update] : true,
+      submit_for_review: false,
+      automatic_release: false,
+      run_precheck_before_submit: false,
+      force: true,
+    }
+
+    deliver(**deliver_options)
   end
 
   desc "Build a signed iOS IPA and upload it to TestFlight for internal testing"
