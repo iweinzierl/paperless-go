@@ -1,0 +1,2 @@
+- se anadio una vista previa PDF a pantalla completa desde los detalles del documento para leerlo mejor
+- los detalles del documento muestran ahora con mas claridad la fecha de creacion

@@ -1,0 +1,2 @@
+- Vollbild-PDF-Vorschau in den Dokumentdetails fuer leichteres Lesen hinzugefuegt
+- Dokumentdetails zeigen das Erstellungsdatum nun klarer an
