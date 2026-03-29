@@ -1,0 +1,2 @@
+- la gestion de PDF importados reanuda correctamente la subida despues de desbloquear la aplicacion
+- flujo de importacion y edicion de documentos mas estable con mejoras visuales adicionales

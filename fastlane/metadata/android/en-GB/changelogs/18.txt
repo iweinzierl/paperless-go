@@ -1,0 +1,2 @@
+- improved imported PDF handling so uploads continue correctly after unlocking the app
+- refined document import and editing flows with additional stability and UI polish

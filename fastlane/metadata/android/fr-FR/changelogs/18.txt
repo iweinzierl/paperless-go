@@ -1,0 +1,2 @@
+- la gestion des PDF importes reprend correctement l envoi apres le deverrouillage de l application
+- flux d import et de modification des documents encore stabilises avec des ameliorations visuelles

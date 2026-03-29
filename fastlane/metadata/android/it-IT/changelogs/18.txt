@@ -1,0 +1,2 @@
+- la gestione dei PDF importati riprende correttamente il caricamento dopo lo sblocco dell app
+- flussi di importazione e modifica dei documenti ancora piu stabili con ulteriori miglioramenti visivi

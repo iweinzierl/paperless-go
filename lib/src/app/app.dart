@@ -259,6 +259,10 @@ class _PaperlessNgxAppState extends ConsumerState<PaperlessNgxApp>
       _isAppLocked = !didAuthenticate;
       _unlockErrorMessage = didAuthenticate ? null : l10n.biometricUnlockFailed;
     });
+
+    if (didAuthenticate) {
+      _scheduleIncomingPdfHandling();
+    }
   }
 
   Future<void> _showBiometricPromptIfNeeded() async {

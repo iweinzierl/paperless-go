@@ -1,0 +1,2 @@
+- Importierte PDFs werden nach dem Entsperren der App wieder zuverlaessig fuer den Upload uebernommen
+- Dokumentimport und Bearbeitungsablaeufe weiter stabilisiert und visuell verfeinert
