@@ -286,10 +286,10 @@ class _DocumentDetailBodyState extends ConsumerState<_DocumentDetailBody> {
       if (tagNames.length > 3) '+${tagNames.length - 3}',
     ];
     final summaryMetadata = <Widget>[
-      if (document.added != null && document.added!.trim().isNotEmpty)
+      if (document.created != null && document.created!.trim().isNotEmpty)
         _CompactMetadataItem(
           icon: Icons.calendar_today_outlined,
-          label: _formatMetadataTimestamp(context, document.added)!,
+          label: _formatMetadataTimestamp(context, document.created)!,
         ),
       if (document.pageCount != null)
         _CompactMetadataItem(
@@ -401,10 +401,6 @@ class _DocumentDetailBodyState extends ConsumerState<_DocumentDetailBody> {
               _MetadataInfoRow(
                 label: l10n.createdLabel,
                 value: _formatMetadataTimestamp(context, document.created),
-              ),
-              _MetadataInfoRow(
-                label: l10n.addedLabel,
-                value: _formatMetadataTimestamp(context, document.added),
               ),
               _MetadataInfoRow(
                 label: l10n.pagesLabel,
