@@ -379,11 +379,10 @@ class _DocumentDetailBodyState extends ConsumerState<_DocumentDetailBody> {
             },
             onPreview: isOpening
                 ? null
-                : () => _openDocument(
+                : () => _openFullscreenPreview(
                     context,
-                    ref,
                     document,
-                    variant: DocumentOpenVariant.preview,
+                    initialPage: selectedPage,
                   ),
           ),
           const SizedBox(height: 20),
@@ -484,6 +483,21 @@ class _DocumentDetailBodyState extends ConsumerState<_DocumentDetailBody> {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(SnackBar(content: Text(context.l10n.metadataUpdated)));
+  }
+
+  Future<void> _openFullscreenPreview(
+    BuildContext context,
+    PaperlessDocument document, {
+    required int initialPage,
+  }) {
+    return Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (context) => _DocumentFullscreenPreviewPage(
+          document: document,
+          initialPage: initialPage,
+        ),
+      ),
+    );
   }
 }
 
@@ -2856,7 +2870,7 @@ class _PreviewPanel extends StatelessWidget {
             style: FilledButton.styleFrom(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             ),
-            icon: const Icon(Icons.search),
+            icon: const Icon(Icons.fullscreen_rounded),
             label: Text(context.l10n.openAction.toUpperCase()),
           ),
         ),
@@ -3008,7 +3022,7 @@ class _PreviewLoadingState extends StatelessWidget {
             style: FilledButton.styleFrom(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             ),
-            icon: const Icon(Icons.search),
+            icon: const Icon(Icons.fullscreen_rounded),
             label: Text(context.l10n.openAction.toUpperCase()),
           ),
         ),
@@ -3112,11 +3126,96 @@ class _ThumbnailFallbackPanel extends StatelessWidget {
             style: FilledButton.styleFrom(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             ),
-            icon: const Icon(Icons.search),
+            icon: const Icon(Icons.fullscreen_rounded),
             label: Text(context.l10n.openAction.toUpperCase()),
           ),
         ),
       ],
+    );
+  }
+}
+
+class _DocumentFullscreenPreviewPage extends StatefulWidget {
+  const _DocumentFullscreenPreviewPage({
+    required this.document,
+    required this.initialPage,
+  });
+
+  final PaperlessDocument document;
+  final int initialPage;
+
+  @override
+  State<_DocumentFullscreenPreviewPage> createState() =>
+      _DocumentFullscreenPreviewPageState();
+}
+
+class _DocumentFullscreenPreviewPageState
+    extends State<_DocumentFullscreenPreviewPage> {
+  int _currentPage = 1;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentPage = widget.initialPage;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final repository = ProviderScope.containerOf(
+      context,
+      listen: false,
+    ).read(documentsRepositoryProvider);
+    final previewUri = repository.buildDocumentPreviewUri(
+      documentId: widget.document.id,
+    );
+    final headers = repository.buildAuthenticatedHeaders();
+    final totalPages = widget.document.pageCount;
+
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        foregroundColor: Colors.white,
+        title: Text(
+          widget.document.title,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        actions: [
+          if (totalPages != null)
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.only(right: 16),
+                child: Text(
+                  '${_currentPage.clamp(1, totalPages)} / $totalPages',
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    color: Colors.white70,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+      body: PdfViewer.uri(
+        previewUri,
+        headers: headers,
+        initialPageNumber: widget.initialPage,
+        params: PdfViewerParams(
+          backgroundColor: Colors.black,
+          pageDropShadow: null,
+          margin: 12,
+          onPageChanged: (pageNumber) {
+            if (pageNumber == null || pageNumber == _currentPage || !mounted) {
+              return;
+            }
+
+            setState(() {
+              _currentPage = pageNumber;
+            });
+          },
+        ),
+      ),
     );
   }
 }
