@@ -36,7 +36,7 @@ class _ScanDocumentPageState extends ConsumerState<ScanDocumentPage> {
 
       ref
           .read(documentScanControllerProvider.notifier)
-          .importPdf(initialImportedDocumentPath);
+          .importDocument(initialImportedDocumentPath);
     });
   }
 
@@ -152,44 +152,48 @@ class _ScanDocumentPageState extends ConsumerState<ScanDocumentPage> {
                 ),
               ],
               const SizedBox(height: 16),
-              if (!state.hasImportedDocument)
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: state.isBusy
-                            ? null
-                            : () => _scanPages(
-                                context,
-                                ref,
-                                replaceExisting: false,
-                              ),
-                        icon: const Icon(Icons.document_scanner_outlined),
-                        label: Text(
-                          state.hasPages
-                              ? l10n.scanDocumentAddPagesAction
-                              : l10n.scanDocumentAction,
-                        ),
-                      ),
+              if (!state.hasImportedDocument) ...[
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: state.isBusy
+                        ? null
+                        : () =>
+                              _scanPages(context, ref, replaceExisting: false),
+                    icon: const Icon(Icons.document_scanner_outlined),
+                    label: Text(
+                      state.hasPages
+                          ? l10n.scanDocumentAddPagesAction
+                          : l10n.scanDocumentAction,
                     ),
-                    if (state.hasPages) ...[
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: state.isBusy
-                              ? null
-                              : () => _scanPages(
-                                  context,
-                                  ref,
-                                  replaceExisting: true,
-                                ),
-                          icon: const Icon(Icons.restart_alt),
-                          label: Text(l10n.scanDocumentReplacePagesAction),
-                        ),
-                      ),
-                    ],
-                  ],
+                  ),
                 ),
+                if (state.hasPages) ...[
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: state.isBusy
+                          ? null
+                          : () =>
+                                _scanPages(context, ref, replaceExisting: true),
+                      icon: const Icon(Icons.restart_alt),
+                      label: Text(l10n.scanDocumentReplacePagesAction),
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 12),
+              ],
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: state.isBusy
+                      ? null
+                      : () => _pickDocument(context, ref),
+                  icon: const Icon(Icons.upload_file_outlined),
+                  label: Text(l10n.scanDocumentImportAction),
+                ),
+              ),
               if (state.hasContent) ...[
                 const SizedBox(height: 12),
                 SizedBox(
@@ -260,6 +264,22 @@ class _ScanDocumentPageState extends ConsumerState<ScanDocumentPage> {
         ..showSnackBar(SnackBar(content: Text(message)));
     }
   }
+
+  Future<void> _pickDocument(BuildContext context, WidgetRef ref) async {
+    try {
+      await ref.read(documentScanControllerProvider.notifier).pickDocument();
+    } catch (_) {
+      if (!context.mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(content: Text(context.l10n.scanDocumentImportFailed)),
+        );
+    }
+  }
 }
 
 class _ImportedPdfCard extends StatelessWidget {
@@ -270,15 +290,16 @@ class _ImportedPdfCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final fileName = Uri.file(path).pathSegments.last;
+    final extension = fileName.contains('.')
+        ? fileName.split('.').last.toUpperCase()
+        : context.l10n.documentDetailsTitle;
+
     return Card(
       child: ListTile(
-        leading: const Icon(Icons.picture_as_pdf_outlined, size: 32),
-        title: Text(
-          Uri.file(path).pathSegments.last,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-        subtitle: const Text('PDF'),
+        leading: Icon(_leadingIconForPath(path), size: 32),
+        title: Text(fileName, maxLines: 1, overflow: TextOverflow.ellipsis),
+        subtitle: Text(extension),
         trailing: IconButton(
           tooltip: context.l10n.deleteAction,
           onPressed: onRemove,
@@ -286,6 +307,25 @@ class _ImportedPdfCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  IconData _leadingIconForPath(String filePath) {
+    final normalizedPath = filePath.toLowerCase();
+    if (normalizedPath.endsWith('.pdf')) {
+      return Icons.picture_as_pdf_outlined;
+    }
+    if (normalizedPath.endsWith('.png') ||
+        normalizedPath.endsWith('.jpg') ||
+        normalizedPath.endsWith('.jpeg') ||
+        normalizedPath.endsWith('.webp') ||
+        normalizedPath.endsWith('.bmp') ||
+        normalizedPath.endsWith('.gif') ||
+        normalizedPath.endsWith('.tif') ||
+        normalizedPath.endsWith('.tiff')) {
+      return Icons.image_outlined;
+    }
+
+    return Icons.insert_drive_file_outlined;
   }
 }
 

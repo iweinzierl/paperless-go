@@ -689,7 +689,7 @@ abstract class AppLocalizations {
   /// No description provided for @scanDocumentDescription.
   ///
   /// In en, this message translates to:
-  /// **'Capture one or more pages, review them, and upload the resulting PDF to paperless-ngx.'**
+  /// **'Capture one or more pages or choose an existing file from your device, review it, and upload it to paperless-ngx.'**
   String get scanDocumentDescription;
 
   /// No description provided for @scanDocumentEmptyTitle.
@@ -701,7 +701,7 @@ abstract class AppLocalizations {
   /// No description provided for @scanDocumentEmptyDescription.
   ///
   /// In en, this message translates to:
-  /// **'Use your device camera to capture a paper document. Each scan is combined into one PDF before upload.'**
+  /// **'Use your device camera to capture a paper document or choose an existing file from your device.'**
   String get scanDocumentEmptyDescription;
 
   /// No description provided for @scanDocumentTitleFieldLabel.
@@ -763,6 +763,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The scan could not be uploaded.'**
   String get scanDocumentUploadFailed;
+
+  /// No description provided for @scanDocumentImportAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose from device'**
+  String get scanDocumentImportAction;
+
+  /// No description provided for @scanDocumentImportFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'A document could not be selected on this device.'**
+  String get scanDocumentImportFailed;
 
   /// No description provided for @removeScannedPageTooltip.
   ///

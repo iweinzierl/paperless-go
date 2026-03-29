@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:cunning_document_scanner/cunning_document_scanner.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -15,6 +16,10 @@ final documentScanComposerProvider = Provider<DocumentScanComposer>(
   (ref) => const PdfDocumentScanComposer(),
 );
 
+final documentImportPickerProvider = Provider<DocumentImportPicker>(
+  (ref) => const SystemDocumentImportPicker(),
+);
+
 final documentScanControllerProvider =
     AutoDisposeNotifierProvider<DocumentScanController, DocumentScanState>(
       DocumentScanController.new,
@@ -26,6 +31,10 @@ abstract class DocumentScanner {
 
 abstract class DocumentScanComposer {
   Future<String> composeDocument(List<String> pagePaths);
+}
+
+abstract class DocumentImportPicker {
+  Future<String?> pickDocument();
 }
 
 class SystemDocumentScanner implements DocumentScanner {
@@ -75,6 +84,43 @@ class PdfDocumentScanComposer implements DocumentScanComposer {
   }
 }
 
+class SystemDocumentImportPicker implements DocumentImportPicker {
+  const SystemDocumentImportPicker();
+
+  @override
+  Future<String?> pickDocument() async {
+    final result = await FilePicker.platform.pickFiles(
+      allowMultiple: false,
+      withData: true,
+      type: FileType.any,
+    );
+    if (result == null || result.files.isEmpty) {
+      return null;
+    }
+
+    final selectedFile = result.files.first;
+    final selectedPath = selectedFile.path?.trim();
+    if (selectedPath != null && selectedPath.isNotEmpty) {
+      return selectedPath;
+    }
+
+    final bytes = selectedFile.bytes;
+    if (bytes == null || bytes.isEmpty) {
+      return null;
+    }
+
+    final directory = await getTemporaryDirectory();
+    final fileName = selectedFile.name.trim().isEmpty
+        ? 'imported-document-${DateTime.now().millisecondsSinceEpoch}'
+        : selectedFile.name.trim();
+    final file = File(
+      '${directory.path}/${DateTime.now().millisecondsSinceEpoch}-$fileName',
+    );
+    await file.writeAsBytes(bytes, flush: true);
+    return file.path;
+  }
+}
+
 class DocumentScanController extends AutoDisposeNotifier<DocumentScanState> {
   @override
   DocumentScanState build() => const DocumentScanState();
@@ -83,7 +129,7 @@ class DocumentScanController extends AutoDisposeNotifier<DocumentScanState> {
     state = state.copyWith(title: value);
   }
 
-  void importPdf(String filePath) {
+  void importDocument(String filePath) {
     final normalizedPath = filePath.trim();
     if (normalizedPath.isEmpty || state.isBusy) {
       return;
@@ -95,6 +141,22 @@ class DocumentScanController extends AutoDisposeNotifier<DocumentScanState> {
       title: _defaultTitleFromPath(normalizedPath),
       clearUploadStatus: true,
     );
+  }
+
+  Future<bool> pickDocument() async {
+    if (state.isBusy) {
+      return false;
+    }
+
+    final selectedPath = await ref
+        .read(documentImportPickerProvider)
+        .pickDocument();
+    if (selectedPath == null || selectedPath.trim().isEmpty) {
+      return false;
+    }
+
+    importDocument(selectedPath);
+    return true;
   }
 
   void removePageAt(int index) {

@@ -329,14 +329,14 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get scanDocumentDescription =>
-      'Acquisisci una o più pagine, controllale e carica il PDF risultante su paperless-ngx.';
+      'Acquisisci una o più pagine oppure scegli un file già presente sul dispositivo, controllalo e caricalo su paperless-ngx.';
 
   @override
   String get scanDocumentEmptyTitle => 'Avvia una nuova scansione';
 
   @override
   String get scanDocumentEmptyDescription =>
-      'Usa la fotocamera del dispositivo per acquisire un documento cartaceo. Tutte le pagine scansionate vengono unite in un unico PDF prima del caricamento.';
+      'Usa la fotocamera del dispositivo per acquisire un documento cartaceo oppure scegli un file già presente sul dispositivo.';
 
   @override
   String get scanDocumentTitleFieldLabel => 'Titolo del documento';
@@ -376,6 +376,13 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get scanDocumentUploadFailed => 'Impossibile caricare la scansione.';
+
+  @override
+  String get scanDocumentImportAction => 'Scegli dal dispositivo';
+
+  @override
+  String get scanDocumentImportFailed =>
+      'Impossibile selezionare un documento su questo dispositivo.';
 
   @override
   String get removeScannedPageTooltip => 'Rimuovi pagina scansionata';

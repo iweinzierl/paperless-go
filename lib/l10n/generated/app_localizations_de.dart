@@ -331,14 +331,14 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get scanDocumentDescription =>
-      'Erfasse eine oder mehrere Seiten, prüfe sie und lade die resultierende PDF zu paperless-ngx hoch.';
+      'Erfasse eine oder mehrere Seiten oder wähle eine vorhandene Datei auf deinem Gerät aus, prüfe sie und lade sie zu paperless-ngx hoch.';
 
   @override
   String get scanDocumentEmptyTitle => 'Neuen Scan starten';
 
   @override
   String get scanDocumentEmptyDescription =>
-      'Verwende die Kamera deines Geräts, um ein Papierdokument zu erfassen. Alle gescannten Seiten werden vor dem Upload zu einer PDF zusammengefasst.';
+      'Verwende die Kamera deines Geräts, um ein Papierdokument zu erfassen, oder wähle eine vorhandene Datei auf deinem Gerät aus.';
 
   @override
   String get scanDocumentTitleFieldLabel => 'Dokumenttitel';
@@ -379,6 +379,13 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get scanDocumentUploadFailed =>
       'Der Scan konnte nicht hochgeladen werden.';
+
+  @override
+  String get scanDocumentImportAction => 'Vom Gerät auswählen';
+
+  @override
+  String get scanDocumentImportFailed =>
+      'Auf diesem Gerät konnte kein Dokument ausgewählt werden.';
 
   @override
   String get removeScannedPageTooltip => 'Gescannte Seite entfernen';
