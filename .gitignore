@@ -53,6 +53,7 @@ app.*.map.json
 /fastlane/app-store-connect-api-key.p8
 /fastlane/app-store-connect-api-key.json
 /fastlane/play-store-service-account.json
+/fastlane/.generated/
 
 # Fastlane metadata and screenshots
 fastlane/report.xml

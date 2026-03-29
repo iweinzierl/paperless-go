@@ -6,6 +6,7 @@ override_status_bar(true)
 localize_simulator(true)
 devices([
   "iPhone 16 Pro",
+  "iPhone 11 Pro Max",
 ])
 languages([
   "de-DE",

@@ -135,7 +135,7 @@ All commands are run from the project root.
 ./scripts/ios/run_fastlane.sh screenshots
 ```
 
-This lane uses `snapshot`, normalizes the generated files into the Android-style layout under `fastlane/metadata/ios/<locale>/images/phoneScreenshots/`, and writes an HTML report to `fastlane/metadata/ios/screenshots.html`.
+This lane uses `snapshot`, captures both the 6.3-inch and 6.5-inch iPhone App Store screenshot sets, normalizes the generated files into the Android-style layout under `fastlane/metadata/ios/<locale>/images/phoneScreenshots/`, and writes an HTML report to `fastlane/metadata/ios/screenshots.html`.
 
 ### Upload App Store metadata and screenshots
 
