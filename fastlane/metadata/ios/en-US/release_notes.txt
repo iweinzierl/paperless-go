@@ -1,2 +1,3 @@
-- added fullscreen PDF preview from document details for easier reading
-- document details now show the created date more clearly
+- improved large-screen layouts across documents, recent uploads, inbox, and filters
+- added title search to recent uploads and inbox
+- document details now use cleaner date and title presentation
