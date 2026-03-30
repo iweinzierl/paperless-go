@@ -51,7 +51,7 @@ void main() {
 
       final notifier = container.read(documentScanControllerProvider.notifier);
 
-      notifier.importPdf('/tmp/annual-report.pdf');
+      notifier.importDocument('/tmp/annual-report.pdf');
       final taskId = await notifier.upload();
 
       expect(

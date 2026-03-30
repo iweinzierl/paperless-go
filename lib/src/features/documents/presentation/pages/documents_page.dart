@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:paperless_ngx_app/src/core/data/local/sync_status_preferences.dart';
+import 'package:paperless_ngx_app/src/core/presentation/layout/adaptive_layout.dart';
 import 'package:paperless_ngx_app/src/core/presentation/localization/app_localizations_x.dart';
 import 'package:paperless_ngx_app/src/core/presentation/widgets/refresh_status_text.dart';
 import 'package:paperless_ngx_app/src/core/providers/sync_status_preferences_provider.dart';
@@ -18,6 +19,7 @@ import 'package:paperless_ngx_app/src/features/documents/presentation/pages/docu
 import 'package:paperless_ngx_app/src/features/documents/presentation/pages/documents_filters_page.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/providers/document_open_controller.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/providers/documents_providers.dart';
+import 'package:paperless_ngx_app/src/features/documents/presentation/providers/selected_document_provider.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/widgets/paperless_document_card.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/widgets/paperless_document_list_item.dart';
 
@@ -109,139 +111,123 @@ class _DocumentsPageState extends ConsumerState<DocumentsPage> {
 
     _syncController(query);
 
-    return Scaffold(
-      key: _scaffoldKey,
-      drawer: const AppDrawer(),
-      appBar: AppBar(
-        titleSpacing: 0,
-        title: Text(l10n.navigationDocuments),
-        actions: [
-          IconButton(
-            onPressed: () => _updateLayoutMode(
-              layoutMode == DocumentsLayoutMode.card
-                  ? DocumentsLayoutMode.list
-                  : DocumentsLayoutMode.card,
-            ),
-            icon: Icon(
-              layoutMode == DocumentsLayoutMode.card
-                  ? Icons.view_list_rounded
-                  : Icons.dashboard_customize_rounded,
-            ),
-          ),
-          PopupMenuButton<_DocumentsPageAction>(
-            tooltip: MaterialLocalizations.of(context).showMenuTooltip,
-            onSelected: (action) {
-              switch (action) {
-                case _DocumentsPageAction.refresh:
-                  _refreshDocumentsPage();
-              }
-            },
-            itemBuilder: (context) => [
-              PopupMenuItem<_DocumentsPageAction>(
-                value: _DocumentsPageAction.refresh,
-                enabled: !documentsPage.isRefreshing,
-                child: Text(
-                  MaterialLocalizations.of(
-                    context,
-                  ).refreshIndicatorSemanticLabel,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-      body: DecoratedBox(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              theme.colorScheme.surface,
-              theme.colorScheme.surfaceContainerHigh,
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
+    final isWideScreen = useWideLayout(context);
+    final effectiveLayoutMode = isWideScreen
+        ? DocumentsLayoutMode.list
+        : layoutMode;
+
+    final bodyContent = DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            theme.colorScheme.surface,
+            theme.colorScheme.surfaceContainerHigh,
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 10),
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(0, 8, 0, 4),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+      ),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 10),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(0, 8, 0, 4),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _searchController,
+                          focusNode: _searchFocusNode,
+                          textInputAction: TextInputAction.search,
+                          onSubmitted: _submitSearch,
+                          decoration: InputDecoration(
+                            hintText: l10n.searchByTitleHint,
+                            prefixIcon: const Icon(Icons.search),
+                            suffixIcon: query.isNotEmpty
+                                ? IconButton(
+                                    tooltip: l10n.clearSearchTooltip,
+                                    onPressed: _clearSearch,
+                                    icon: const Icon(Icons.close),
+                                  )
+                                : null,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      IconButton.filledTonal(
+                        tooltip: l10n.filtersTooltip,
+                        onPressed: () => _openFilters(context),
+                        style: IconButton.styleFrom(
+                          minimumSize: const Size(56, 56),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                        ),
+                        icon: Badge.count(
+                          isLabelVisible: activeFilterCount > 0,
+                          count: activeFilterCount,
+                          child: const Icon(Icons.tune),
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (isWideScreen) ...[
+                    const SizedBox(height: 16),
                     Row(
                       children: [
                         Expanded(
-                          child: TextField(
-                            controller: _searchController,
-                            focusNode: _searchFocusNode,
-                            textInputAction: TextInputAction.search,
-                            onSubmitted: _submitSearch,
-                            decoration: InputDecoration(
-                              hintText: l10n.searchByTitleHint,
-                              prefixIcon: const Icon(Icons.search),
-                              suffixIcon: query.isNotEmpty
-                                  ? IconButton(
-                                      tooltip: l10n.clearSearchTooltip,
-                                      onPressed: _clearSearch,
-                                      icon: const Icon(Icons.close),
-                                    )
-                                  : null,
+                          child: Text(
+                            l10n.navigationDocuments,
+                            style: theme.textTheme.headlineSmall?.copyWith(
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
                         ),
-                        const SizedBox(width: 12),
-                        IconButton.filledTonal(
-                          tooltip: l10n.filtersTooltip,
-                          onPressed: () => _openFilters(context),
-                          style: IconButton.styleFrom(
-                            minimumSize: const Size(56, 56),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                          ),
-                          icon: Badge.count(
-                            isLabelVisible: activeFilterCount > 0,
-                            count: activeFilterCount,
-                            child: const Icon(Icons.tune),
-                          ),
+                        RefreshStatusText(
+                          lastUpdatedAt: _lastUpdatedAt,
+                          isRefreshing: documentsPage.isRefreshing,
+                          lastRefreshFailedAt: _lastRefreshFailedAt,
                         ),
                       ],
                     ),
-                    if (activeFilterCount > 0) ...[
-                      const SizedBox(height: 14),
-                      _ActiveDocumentsControls(
-                        filterState: filterState,
-                        ordering: ordering,
-                        onRemoveTag: (tagId) => _updateFilters(
-                          filterState.copyWith(
-                            tagIds: filterState.tagIds
-                                .where((currentTagId) => currentTagId != tagId)
-                                .toList(growable: false),
-                            clearTag: filterState.tagIds.length == 1,
-                          ),
+                  ],
+                  if (activeFilterCount > 0) ...[
+                    const SizedBox(height: 14),
+                    _ActiveDocumentsControls(
+                      filterState: filterState,
+                      ordering: ordering,
+                      onRemoveTag: (tagId) => _updateFilters(
+                        filterState.copyWith(
+                          tagIds: filterState.tagIds
+                              .where((currentTagId) => currentTagId != tagId)
+                              .toList(growable: false),
+                          clearTag: filterState.tagIds.length == 1,
                         ),
-                        onClearCorrespondent:
-                            filterState.correspondentId != null
-                            ? () => _updateFilters(
-                                filterState.copyWith(clearCorrespondent: true),
-                              )
-                            : null,
-                        onClearDocumentType: filterState.documentTypeId != null
-                            ? () => _updateFilters(
-                                filterState.copyWith(clearDocumentType: true),
-                              )
-                            : null,
-                        onResetOrdering:
-                            ordering != documentsSortOptions.first.ordering
-                            ? () => _updateOrdering(
-                                documentsSortOptions.first.ordering,
-                              )
-                            : null,
                       ),
-                    ],
-                    const SizedBox(height: 12),
+                      onClearCorrespondent: filterState.correspondentId != null
+                          ? () => _updateFilters(
+                              filterState.copyWith(clearCorrespondent: true),
+                            )
+                          : null,
+                      onClearDocumentType: filterState.documentTypeId != null
+                          ? () => _updateFilters(
+                              filterState.copyWith(clearDocumentType: true),
+                            )
+                          : null,
+                      onResetOrdering:
+                          ordering != documentsSortOptions.first.ordering
+                          ? () => _updateOrdering(
+                              documentsSortOptions.first.ordering,
+                            )
+                          : null,
+                    ),
+                  ],
+                  const SizedBox(height: 12),
+                  if (!isWideScreen)
                     Align(
                       alignment: Alignment.centerRight,
                       child: RefreshStatusText(
@@ -250,56 +236,149 @@ class _DocumentsPageState extends ConsumerState<DocumentsPage> {
                         lastRefreshFailedAt: _lastRefreshFailedAt,
                       ),
                     ),
-                  ],
-                ),
-              ),
-            ),
-            Expanded(
-              child: Stack(
-                children: [
-                  RefreshIndicator(
-                    onRefresh: _refreshDocumentsPage,
-                    child: page != null
-                        ? _DocumentsList(
-                            page: page,
-                            layoutMode: layoutMode,
-                            onPreviousPage:
-                                page.count > 0 &&
-                                    ref.read(documentsCurrentPageProvider) > 1
-                                ? () => _goToPage(
-                                    ref.read(documentsCurrentPageProvider) - 1,
-                                  )
-                                : null,
-                            onNextPage:
-                                (ref.read(documentsCurrentPageProvider) * 20) <
-                                    page.count
-                                ? () => _goToPage(
-                                    ref.read(documentsCurrentPageProvider) + 1,
-                                  )
-                                : null,
-                          )
-                        : documentsPage.when(
-                            data: (_) => const SizedBox.shrink(),
-                            error: (error, stackTrace) => _DocumentsError(
-                              onRetry: () =>
-                                  ref.invalidate(documentsPageProvider),
-                            ),
-                            loading: () => const _DocumentsLoading(),
-                          ),
-                  ),
-                  if (documentsPage.isRefreshing && page != null)
-                    const Positioned(
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      child: LinearProgressIndicator(minHeight: 2),
-                    ),
                 ],
               ),
             ),
-          ],
-        ),
+          ),
+          Expanded(
+            child: Stack(
+              children: [
+                RefreshIndicator(
+                  onRefresh: _refreshDocumentsPage,
+                  child: page != null
+                      ? _DocumentsList(
+                          page: page,
+                          layoutMode: effectiveLayoutMode,
+                          onPreviousPage:
+                              page.count > 0 &&
+                                  ref.read(documentsCurrentPageProvider) > 1
+                              ? () => _goToPage(
+                                  ref.read(documentsCurrentPageProvider) - 1,
+                                )
+                              : null,
+                          onNextPage:
+                              (ref.read(documentsCurrentPageProvider) * 20) <
+                                  page.count
+                              ? () => _goToPage(
+                                  ref.read(documentsCurrentPageProvider) + 1,
+                                )
+                              : null,
+                        )
+                      : documentsPage.when(
+                          data: (_) => const SizedBox.shrink(),
+                          error: (error, stackTrace) => _DocumentsError(
+                            onRetry: () =>
+                                ref.invalidate(documentsPageProvider),
+                          ),
+                          loading: () => const _DocumentsLoading(),
+                        ),
+                ),
+                if (documentsPage.isRefreshing && page != null)
+                  const Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    child: LinearProgressIndicator(minHeight: 2),
+                  ),
+              ],
+            ),
+          ),
+        ],
       ),
+    );
+
+    return Scaffold(
+      key: _scaffoldKey,
+      drawer: isWideScreen ? null : const AppDrawer(),
+      appBar: isWideScreen
+          ? null
+          : AppBar(
+              titleSpacing: 0,
+              title: Text(l10n.navigationDocuments),
+              actions: [
+                IconButton(
+                  onPressed: () => _updateLayoutMode(
+                    layoutMode == DocumentsLayoutMode.card
+                        ? DocumentsLayoutMode.list
+                        : DocumentsLayoutMode.card,
+                  ),
+                  icon: Icon(
+                    layoutMode == DocumentsLayoutMode.card
+                        ? Icons.view_list_rounded
+                        : Icons.dashboard_customize_rounded,
+                  ),
+                ),
+                PopupMenuButton<_DocumentsPageAction>(
+                  tooltip: MaterialLocalizations.of(context).showMenuTooltip,
+                  onSelected: (action) {
+                    switch (action) {
+                      case _DocumentsPageAction.refresh:
+                        _refreshDocumentsPage();
+                    }
+                  },
+                  itemBuilder: (context) => [
+                    PopupMenuItem<_DocumentsPageAction>(
+                      value: _DocumentsPageAction.refresh,
+                      enabled: !documentsPage.isRefreshing,
+                      child: Text(
+                        MaterialLocalizations.of(
+                          context,
+                        ).refreshIndicatorSemanticLabel,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+      body: isWideScreen
+          ? SafeArea(
+              bottom: false,
+              minimum: const EdgeInsets.only(top: 8),
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      theme.colorScheme.surface,
+                      theme.colorScheme.surfaceContainerHigh,
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(flex: 1, child: bodyContent),
+                    const VerticalDivider(width: 1, thickness: 1),
+                    Expanded(
+                      flex: 2,
+                      child: Consumer(
+                        builder: (context, ref, _) {
+                          final selectedId = ref.watch(
+                            selectedDocumentIdProvider,
+                          );
+                          if (selectedId == null) {
+                            return Center(
+                              child: Text(
+                                l10n.documentDetailsTitle,
+                                style: theme.textTheme.titleLarge?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            );
+                          }
+                          return DocumentDetailPage(
+                            documentId: selectedId,
+                            embedded: true,
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          : bodyContent,
     );
   }
 
@@ -648,11 +727,16 @@ class _DocumentsList extends ConsumerWidget {
     PaperlessDocument document,
   ) {
     ref.read(recentlyOpenedDocumentsProvider.notifier).record(document);
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (context) => DocumentDetailPage(documentId: document.id),
-      ),
-    );
+    final isWideScreen = useWideLayout(context);
+    if (isWideScreen) {
+      ref.read(selectedDocumentIdProvider.notifier).state = document.id;
+    } else {
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (context) => DocumentDetailPage(documentId: document.id),
+        ),
+      );
+    }
   }
 
   Future<void> _openDocument(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pdfrx/pdfrx.dart';
+import 'package:paperless_ngx_app/src/core/presentation/layout/adaptive_layout.dart';
 import 'package:paperless_ngx_app/src/features/auth/presentation/providers/current_user_capabilities_provider.dart';
 import 'package:paperless_ngx_app/src/core/presentation/localization/app_localizations_x.dart';
 import 'package:paperless_ngx_app/src/core/presentation/formatters/timestamp_text.dart';
@@ -11,6 +12,7 @@ import 'package:paperless_ngx_app/src/features/documents/presentation/providers/
 import 'package:paperless_ngx_app/src/features/documents/presentation/providers/document_detail_provider.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/providers/document_open_controller.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/providers/documents_providers.dart';
+import 'package:paperless_ngx_app/src/features/documents/presentation/providers/selected_document_provider.dart';
 import 'package:paperless_ngx_app/src/features/documents/data/repositories/documents_repository.dart';
 
 enum _DocumentDetailAction { openOriginal, delete }
@@ -19,15 +21,18 @@ class DocumentDetailPage extends ConsumerWidget {
   const DocumentDetailPage({
     required this.documentId,
     this.openEditMetadataOnLoad = false,
+    this.embedded = false,
     super.key,
   });
 
   final int documentId;
   final bool openEditMetadataOnLoad;
+  final bool embedded;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final documentAsync = ref.watch(documentDetailProvider(documentId));
+    final isWideScreen = useWideLayout(context);
     final capabilities = ref.watch(currentUserCapabilitiesProvider).valueOrNull;
     final document = documentAsync.valueOrNull;
     final deletingIds = ref.watch(documentDeleteControllerProvider);
@@ -41,57 +46,72 @@ class DocumentDetailPage extends ConsumerWidget {
         capabilities != null &&
         document.canBeDeletedBy(capabilities);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(context.l10n.documentDetailsTitle),
-        actions: [
-          if (document != null)
-            if (isDeleting)
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                child: SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: CircularProgressIndicator(strokeWidth: 2.5),
-                ),
-              )
-            else
-              PopupMenuButton<_DocumentDetailAction>(
-                onSelected: (action) {
-                  switch (action) {
-                    case _DocumentDetailAction.openOriginal:
-                      _openOriginalDocument(context, ref, document);
-                    case _DocumentDetailAction.delete:
-                      _deleteDocument(context, ref, document);
-                  }
-                },
-                itemBuilder: (context) {
-                  final items = <PopupMenuEntry<_DocumentDetailAction>>[
-                    PopupMenuItem<_DocumentDetailAction>(
-                      value: _DocumentDetailAction.openOriginal,
-                      child: Text(context.l10n.openOriginalAction),
-                    ),
-                  ];
-
-                  if (canSeeDeleteAction) {
-                    items.add(
-                      PopupMenuItem<_DocumentDetailAction>(
-                        value: _DocumentDetailAction.delete,
-                        enabled: canDeleteDocument,
-                        child: Text(context.l10n.deleteDocumentAction),
-                      ),
-                    );
-                  }
-
-                  return items;
-                },
+    final documentActions = document == null
+        ? const <Widget>[]
+        : isDeleting
+        ? const [
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(strokeWidth: 2.5),
               ),
-        ],
-      ),
+            ),
+          ]
+        : [
+            PopupMenuButton<_DocumentDetailAction>(
+              onSelected: (action) {
+                switch (action) {
+                  case _DocumentDetailAction.openOriginal:
+                    _openOriginalDocument(context, ref, document);
+                  case _DocumentDetailAction.delete:
+                    _deleteDocument(context, ref, document, embedded);
+                }
+              },
+              itemBuilder: (context) {
+                final items = <PopupMenuEntry<_DocumentDetailAction>>[
+                  PopupMenuItem<_DocumentDetailAction>(
+                    value: _DocumentDetailAction.openOriginal,
+                    child: Text(context.l10n.openOriginalAction),
+                  ),
+                ];
+
+                if (canSeeDeleteAction) {
+                  items.add(
+                    PopupMenuItem<_DocumentDetailAction>(
+                      value: _DocumentDetailAction.delete,
+                      enabled: canDeleteDocument,
+                      child: Text(context.l10n.deleteDocumentAction),
+                    ),
+                  );
+                }
+
+                return items;
+              },
+            ),
+          ];
+
+    return Scaffold(
+      backgroundColor: embedded ? Colors.transparent : null,
+      appBar: embedded
+          ? null
+          : AppBar(
+              title: Text(
+                isWideScreen
+                    ? context.l10n.documentDetailsTitle
+                    : (document?.title ?? context.l10n.documentDetailsTitle),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              actions: documentActions,
+            ),
       body: documentAsync.when(
         data: (document) => _DocumentDetailBody(
           document: document,
           openEditMetadataOnLoad: openEditMetadataOnLoad,
+          embedded: embedded,
+          actionWidgets: documentActions,
         ),
         error: (error, stackTrace) => _DocumentDetailError(
           onRetry: () => ref.invalidate(documentDetailProvider(documentId)),
@@ -126,6 +146,7 @@ class DocumentDetailPage extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref,
     PaperlessDocument document,
+    bool embedded,
   ) async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -163,7 +184,11 @@ class DocumentDetailPage extends ConsumerWidget {
         return;
       }
 
-      navigator.pop();
+      if (embedded) {
+        ref.read(selectedDocumentIdProvider.notifier).state = null;
+      } else {
+        navigator.pop();
+      }
       messenger
         ..hideCurrentSnackBar()
         ..showSnackBar(SnackBar(content: Text(context.l10n.documentDeleted)));
@@ -183,10 +208,14 @@ class _DocumentDetailBody extends ConsumerStatefulWidget {
   const _DocumentDetailBody({
     required this.document,
     required this.openEditMetadataOnLoad,
+    required this.embedded,
+    required this.actionWidgets,
   });
 
   final PaperlessDocument document;
   final bool openEditMetadataOnLoad;
+  final bool embedded;
+  final List<Widget> actionWidgets;
 
   @override
   ConsumerState<_DocumentDetailBody> createState() =>
@@ -279,28 +308,14 @@ class _DocumentDetailBodyState extends ConsumerState<_DocumentDetailBody> {
       document.documentTypeId,
     );
     final tagNames = _resolveTagNames(tagOptions, document.tags);
+    final summaryLeadingLabel = correspondentName ?? l10n.noCorrespondentOption;
+    final summaryTrailingLabel = _formatMetadataTimestamp(
+      context,
+      document.created,
+    );
     final summaryBadges = <String>[
-      if (correspondentName != null) correspondentName,
       if (documentTypeName != null) documentTypeName,
-      for (final tagName in tagNames.take(3)) tagName,
-      if (tagNames.length > 3) '+${tagNames.length - 3}',
-    ];
-    final summaryMetadata = <Widget>[
-      if (document.created != null && document.created!.trim().isNotEmpty)
-        _CompactMetadataItem(
-          icon: Icons.calendar_today_outlined,
-          label: _formatMetadataTimestamp(context, document.created)!,
-        ),
-      if (document.pageCount != null)
-        _CompactMetadataItem(
-          icon: Icons.description_outlined,
-          label: l10n.documentPages(document.pageCount!),
-        ),
-      if (document.mimeType != null && document.mimeType!.trim().isNotEmpty)
-        _CompactMetadataItem(
-          icon: Icons.layers_outlined,
-          label: document.mimeType!,
-        ),
+      ...tagNames,
     ];
 
     return DecoratedBox(
@@ -314,130 +329,142 @@ class _DocumentDetailBodyState extends ConsumerState<_DocumentDetailBody> {
           end: Alignment.bottomRight,
         ),
       ),
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-        children: [
-          _DocumentSummaryCard(
-            document: document,
-            badges: summaryBadges,
-            metadata: summaryMetadata,
-          ),
-          const SizedBox(height: 18),
-          FilledButton.icon(
-            onPressed: isOpening
-                ? null
-                : () => _openDocument(context, ref, document),
-            style: FilledButton.styleFrom(
-              minimumSize: const Size.fromHeight(56),
-              shape: const StadiumBorder(),
-              textStyle: theme.textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w800,
-                letterSpacing: 1.0,
-              ),
-            ),
-            icon: Icon(
-              isOpening ? Icons.hourglass_top : Icons.visibility_outlined,
-            ),
-            label: Text(
-              (isOpening ? l10n.openingAction : l10n.openDocumentAction)
-                  .toUpperCase(),
-            ),
-          ),
-          const SizedBox(height: 12),
-          OutlinedButton.icon(
-            onPressed: canEditMetadata
-                ? () => _editMetadata(context, ref, document)
-                : null,
-            style: OutlinedButton.styleFrom(
-              minimumSize: const Size.fromHeight(56),
-              shape: const StadiumBorder(),
-              textStyle: theme.textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w800,
-                letterSpacing: 1.0,
-              ),
-            ),
-            icon: const Icon(Icons.edit_outlined),
-            label: Text(l10n.editMetadataAction.toUpperCase()),
-          ),
-          const SizedBox(height: 20),
-          _PreviewCard(
-            title: l10n.thumbnailPreviewTitle,
-            document: document,
-            pageCount: effectivePageCount,
-            selectedPage: selectedPage,
-            pageStripScrollController: _pageStripScrollController,
-            thumbnailWidget: thumbnailWidget,
-            thumbnailImageProvider: thumbnailImageProvider,
-            repository: repository,
-            onSelectPage: (pageNumber) {
-              if (pageNumber == _selectedPage) {
-                return;
-              }
-              setState(() {
-                _selectedPage = pageNumber;
-              });
-            },
-            onPreview: isOpening
-                ? null
-                : () => _openFullscreenPreview(
-                    context,
-                    document,
-                    initialPage: selectedPage,
-                  ),
-          ),
-          const SizedBox(height: 20),
-          _MetadataCard(
-            title: l10n.metadataTitle,
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 800),
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
             children: [
-              _MetadataInfoRow(
-                label: l10n.fileNameLabel,
-                value: document.preferredFileName,
+              if (widget.embedded) ...[
+                _EmbeddedDocumentActionBar(
+                  title: document.title,
+                  actionWidgets: widget.actionWidgets,
+                ),
+                const SizedBox(height: 16),
+              ],
+              _DocumentSummaryCard(
+                primaryLabel: summaryLeadingLabel,
+                trailingLabel: summaryTrailingLabel,
+                badges: summaryBadges,
               ),
-              _MetadataInfoRow(
-                label: l10n.mimeTypeLabel,
-                value: document.mimeType,
+              const SizedBox(height: 18),
+              FilledButton.icon(
+                onPressed: isOpening
+                    ? null
+                    : () => _openDocument(context, ref, document),
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size.fromHeight(56),
+                  shape: const StadiumBorder(),
+                  textStyle: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1.0,
+                  ),
+                ),
+                icon: Icon(
+                  isOpening ? Icons.hourglass_top : Icons.visibility_outlined,
+                ),
+                label: Text(
+                  (isOpening ? l10n.openingAction : l10n.openDocumentAction)
+                      .toUpperCase(),
+                ),
               ),
-              _MetadataInfoRow(
-                label: l10n.createdLabel,
-                value: _formatMetadataTimestamp(context, document.created),
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                onPressed: canEditMetadata
+                    ? () => _editMetadata(context, ref, document)
+                    : null,
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size.fromHeight(56),
+                  shape: const StadiumBorder(),
+                  textStyle: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1.0,
+                  ),
+                ),
+                icon: const Icon(Icons.edit_outlined),
+                label: Text(l10n.editMetadataAction.toUpperCase()),
               ),
-              _MetadataInfoRow(
-                label: l10n.pagesLabel,
-                value: document.pageCount?.toString(),
+              const SizedBox(height: 20),
+              _PreviewCard(
+                title: l10n.thumbnailPreviewTitle,
+                document: document,
+                pageCount: effectivePageCount,
+                selectedPage: selectedPage,
+                pageStripScrollController: _pageStripScrollController,
+                thumbnailWidget: thumbnailWidget,
+                thumbnailImageProvider: thumbnailImageProvider,
+                repository: repository,
+                onSelectPage: (pageNumber) {
+                  if (pageNumber == _selectedPage) {
+                    return;
+                  }
+                  setState(() {
+                    _selectedPage = pageNumber;
+                  });
+                },
+                onPreview: isOpening
+                    ? null
+                    : () => _openFullscreenPreview(
+                        context,
+                        document,
+                        initialPage: selectedPage,
+                      ),
               ),
-              _MetadataInfoRow(
-                label: l10n.archiveSerialNumberLabel,
-                value: document.archiveSerialNumber?.toString(),
+              const SizedBox(height: 20),
+              _MetadataCard(
+                title: l10n.metadataTitle,
+                children: [
+                  _MetadataInfoRow(
+                    label: l10n.fileNameLabel,
+                    value: document.preferredFileName,
+                  ),
+                  _MetadataInfoRow(
+                    label: l10n.mimeTypeLabel,
+                    value: document.mimeType,
+                  ),
+                  _MetadataInfoRow(
+                    label: l10n.createdLabel,
+                    value: _formatMetadataTimestamp(context, document.created),
+                  ),
+                  _MetadataInfoRow(
+                    label: l10n.pagesLabel,
+                    value: document.pageCount?.toString(),
+                  ),
+                  _MetadataInfoRow(
+                    label: l10n.archiveSerialNumberLabel,
+                    value: document.archiveSerialNumber?.toString(),
+                  ),
+                  _ResolvedOptionRow(
+                    label: l10n.correspondentLabel,
+                    optionId: document.correspondentId,
+                    options: correspondentOptions,
+                    fallbackValue: document.correspondentId?.toString(),
+                  ),
+                  _ResolvedOptionRow(
+                    label: l10n.documentTypeLabel,
+                    optionId: document.documentTypeId,
+                    options: documentTypeOptions,
+                    fallbackValue: document.documentTypeId?.toString(),
+                  ),
+                  _ResolvedTagsRow(document: document, options: tagOptions),
+                ],
               ),
-              _ResolvedOptionRow(
-                label: l10n.correspondentLabel,
-                optionId: document.correspondentId,
-                options: correspondentOptions,
-                fallbackValue: document.correspondentId?.toString(),
-              ),
-              _ResolvedOptionRow(
-                label: l10n.documentTypeLabel,
-                optionId: document.documentTypeId,
-                options: documentTypeOptions,
-                fallbackValue: document.documentTypeId?.toString(),
-              ),
-              _ResolvedTagsRow(document: document, options: tagOptions),
-            ],
-          ),
-          if (document.content != null &&
-              document.content!.trim().isNotEmpty) ...[
-            const SizedBox(height: 20),
-            _DetailSection(
-              title: l10n.contentPreviewTitle,
-              children: [
-                Text(
-                  document.content!.trim(),
-                  style: theme.textTheme.bodyMedium?.copyWith(height: 1.55),
+              if (document.content != null &&
+                  document.content!.trim().isNotEmpty) ...[
+                const SizedBox(height: 20),
+                _DetailSection(
+                  title: l10n.contentPreviewTitle,
+                  children: [
+                    Text(
+                      document.content!.trim(),
+                      style: theme.textTheme.bodyMedium?.copyWith(height: 1.55),
+                    ),
+                  ],
                 ),
               ],
-            ),
-          ],
-        ],
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -496,6 +523,40 @@ class _DocumentDetailBodyState extends ConsumerState<_DocumentDetailBody> {
           document: document,
           initialPage: initialPage,
         ),
+      ),
+    );
+  }
+}
+
+class _EmbeddedDocumentActionBar extends StatelessWidget {
+  const _EmbeddedDocumentActionBar({
+    required this.title,
+    required this.actionWidgets,
+  });
+
+  final String title;
+  final List<Widget> actionWidgets;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          ...actionWidgets,
+        ],
       ),
     );
   }
@@ -697,183 +758,196 @@ class _EditDocumentMetadataPageState
             end: Alignment.bottomCenter,
           ),
         ),
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-          children: [
-            _EditFieldSection(
-              label: l10n.titleLabel,
-              child: _EditMetadataTextField(
-                controller: _titleController,
-                enabled: !_isBusy,
-                hintText: l10n.titleLabel,
-                textInputAction: TextInputAction.next,
-                errorText: _titleError,
-              ),
-            ),
-            const SizedBox(height: 18),
-            _EditFieldSection(
-              label: l10n.createdDateLabel,
-              child: _EditMetadataTextField(
-                controller: _createdController,
-                enabled: !_isBusy,
-                hintText: l10n.createdDateHint,
-                keyboardType: TextInputType.datetime,
-                errorText: _createdError,
-                suffix: IconButton(
-                  onPressed: _isBusy ? null : _pickCreatedDate,
-                  icon: const Icon(Icons.calendar_today_outlined),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 600),
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+              children: [
+                _EditFieldSection(
+                  label: l10n.titleLabel,
+                  child: _EditMetadataTextField(
+                    controller: _titleController,
+                    enabled: !_isBusy,
+                    hintText: l10n.titleLabel,
+                    textInputAction: TextInputAction.next,
+                    errorText: _titleError,
+                  ),
                 ),
-              ),
-            ),
-            const SizedBox(height: 18),
-            _EditFieldSection(
-              label: l10n.correspondentLabel,
-              child: correspondents.when(
-                data: (items) => Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: _EditSelectionField(
-                        icon: Icons.business_outlined,
-                        value: selectedCorrespondentLabel,
-                        placeholder: l10n.noCorrespondentOption,
-                        actionIcon: Icons.unfold_more,
-                        enabled: !_isBusy,
-                        onTap: _isBusy
-                            ? null
-                            : () => _openCorrespondentSelection(items),
-                      ),
+                const SizedBox(height: 18),
+                _EditFieldSection(
+                  label: l10n.createdDateLabel,
+                  child: _EditMetadataTextField(
+                    controller: _createdController,
+                    enabled: !_isBusy,
+                    hintText: l10n.createdDateHint,
+                    keyboardType: TextInputType.datetime,
+                    errorText: _createdError,
+                    suffix: IconButton(
+                      onPressed: _isBusy ? null : _pickCreatedDate,
+                      icon: const Icon(Icons.calendar_today_outlined),
                     ),
-                    const SizedBox(width: 12),
-                    _EditSquareActionButton(
-                      icon: _isCreatingCorrespondent ? null : Icons.add_rounded,
-                      onTap: _isBusy || _isCreatingCorrespondent
-                          ? null
-                          : _createCorrespondent,
-                      isLoading: _isCreatingCorrespondent,
+                  ),
+                ),
+                const SizedBox(height: 18),
+                _EditFieldSection(
+                  label: l10n.correspondentLabel,
+                  child: correspondents.when(
+                    data: (items) => Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: _EditSelectionField(
+                            icon: Icons.business_outlined,
+                            value: selectedCorrespondentLabel,
+                            placeholder: l10n.noCorrespondentOption,
+                            actionIcon: Icons.unfold_more,
+                            enabled: !_isBusy,
+                            onTap: _isBusy
+                                ? null
+                                : () => _openCorrespondentSelection(items),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        _EditSquareActionButton(
+                          icon: _isCreatingCorrespondent
+                              ? null
+                              : Icons.add_rounded,
+                          onTap: _isBusy || _isCreatingCorrespondent
+                              ? null
+                              : _createCorrespondent,
+                          isLoading: _isCreatingCorrespondent,
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-                error: (error, stackTrace) => _EditInlineStatusCard(
-                  message: l10n.couldNotLoadCorrespondents,
-                  isError: true,
-                ),
-                loading: () => const _EditLoadingCard(),
-              ),
-            ),
-            const SizedBox(height: 18),
-            _EditFieldSection(
-              label: l10n.documentTypeLabel,
-              child: documentTypes.when(
-                data: (items) => Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: _EditSelectionField(
-                        icon: Icons.description_outlined,
-                        value: selectedDocumentTypeLabel,
-                        placeholder: l10n.noDocumentTypeOption,
-                        actionIcon: Icons.unfold_more,
-                        enabled: !_isBusy,
-                        onTap: _isBusy
-                            ? null
-                            : () => _openDocumentTypeSelection(items),
-                      ),
+                    error: (error, stackTrace) => _EditInlineStatusCard(
+                      message: l10n.couldNotLoadCorrespondents,
+                      isError: true,
                     ),
-                    const SizedBox(width: 12),
-                    _EditSquareActionButton(
-                      icon: _isCreatingDocumentType ? null : Icons.add_rounded,
-                      onTap: _isBusy || _isCreatingDocumentType
-                          ? null
-                          : _createDocumentType,
-                      isLoading: _isCreatingDocumentType,
+                    loading: () => const _EditLoadingCard(),
+                  ),
+                ),
+                const SizedBox(height: 18),
+                _EditFieldSection(
+                  label: l10n.documentTypeLabel,
+                  child: documentTypes.when(
+                    data: (items) => Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: _EditSelectionField(
+                            icon: Icons.description_outlined,
+                            value: selectedDocumentTypeLabel,
+                            placeholder: l10n.noDocumentTypeOption,
+                            actionIcon: Icons.unfold_more,
+                            enabled: !_isBusy,
+                            onTap: _isBusy
+                                ? null
+                                : () => _openDocumentTypeSelection(items),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        _EditSquareActionButton(
+                          icon: _isCreatingDocumentType
+                              ? null
+                              : Icons.add_rounded,
+                          onTap: _isBusy || _isCreatingDocumentType
+                              ? null
+                              : _createDocumentType,
+                          isLoading: _isCreatingDocumentType,
+                        ),
+                      ],
                     ),
-                  ],
+                    error: (error, stackTrace) => _EditInlineStatusCard(
+                      message: l10n.couldNotLoadDocumentTypes,
+                      isError: true,
+                    ),
+                    loading: () => const _EditLoadingCard(),
+                  ),
                 ),
-                error: (error, stackTrace) => _EditInlineStatusCard(
-                  message: l10n.couldNotLoadDocumentTypes,
-                  isError: true,
-                ),
-                loading: () => const _EditLoadingCard(),
-              ),
-            ),
-            const SizedBox(height: 18),
-            _EditFieldSection(
-              label: l10n.tagsLabel,
-              child: tags.when(
-                data: (items) => Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: selectedTags.isEmpty
-                          ? Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 18),
-                              child: Text(
-                                l10n.noTagsSelected,
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: theme.colorScheme.onSurfaceVariant,
-                                ),
-                              ),
-                            )
-                          : Wrap(
-                              spacing: 10,
-                              runSpacing: 10,
-                              children: [
-                                for (final tag in selectedTags)
-                                  _EditSelectionChip(
-                                    label: tag.value,
-                                    icon: Icons.sell_outlined,
-                                    selected: true,
-                                    enabled: !_isBusy,
-                                    onPressed: _isBusy
-                                        ? null
-                                        : () => _openTagSelection(items),
-                                    onDeleted: _isBusy
-                                        ? null
-                                        : () => _removeSelectedTag(tag.key),
+                const SizedBox(height: 18),
+                _EditFieldSection(
+                  label: l10n.tagsLabel,
+                  child: tags.when(
+                    data: (items) => Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: selectedTags.isEmpty
+                              ? Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 18,
                                   ),
-                              ],
-                            ),
+                                  child: Text(
+                                    l10n.noTagsSelected,
+                                    style: theme.textTheme.bodyMedium?.copyWith(
+                                      color: theme.colorScheme.onSurfaceVariant,
+                                    ),
+                                  ),
+                                )
+                              : Wrap(
+                                  spacing: 10,
+                                  runSpacing: 10,
+                                  children: [
+                                    for (final tag in selectedTags)
+                                      _EditSelectionChip(
+                                        label: tag.value,
+                                        icon: Icons.sell_outlined,
+                                        selected: true,
+                                        enabled: !_isBusy,
+                                        onPressed: _isBusy
+                                            ? null
+                                            : () => _openTagSelection(items),
+                                        onDeleted: _isBusy
+                                            ? null
+                                            : () => _removeSelectedTag(tag.key),
+                                      ),
+                                  ],
+                                ),
+                        ),
+                        const SizedBox(width: 12),
+                        _EditSquareActionButton(
+                          icon: Icons.add_rounded,
+                          onTap: _isBusy
+                              ? null
+                              : () => _openTagSelection(items),
+                          isLoading: false,
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 12),
-                    _EditSquareActionButton(
-                      icon: Icons.add_rounded,
-                      onTap: _isBusy ? null : () => _openTagSelection(items),
-                      isLoading: false,
+                    error: (error, stackTrace) => _EditInlineStatusCard(
+                      message: l10n.retryTagLoadingAction,
+                      isError: true,
+                      actionLabel: l10n.retryAction,
+                      onAction: _isBusy
+                          ? null
+                          : () => ref.invalidate(tagOptionsProvider),
                     ),
-                  ],
+                    loading: () => const _EditLoadingCard(),
+                  ),
                 ),
-                error: (error, stackTrace) => _EditInlineStatusCard(
-                  message: l10n.retryTagLoadingAction,
-                  isError: true,
-                  actionLabel: l10n.retryAction,
-                  onAction: _isBusy
-                      ? null
-                      : () => ref.invalidate(tagOptionsProvider),
+                const SizedBox(height: 30),
+                _EditMetadataHero(
+                  document: widget.document,
+                  repository: repository,
+                  eyebrow: heroEyebrow,
+                  badges: heroBadges,
                 ),
-                loading: () => const _EditLoadingCard(),
-              ),
-            ),
-            const SizedBox(height: 30),
-            _EditMetadataHero(
-              document: widget.document,
-              repository: repository,
-              eyebrow: heroEyebrow,
-              badges: heroBadges,
-            ),
-            const SizedBox(height: 30),
-            Text(
-              'END OF ARCHIVE METADATA',
-              textAlign: TextAlign.center,
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant.withValues(
-                  alpha: 0.7,
+                const SizedBox(height: 30),
+                Text(
+                  'END OF ARCHIVE METADATA',
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant.withValues(
+                      alpha: 0.7,
+                    ),
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 3,
+                  ),
                 ),
-                fontWeight: FontWeight.w700,
-                letterSpacing: 3,
-              ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -1668,23 +1742,24 @@ String? _formatMetadataTimestamp(BuildContext context, String? value) {
     return null;
   }
 
-  return formatDocumentTimestamp(
-    context.l10n,
-    trimmed,
-    localeName: context.localeName,
-  );
+  final parsed = DateTime.tryParse(trimmed);
+  if (parsed == null) {
+    return trimmed;
+  }
+
+  return formatAbsoluteDate(parsed, localeName: context.localeName);
 }
 
 class _DocumentSummaryCard extends StatelessWidget {
   const _DocumentSummaryCard({
-    required this.document,
+    required this.primaryLabel,
     required this.badges,
-    required this.metadata,
+    this.trailingLabel,
   });
 
-  final PaperlessDocument document;
+  final String primaryLabel;
   final List<String> badges;
-  final List<Widget> metadata;
+  final String? trailingLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -1707,20 +1782,37 @@ class _DocumentSummaryCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              document.title,
-              style: theme.textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w800,
-                letterSpacing: -0.8,
-                height: 1.05,
-              ),
+            Wrap(
+              spacing: 12,
+              runSpacing: 6,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                Text(
+                  primaryLabel,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.4,
+                    height: 1.1,
+                  ),
+                ),
+                if (trailingLabel != null &&
+                    trailingLabel!.trim().isNotEmpty) ...[
+                  Text(
+                    trailingLabel!,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ],
             ),
-            if (metadata.isNotEmpty) ...[
-              const SizedBox(height: 14),
-              Wrap(spacing: 10, runSpacing: 10, children: metadata),
-            ],
             if (badges.isNotEmpty) ...[
-              const SizedBox(height: 18),
+              const SizedBox(height: 16),
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
@@ -1729,44 +1821,6 @@ class _DocumentSummaryCard extends StatelessWidget {
                     .toList(growable: false),
               ),
             ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _CompactMetadataItem extends StatelessWidget {
-  const _CompactMetadataItem({required this.icon, required this.label});
-
-  final IconData icon;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest.withValues(
-          alpha: 0.55,
-        ),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 16, color: theme.colorScheme.onSurfaceVariant),
-            const SizedBox(width: 8),
-            Text(
-              label,
-              style: theme.textTheme.labelLarge?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
           ],
         ),
       ),

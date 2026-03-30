@@ -76,231 +76,236 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.settingsTitle)),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
-        children: [
-          if (state.connectedDisplayName != null) ...[
-            _ConnectionStatusBanner(
-              displayName: state.connectedDisplayName!,
-              serverUrl: state.serverUrl,
-            ),
-            const SizedBox(height: 16),
-          ],
-          _SectionHeader(label: l10n.settingsConnectionSection),
-          _SettingsGroup(
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 800),
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
             children: [
-              _SettingsTile(
-                icon: Icons.cloud_outlined,
-                title: l10n.serverUrlLabel,
-                subtitle: l10n.settingsServerUrlSubtitle,
-                child: TextField(
-                  controller: _serverUrlController,
-                  keyboardType: TextInputType.url,
-                  decoration: InputDecoration(
-                    hintText: '${l10n.serverUrlHint}/',
-                    errorText: state.serverUrlError(
-                      l10n.loginValidationServerUrlRequired,
-                      l10n.loginValidationFullUrl,
-                    ),
-                  ),
-                  onChanged: ref
-                      .read(settingsControllerProvider.notifier)
-                      .updateServerUrl,
+              if (state.connectedDisplayName != null) ...[
+                _ConnectionStatusBanner(
+                  displayName: state.connectedDisplayName!,
+                  serverUrl: state.serverUrl,
                 ),
-              ),
-              const _SettingsDivider(),
-              _SettingsTile(
-                icon: Icons.person_outline,
-                title: l10n.usernameLabel,
-                subtitle: l10n.settingsUsernameSubtitle,
-                child: TextField(
-                  controller: _usernameController,
-                  decoration: InputDecoration(
-                    errorText: state.usernameError(
-                      l10n.loginValidationUsernameRequired,
-                    ),
-                  ),
-                  onChanged: ref
-                      .read(settingsControllerProvider.notifier)
-                      .updateUsername,
-                ),
-              ),
-              const _SettingsDivider(),
-              _SettingsTile(
-                icon: Icons.lock_outline,
-                title: l10n.passwordLabel,
-                subtitle: l10n.settingsPasswordSubtitle,
-                child: TextField(
-                  controller: _passwordController,
-                  obscureText: true,
-                  decoration: InputDecoration(
-                    errorText: state.passwordError(
-                      l10n.loginValidationPasswordRequired,
-                    ),
-                  ),
-                  onChanged: ref
-                      .read(settingsControllerProvider.notifier)
-                      .updatePassword,
-                ),
-              ),
-              const _SettingsDivider(),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
-                child: SizedBox(
-                  width: double.infinity,
-                  child: FilledButton.icon(
-                    onPressed: state.isSaving
-                        ? null
-                        : () => ref
-                              .read(settingsControllerProvider.notifier)
-                              .submit(),
-                    icon: state.isSaving
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.save_outlined),
-                    label: Text(
-                      state.isSaving
-                          ? l10n.savingAction
-                          : l10n.saveSettingsAction,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          _SectionHeader(label: l10n.settingsAppearanceBehaviorSection),
-          _SettingsGroup(
-            children: [
-              _SettingsTile(
-                icon: Icons.language_outlined,
-                title: l10n.appLanguageTitle,
-                subtitle: l10n.appLanguageSubtitle,
-                child: _SettingsDropdownField<AppLanguage>(
-                  value: behaviorSettings.appLanguage,
-                  entries: AppLanguage.values
-                      .map(
-                        (value) => DropdownMenuEntry<AppLanguage>(
-                          value: value,
-                          label: _appLanguageLabel(context, value),
+                const SizedBox(height: 16),
+              ],
+              _SectionHeader(label: l10n.settingsConnectionSection),
+              _SettingsGroup(
+                children: [
+                  _SettingsTile(
+                    icon: Icons.cloud_outlined,
+                    title: l10n.serverUrlLabel,
+                    subtitle: l10n.settingsServerUrlSubtitle,
+                    child: TextField(
+                      controller: _serverUrlController,
+                      keyboardType: TextInputType.url,
+                      decoration: InputDecoration(
+                        hintText: '${l10n.serverUrlHint}/',
+                        errorText: state.serverUrlError(
+                          l10n.loginValidationServerUrlRequired,
+                          l10n.loginValidationFullUrl,
                         ),
-                      )
-                      .toList(growable: false),
-                  onSelected: (value) {
-                    if (value == null) {
-                      return;
-                    }
-
-                    ref
-                        .read(appBehaviorSettingsProvider.notifier)
-                        .setAppLanguage(value);
-                  },
-                ),
-              ),
-              const _SettingsDivider(),
-              _SettingsTile(
-                icon: Icons.dark_mode_outlined,
-                title: l10n.themeModeTitle,
-                subtitle: l10n.themeModeSubtitle,
-                child: _SettingsDropdownField<AppThemeMode>(
-                  value: behaviorSettings.themeMode,
-                  entries: [
-                    DropdownMenuEntry(
-                      value: AppThemeMode.light,
-                      label: l10n.themeModeLight,
+                      ),
+                      onChanged: ref
+                          .read(settingsControllerProvider.notifier)
+                          .updateServerUrl,
                     ),
-                    DropdownMenuEntry(
-                      value: AppThemeMode.dark,
-                      label: l10n.themeModeDark,
+                  ),
+                  const _SettingsDivider(),
+                  _SettingsTile(
+                    icon: Icons.person_outline,
+                    title: l10n.usernameLabel,
+                    subtitle: l10n.settingsUsernameSubtitle,
+                    child: TextField(
+                      controller: _usernameController,
+                      decoration: InputDecoration(
+                        errorText: state.usernameError(
+                          l10n.loginValidationUsernameRequired,
+                        ),
+                      ),
+                      onChanged: ref
+                          .read(settingsControllerProvider.notifier)
+                          .updateUsername,
+                    ),
+                  ),
+                  const _SettingsDivider(),
+                  _SettingsTile(
+                    icon: Icons.lock_outline,
+                    title: l10n.passwordLabel,
+                    subtitle: l10n.settingsPasswordSubtitle,
+                    child: TextField(
+                      controller: _passwordController,
+                      obscureText: true,
+                      decoration: InputDecoration(
+                        errorText: state.passwordError(
+                          l10n.loginValidationPasswordRequired,
+                        ),
+                      ),
+                      onChanged: ref
+                          .read(settingsControllerProvider.notifier)
+                          .updatePassword,
+                    ),
+                  ),
+                  const _SettingsDivider(),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: FilledButton.icon(
+                        onPressed: state.isSaving
+                            ? null
+                            : () => ref
+                                  .read(settingsControllerProvider.notifier)
+                                  .submit(),
+                        icon: state.isSaving
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Icon(Icons.save_outlined),
+                        label: Text(
+                          state.isSaving
+                              ? l10n.savingAction
+                              : l10n.saveSettingsAction,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              _SectionHeader(label: l10n.settingsAppearanceBehaviorSection),
+              _SettingsGroup(
+                children: [
+                  _SettingsTile(
+                    icon: Icons.language_outlined,
+                    title: l10n.appLanguageTitle,
+                    subtitle: l10n.appLanguageSubtitle,
+                    child: _SettingsDropdownField<AppLanguage>(
+                      value: behaviorSettings.appLanguage,
+                      entries: AppLanguage.values
+                          .map(
+                            (value) => DropdownMenuEntry<AppLanguage>(
+                              value: value,
+                              label: _appLanguageLabel(context, value),
+                            ),
+                          )
+                          .toList(growable: false),
+                      onSelected: (value) {
+                        if (value == null) {
+                          return;
+                        }
+
+                        ref
+                            .read(appBehaviorSettingsProvider.notifier)
+                            .setAppLanguage(value);
+                      },
+                    ),
+                  ),
+                  const _SettingsDivider(),
+                  _SettingsTile(
+                    icon: Icons.dark_mode_outlined,
+                    title: l10n.themeModeTitle,
+                    subtitle: l10n.themeModeSubtitle,
+                    child: _SettingsDropdownField<AppThemeMode>(
+                      value: behaviorSettings.themeMode,
+                      entries: [
+                        DropdownMenuEntry(
+                          value: AppThemeMode.light,
+                          label: l10n.themeModeLight,
+                        ),
+                        DropdownMenuEntry(
+                          value: AppThemeMode.dark,
+                          label: l10n.themeModeDark,
+                        ),
+                      ],
+                      onSelected: (value) {
+                        if (value == null) {
+                          return;
+                        }
+
+                        ref
+                            .read(appBehaviorSettingsProvider.notifier)
+                            .setThemeMode(value);
+                      },
+                    ),
+                  ),
+                  const _SettingsDivider(),
+                  _SettingsToggleTile(
+                    icon: Icons.image_outlined,
+                    title: l10n.cachePreviewsTitle,
+                    subtitle: l10n.cachePreviewsSubtitle,
+                    value: behaviorSettings.cachePreviewsEnabled,
+                    onChanged: ref
+                        .read(appBehaviorSettingsProvider.notifier)
+                        .setCachePreviewsEnabled,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              _SectionHeader(label: l10n.settingsSecuritySection),
+              _SettingsGroup(
+                children: [
+                  _SettingsToggleTile(
+                    icon: Icons.fingerprint,
+                    title: l10n.biometricLockTitle,
+                    subtitle: l10n.biometricLockSubtitle,
+                    value: behaviorSettings.biometricLockEnabled,
+                    onChanged: (value) =>
+                        _handleBiometricLockToggle(context, value),
+                  ),
+                  if (behaviorSettings.biometricLockEnabled) ...[
+                    const _SettingsDivider(),
+                    _SettingsTile(
+                      icon: Icons.timer_outlined,
+                      title: l10n.appLockTimeoutTitle,
+                      subtitle: l10n.appLockTimeoutSubtitle,
+                      child: _SettingsDropdownField<AppLockTimeout>(
+                        value: behaviorSettings.appLockTimeout,
+                        entries: AppLockTimeout.values
+                            .map(
+                              (value) => DropdownMenuEntry<AppLockTimeout>(
+                                value: value,
+                                label: _appLockTimeoutLabel(context, value),
+                              ),
+                            )
+                            .toList(growable: false),
+                        onSelected: (value) {
+                          if (value == null) {
+                            return;
+                          }
+
+                          ref
+                              .read(appBehaviorSettingsProvider.notifier)
+                              .setAppLockTimeout(value);
+                        },
+                      ),
                     ),
                   ],
-                  onSelected: (value) {
-                    if (value == null) {
-                      return;
-                    }
-
-                    ref
-                        .read(appBehaviorSettingsProvider.notifier)
-                        .setThemeMode(value);
-                  },
-                ),
+                ],
               ),
-              const _SettingsDivider(),
-              _SettingsToggleTile(
-                icon: Icons.image_outlined,
-                title: l10n.cachePreviewsTitle,
-                subtitle: l10n.cachePreviewsSubtitle,
-                value: behaviorSettings.cachePreviewsEnabled,
-                onChanged: ref
-                    .read(appBehaviorSettingsProvider.notifier)
-                    .setCachePreviewsEnabled,
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          _SectionHeader(label: l10n.settingsSecuritySection),
-          _SettingsGroup(
-            children: [
-              _SettingsToggleTile(
-                icon: Icons.fingerprint,
-                title: l10n.biometricLockTitle,
-                subtitle: l10n.biometricLockSubtitle,
-                value: behaviorSettings.biometricLockEnabled,
-                onChanged: (value) =>
-                    _handleBiometricLockToggle(context, value),
-              ),
-              if (behaviorSettings.biometricLockEnabled) ...[
-                const _SettingsDivider(),
-                _SettingsTile(
-                  icon: Icons.timer_outlined,
-                  title: l10n.appLockTimeoutTitle,
-                  subtitle: l10n.appLockTimeoutSubtitle,
-                  child: _SettingsDropdownField<AppLockTimeout>(
-                    value: behaviorSettings.appLockTimeout,
-                    entries: AppLockTimeout.values
-                        .map(
-                          (value) => DropdownMenuEntry<AppLockTimeout>(
-                            value: value,
-                            label: _appLockTimeoutLabel(context, value),
-                          ),
-                        )
-                        .toList(growable: false),
-                    onSelected: (value) {
-                      if (value == null) {
-                        return;
-                      }
-
-                      ref
-                          .read(appBehaviorSettingsProvider.notifier)
-                          .setAppLockTimeout(value);
-                    },
+              const SizedBox(height: 20),
+              _SectionHeader(label: l10n.signOutAction),
+              _SettingsGroup(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: () =>
+                            ref.read(authSessionProvider.notifier).signOut(),
+                        icon: const Icon(Icons.logout),
+                        label: Text(l10n.signOutAction),
+                      ),
+                    ),
                   ),
-                ),
-              ],
-            ],
-          ),
-          const SizedBox(height: 20),
-          _SectionHeader(label: l10n.signOutAction),
-          _SettingsGroup(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(20),
-                child: SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    onPressed: () =>
-                        ref.read(authSessionProvider.notifier).signOut(),
-                    icon: const Icon(Icons.logout),
-                    label: Text(l10n.signOutAction),
-                  ),
-                ),
+                ],
               ),
             ],
           ),
-        ],
+        ),
       ),
     );
   }

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:paperless_ngx_app/l10n/generated/app_localizations.dart';
+import 'package:paperless_ngx_app/src/core/presentation/layout/adaptive_layout.dart';
 import 'package:paperless_ngx_app/src/core/presentation/localization/app_localizations_x.dart';
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_filter_option.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/models/documents_filter_state.dart';
@@ -46,6 +48,7 @@ class _DocumentsFiltersPageState extends ConsumerState<DocumentsFiltersPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = context.l10n;
+    final isWideScreen = useWideLayout(context);
     final tagOptions = ref.watch(tagOptionsProvider);
     final correspondentOptions = ref.watch(correspondentOptionsProvider);
     final documentTypeOptions = ref.watch(documentTypeOptionsProvider);
@@ -69,224 +72,457 @@ class _DocumentsFiltersPageState extends ConsumerState<DocumentsFiltersPage> {
           ),
         ),
         actions: [
-          TextButton(
-            onPressed: _reset,
-            style: TextButton.styleFrom(
-              textStyle: theme.textTheme.labelMedium?.copyWith(
-                fontWeight: FontWeight.w800,
-                letterSpacing: 0.7,
+          if (!isWideScreen) ...[
+            TextButton(
+              onPressed: _reset,
+              style: TextButton.styleFrom(
+                textStyle: theme.textTheme.labelMedium?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.7,
+                ),
               ),
+              child: Text(l10n.resetAction),
             ),
-            child: Text(l10n.resetAction),
-          ),
-          const SizedBox(width: 8),
+            const SizedBox(width: 8),
+          ],
         ],
       ),
-      body: DecoratedBox(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              theme.colorScheme.surface,
-              theme.colorScheme.surfaceContainerLowest,
-            ],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(18, 14, 18, 156),
-          children: [
-            if (hasActiveSelections) ...[
-              _SectionTitle(title: l10n.filtersTitle),
-              const SizedBox(height: 14),
-              _ActiveFiltersWrap(
-                filterState: _filterState,
-                ordering: _ordering,
-                tagOptions: tagOptions,
-                correspondentOptions: correspondentOptions,
-                documentTypeOptions: documentTypeOptions,
-                onRemoveTag: (tagId) {
-                  setState(() {
-                    final nextTagIds = _filterState.tagIds
-                        .where((selectedId) => selectedId != tagId)
-                        .toList(growable: false);
-                    _filterState = _filterState.copyWith(
-                      tagIds: nextTagIds,
-                      clearTag: nextTagIds.isEmpty,
-                    );
-                  });
-                },
-                onClearCorrespondent: () {
-                  setState(() {
-                    _filterState = _filterState.copyWith(
-                      clearCorrespondent: true,
-                    );
-                  });
-                },
-                onClearDocumentType: () {
-                  setState(() {
-                    _filterState = _filterState.copyWith(
-                      clearDocumentType: true,
-                    );
-                  });
-                },
-                onResetOrdering: () {
-                  setState(() {
-                    _ordering = documentsSortOptions.first.ordering;
-                  });
-                },
-              ),
-              const SizedBox(height: 28),
-            ],
-            _SectionTitle(title: l10n.sortByLabel),
-            const SizedBox(height: 14),
-            _SortOptionsGrid(
-              selectedOrdering: _ordering,
-              onChanged: (value) {
-                setState(() {
-                  _ordering = value;
-                });
-              },
+      body: isWideScreen
+          ? _buildWideLayout(
+              context,
+              theme,
+              l10n,
+              hasActiveSelections,
+              tagOptions,
+              correspondentOptions,
+              documentTypeOptions,
+            )
+          : _buildCompactLayout(
+              context,
+              theme,
+              l10n,
+              hasActiveSelections,
+              tagOptions,
+              correspondentOptions,
+              documentTypeOptions,
             ),
-            const SizedBox(height: 28),
-            _SectionTitle(title: l10n.filtersTitle),
-            const SizedBox(height: 14),
-            _SingleFilterCategoryCard(
-              title: l10n.filterCorrespondentLabel,
-              icon: Icons.business_outlined,
-              iconBackgroundColor: const Color(0xFFD6EAF9),
-              options: correspondentOptions,
-              selectedId: _filterState.correspondentId,
-              searchHint: l10n.searchCorrespondentsHint,
-              dialogTitle: l10n.selectCorrespondentDialogTitle,
-              noResultsMessage: l10n.noCorrespondentsMatchSearch,
-              onChanged: (value) {
-                setState(() {
-                  _filterState = _filterState.copyWith(
-                    correspondentId: value,
-                    clearCorrespondent: value == null,
-                  );
-                });
-              },
-            ),
-            const SizedBox(height: 16),
-            _SingleFilterCategoryCard(
-              title: l10n.filterDocumentTypeLabel,
-              icon: Icons.description_outlined,
-              iconBackgroundColor: const Color(0xFFFFDDD3),
-              options: documentTypeOptions,
-              selectedId: _filterState.documentTypeId,
-              searchHint: l10n.searchDocumentTypesHint,
-              dialogTitle: l10n.selectDocumentTypeDialogTitle,
-              noResultsMessage: l10n.noDocumentTypesMatchSearch,
-              onChanged: (value) {
-                setState(() {
-                  _filterState = _filterState.copyWith(
-                    documentTypeId: value,
-                    clearDocumentType: value == null,
-                  );
-                });
-              },
-            ),
-            const SizedBox(height: 16),
-            _TagCategoryCard(
-              options: tagOptions,
-              selectedIds: _filterState.tagIds,
-              searchHint: l10n.searchTagsHint,
-              dialogTitle: l10n.selectTagsDialogTitle,
-              noResultsMessage: l10n.noTagsMatchSearch,
-              onChanged: (value) {
-                setState(() {
-                  _filterState = _filterState.copyWith(
-                    tagIds: value,
-                    clearTag: value.isEmpty,
-                  );
-                });
-              },
-            ),
+      bottomNavigationBar: isWideScreen
+          ? null
+          : _buildBottomActionBar(context, theme, l10n),
+    );
+  }
+
+  Widget _buildCompactLayout(
+    BuildContext context,
+    ThemeData theme,
+    AppLocalizations l10n,
+    bool hasActiveSelections,
+    AsyncValue<List<PaperlessFilterOption>> tagOptions,
+    AsyncValue<List<PaperlessFilterOption>> correspondentOptions,
+    AsyncValue<List<PaperlessFilterOption>> documentTypeOptions,
+  ) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            theme.colorScheme.surface,
+            theme.colorScheme.surfaceContainerLowest,
           ],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
         ),
       ),
-      bottomNavigationBar: SafeArea(
-        top: false,
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surface,
-            boxShadow: [
-              BoxShadow(
-                color: theme.colorScheme.shadow.withValues(alpha: 0.08),
-                blurRadius: 18,
-                offset: const Offset(0, -6),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final horizontalInset = constraints.maxWidth > 800
+              ? (constraints.maxWidth - 800) / 2
+              : 0.0;
+
+          return ListView(
+            padding: EdgeInsets.fromLTRB(
+              18 + horizontalInset,
+              14,
+              18 + horizontalInset,
+              156,
+            ),
+            children: _buildCompactSections(
+              l10n,
+              hasActiveSelections,
+              tagOptions,
+              correspondentOptions,
+              documentTypeOptions,
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildWideLayout(
+    BuildContext context,
+    ThemeData theme,
+    AppLocalizations l10n,
+    bool hasActiveSelections,
+    AsyncValue<List<PaperlessFilterOption>> tagOptions,
+    AsyncValue<List<PaperlessFilterOption>> correspondentOptions,
+    AsyncValue<List<PaperlessFilterOption>> documentTypeOptions,
+  ) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            theme.colorScheme.surface,
+            theme.colorScheme.surfaceContainerLowest,
+          ],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
+      ),
+      child: SafeArea(
+        bottom: false,
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 1080),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(28, 8, 28, 28),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 360),
+                        child: _WideActionButtons(
+                          onCancel: () => Navigator.of(context).maybePop(),
+                          onReset: _reset,
+                          onApply: _apply,
+                        ),
+                      ),
+                    ),
+                    if (hasActiveSelections) ...[
+                      const SizedBox(height: 24),
+                      _SectionTitle(title: l10n.filtersTitle),
+                      const SizedBox(height: 14),
+                      _ActiveFiltersWrap(
+                        filterState: _filterState,
+                        ordering: _ordering,
+                        tagOptions: tagOptions,
+                        correspondentOptions: correspondentOptions,
+                        documentTypeOptions: documentTypeOptions,
+                        onRemoveTag: _removeTag,
+                        onClearCorrespondent: _clearCorrespondent,
+                        onClearDocumentType: _clearDocumentType,
+                        onResetOrdering: _resetOrdering,
+                      ),
+                    ],
+                    const SizedBox(height: 28),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(
+                          width: 360,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _SectionTitle(title: l10n.sortByLabel),
+                              const SizedBox(height: 14),
+                              _SortOptionsGrid(
+                                selectedOrdering: _ordering,
+                                compact: true,
+                                onChanged: (value) {
+                                  setState(() {
+                                    _ordering = value;
+                                  });
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 28),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _SectionTitle(title: l10n.filtersTitle),
+                              const SizedBox(height: 14),
+                              _SingleFilterCategoryCard(
+                                title: l10n.filterCorrespondentLabel,
+                                icon: Icons.business_outlined,
+                                iconBackgroundColor: const Color(0xFFD6EAF9),
+                                options: correspondentOptions,
+                                selectedId: _filterState.correspondentId,
+                                searchHint: l10n.searchCorrespondentsHint,
+                                dialogTitle:
+                                    l10n.selectCorrespondentDialogTitle,
+                                noResultsMessage:
+                                    l10n.noCorrespondentsMatchSearch,
+                                onChanged: _setCorrespondent,
+                              ),
+                              const SizedBox(height: 16),
+                              _SingleFilterCategoryCard(
+                                title: l10n.filterDocumentTypeLabel,
+                                icon: Icons.description_outlined,
+                                iconBackgroundColor: const Color(0xFFFFDDD3),
+                                options: documentTypeOptions,
+                                selectedId: _filterState.documentTypeId,
+                                searchHint: l10n.searchDocumentTypesHint,
+                                dialogTitle: l10n.selectDocumentTypeDialogTitle,
+                                noResultsMessage:
+                                    l10n.noDocumentTypesMatchSearch,
+                                onChanged: _setDocumentType,
+                              ),
+                              const SizedBox(height: 16),
+                              _TagCategoryCard(
+                                options: tagOptions,
+                                selectedIds: _filterState.tagIds,
+                                searchHint: l10n.searchTagsHint,
+                                dialogTitle: l10n.selectTagsDialogTitle,
+                                noResultsMessage: l10n.noTagsMatchSearch,
+                                onChanged: _setTags,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
-            ],
-          ),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(18, 14, 18, 18),
-            child: Row(
-              children: [
-                SizedBox(
-                  width: 160,
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.of(context).maybePop(),
-                    style: OutlinedButton.styleFrom(
-                      minimumSize: const Size.fromHeight(66),
-                      textStyle: theme.textTheme.labelMedium?.copyWith(
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 1.0,
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.close),
-                        const SizedBox(width: 10),
-                        Flexible(
-                          child: Text(
-                            l10n.cancelAction.toUpperCase(),
-                            maxLines: 1,
-                            overflow: TextOverflow.fade,
-                            softWrap: false,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: FilledButton(
-                    onPressed: _apply,
-                    style: FilledButton.styleFrom(
-                      minimumSize: const Size.fromHeight(66),
-                      shape: const StadiumBorder(),
-                      textStyle: theme.textTheme.labelMedium?.copyWith(
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 1.0,
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.check_circle_rounded),
-                        const SizedBox(width: 10),
-                        Flexible(
-                          child: Text(
-                            l10n.applyFiltersAction.toUpperCase(),
-                            maxLines: 1,
-                            overflow: TextOverflow.fade,
-                            softWrap: false,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
             ),
           ),
         ),
       ),
     );
+  }
+
+  List<Widget> _buildCompactSections(
+    AppLocalizations l10n,
+    bool hasActiveSelections,
+    AsyncValue<List<PaperlessFilterOption>> tagOptions,
+    AsyncValue<List<PaperlessFilterOption>> correspondentOptions,
+    AsyncValue<List<PaperlessFilterOption>> documentTypeOptions,
+  ) {
+    return [
+      if (hasActiveSelections) ...[
+        _SectionTitle(title: l10n.filtersTitle),
+        const SizedBox(height: 14),
+        _ActiveFiltersWrap(
+          filterState: _filterState,
+          ordering: _ordering,
+          tagOptions: tagOptions,
+          correspondentOptions: correspondentOptions,
+          documentTypeOptions: documentTypeOptions,
+          onRemoveTag: _removeTag,
+          onClearCorrespondent: _clearCorrespondent,
+          onClearDocumentType: _clearDocumentType,
+          onResetOrdering: _resetOrdering,
+        ),
+        const SizedBox(height: 28),
+      ],
+      _SectionTitle(title: l10n.sortByLabel),
+      const SizedBox(height: 14),
+      _SortOptionsGrid(
+        selectedOrdering: _ordering,
+        onChanged: (value) {
+          setState(() {
+            _ordering = value;
+          });
+        },
+      ),
+      const SizedBox(height: 28),
+      _SectionTitle(title: l10n.filtersTitle),
+      const SizedBox(height: 14),
+      _SingleFilterCategoryCard(
+        title: l10n.filterCorrespondentLabel,
+        icon: Icons.business_outlined,
+        iconBackgroundColor: const Color(0xFFD6EAF9),
+        options: correspondentOptions,
+        selectedId: _filterState.correspondentId,
+        searchHint: l10n.searchCorrespondentsHint,
+        dialogTitle: l10n.selectCorrespondentDialogTitle,
+        noResultsMessage: l10n.noCorrespondentsMatchSearch,
+        onChanged: _setCorrespondent,
+      ),
+      const SizedBox(height: 16),
+      _SingleFilterCategoryCard(
+        title: l10n.filterDocumentTypeLabel,
+        icon: Icons.description_outlined,
+        iconBackgroundColor: const Color(0xFFFFDDD3),
+        options: documentTypeOptions,
+        selectedId: _filterState.documentTypeId,
+        searchHint: l10n.searchDocumentTypesHint,
+        dialogTitle: l10n.selectDocumentTypeDialogTitle,
+        noResultsMessage: l10n.noDocumentTypesMatchSearch,
+        onChanged: _setDocumentType,
+      ),
+      const SizedBox(height: 16),
+      _TagCategoryCard(
+        options: tagOptions,
+        selectedIds: _filterState.tagIds,
+        searchHint: l10n.searchTagsHint,
+        dialogTitle: l10n.selectTagsDialogTitle,
+        noResultsMessage: l10n.noTagsMatchSearch,
+        onChanged: _setTags,
+      ),
+    ];
+  }
+
+  Widget _buildBottomActionBar(
+    BuildContext context,
+    ThemeData theme,
+    AppLocalizations l10n,
+  ) {
+    return SafeArea(
+      top: false,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surface,
+          boxShadow: [
+            BoxShadow(
+              color: theme.colorScheme.shadow.withValues(alpha: 0.08),
+              blurRadius: 18,
+              offset: const Offset(0, -6),
+            ),
+          ],
+        ),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final horizontalInset = constraints.maxWidth > 800
+                ? (constraints.maxWidth - 800) / 2
+                : 0.0;
+
+            return Padding(
+              padding: EdgeInsets.fromLTRB(
+                18 + horizontalInset,
+                14,
+                18 + horizontalInset,
+                18,
+              ),
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 160,
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.of(context).maybePop(),
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size.fromHeight(66),
+                        textStyle: theme.textTheme.labelMedium?.copyWith(
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 1.0,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.close),
+                          const SizedBox(width: 10),
+                          Flexible(
+                            child: Text(
+                              l10n.cancelAction.toUpperCase(),
+                              maxLines: 1,
+                              overflow: TextOverflow.fade,
+                              softWrap: false,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: FilledButton(
+                      onPressed: _apply,
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size.fromHeight(66),
+                        shape: const StadiumBorder(),
+                        textStyle: theme.textTheme.labelMedium?.copyWith(
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 1.0,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.check_circle_rounded),
+                          const SizedBox(width: 10),
+                          Flexible(
+                            child: Text(
+                              l10n.applyFiltersAction.toUpperCase(),
+                              maxLines: 1,
+                              overflow: TextOverflow.fade,
+                              softWrap: false,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  void _clearCorrespondent() {
+    setState(() {
+      _filterState = _filterState.copyWith(clearCorrespondent: true);
+    });
+  }
+
+  void _clearDocumentType() {
+    setState(() {
+      _filterState = _filterState.copyWith(clearDocumentType: true);
+    });
+  }
+
+  void _removeTag(int tagId) {
+    setState(() {
+      final nextTagIds = _filterState.tagIds
+          .where((selectedId) => selectedId != tagId)
+          .toList(growable: false);
+      _filterState = _filterState.copyWith(
+        tagIds: nextTagIds,
+        clearTag: nextTagIds.isEmpty,
+      );
+    });
+  }
+
+  void _resetOrdering() {
+    setState(() {
+      _ordering = documentsSortOptions.first.ordering;
+    });
+  }
+
+  void _setCorrespondent(int? value) {
+    setState(() {
+      _filterState = _filterState.copyWith(
+        correspondentId: value,
+        clearCorrespondent: value == null,
+      );
+    });
+  }
+
+  void _setDocumentType(int? value) {
+    setState(() {
+      _filterState = _filterState.copyWith(
+        documentTypeId: value,
+        clearDocumentType: value == null,
+      );
+    });
+  }
+
+  void _setTags(List<int> value) {
+    setState(() {
+      _filterState = _filterState.copyWith(
+        tagIds: value,
+        clearTag: value.isEmpty,
+      );
+    });
   }
 
   void _reset() {
@@ -451,10 +687,12 @@ class _SortOptionsGrid extends StatelessWidget {
   const _SortOptionsGrid({
     required this.selectedOrdering,
     required this.onChanged,
+    this.compact = false,
   });
 
   final String selectedOrdering;
   final ValueChanged<String> onChanged;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -462,11 +700,11 @@ class _SortOptionsGrid extends StatelessWidget {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: documentsSortOptions.length,
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        mainAxisSpacing: 14,
-        crossAxisSpacing: 14,
-        childAspectRatio: 2.45,
+        mainAxisSpacing: compact ? 12 : 14,
+        crossAxisSpacing: compact ? 12 : 14,
+        childAspectRatio: compact ? 2.9 : 2.45,
       ),
       itemBuilder: (context, index) {
         final option = documentsSortOptions[index];
@@ -478,6 +716,77 @@ class _SortOptionsGrid extends StatelessWidget {
           onTap: () => onChanged(option.ordering),
         );
       },
+    );
+  }
+}
+
+class _WideActionButtons extends StatelessWidget {
+  const _WideActionButtons({
+    required this.onCancel,
+    required this.onReset,
+    required this.onApply,
+  });
+
+  final VoidCallback onCancel;
+  final VoidCallback onReset;
+  final VoidCallback onApply;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final l10n = context.l10n;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Align(
+          alignment: Alignment.centerRight,
+          child: TextButton(
+            onPressed: onReset,
+            style: TextButton.styleFrom(
+              textStyle: theme.textTheme.labelMedium?.copyWith(
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.7,
+              ),
+            ),
+            child: Text(l10n.resetAction),
+          ),
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton(
+                onPressed: onCancel,
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size.fromHeight(56),
+                  textStyle: theme.textTheme.labelMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.9,
+                  ),
+                ),
+                child: Text(l10n.cancelAction.toUpperCase()),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              flex: 2,
+              child: FilledButton(
+                onPressed: onApply,
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size.fromHeight(56),
+                  shape: const StadiumBorder(),
+                  textStyle: theme.textTheme.labelMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.9,
+                  ),
+                ),
+                child: Text(l10n.applyFiltersAction.toUpperCase()),
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }

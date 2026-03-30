@@ -9,6 +9,7 @@ import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless
 import 'package:paperless_ngx_app/src/features/documents/presentation/providers/documents_providers.dart';
 
 final appShellTabProvider = StateProvider<int>((ref) => 0);
+final appDrawerMinimizedProvider = StateProvider<bool>((ref) => true);
 
 final reviewQueueCountProvider = Provider<int>((ref) {
   return ref

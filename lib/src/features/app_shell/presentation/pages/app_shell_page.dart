@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:paperless_ngx_app/src/core/presentation/layout/adaptive_layout.dart';
 import 'package:paperless_ngx_app/src/core/presentation/localization/app_localizations_x.dart';
 import 'package:paperless_ngx_app/src/features/app_shell/presentation/pages/review_queue_page.dart';
 import 'package:paperless_ngx_app/src/features/app_shell/presentation/providers/app_shell_providers.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/pages/documents_page.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/pages/scan_document_page.dart';
 import 'package:paperless_ngx_app/src/features/home/presentation/pages/home_page.dart';
+import 'package:paperless_ngx_app/src/features/app_shell/presentation/widgets/app_drawer.dart';
 
 class AppShellPage extends ConsumerWidget {
   const AppShellPage({super.key});
@@ -15,6 +17,7 @@ class AppShellPage extends ConsumerWidget {
     final l10n = context.l10n;
     final selectedTab = ref.watch(appShellTabProvider);
     final reviewQueueCount = ref.watch(reviewQueueCountProvider);
+    final isDrawerMinimized = ref.watch(appDrawerMinimizedProvider);
     final page = switch (selectedTab) {
       0 => const DocumentsPage(),
       1 => const HomePage(),
@@ -22,22 +25,52 @@ class AppShellPage extends ConsumerWidget {
       _ => const DocumentsPage(),
     };
 
-    return Scaffold(
-      body: page,
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _openScanDocument(context),
-        child: const Icon(Icons.document_scanner_outlined, size: 24),
-      ),
-      bottomNavigationBar: _ShellBottomBar(
-        selectedIndex: selectedTab,
-        reviewQueueCount: reviewQueueCount,
-        onSelected: (index) =>
-            ref.read(appShellTabProvider.notifier).state = index,
-        documentsLabel: l10n.navigationDocuments,
-        recentLabel: l10n.navigationRecent,
-        inboxLabel: l10n.navigationInbox,
-      ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (useWideLayoutForSize(
+          Size(constraints.maxWidth, constraints.maxHeight),
+        )) {
+          return Scaffold(
+            body: Row(
+              children: [
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 250),
+                  curve: Curves.easeInOutCubic,
+                  width: isDrawerMinimized ? 90 : 320,
+                  child: AppDrawer(
+                    isPermanent: true,
+                    isMinimized: isDrawerMinimized,
+                  ),
+                ),
+                Expanded(child: page),
+              ],
+            ),
+            floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+            floatingActionButton: FloatingActionButton(
+              onPressed: () => _openScanDocument(context),
+              child: const Icon(Icons.document_scanner_outlined, size: 24),
+            ),
+          );
+        }
+
+        return Scaffold(
+          body: page,
+          floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+          floatingActionButton: FloatingActionButton(
+            onPressed: () => _openScanDocument(context),
+            child: const Icon(Icons.document_scanner_outlined, size: 24),
+          ),
+          bottomNavigationBar: _ShellBottomBar(
+            selectedIndex: selectedTab,
+            reviewQueueCount: reviewQueueCount,
+            onSelected: (index) =>
+                ref.read(appShellTabProvider.notifier).state = index,
+            documentsLabel: l10n.navigationDocuments,
+            recentLabel: l10n.navigationRecent,
+            inboxLabel: l10n.navigationInbox,
+          ),
+        );
+      },
     );
   }
 
