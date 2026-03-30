@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pdfrx/pdfrx.dart';
+import 'package:paperless_ngx_app/l10n/generated/app_localizations.dart';
 import 'package:paperless_ngx_app/src/core/presentation/layout/adaptive_layout.dart';
 import 'package:paperless_ngx_app/src/features/auth/presentation/providers/current_user_capabilities_provider.dart';
 import 'package:paperless_ngx_app/src/core/presentation/localization/app_localizations_x.dart';
@@ -622,6 +623,7 @@ class _EditDocumentMetadataPageState
   late int? _selectedCorrespondentId;
   late int? _selectedDocumentTypeId;
   late Set<int> _selectedTagIds;
+  int _selectedPreviewPage = 1;
   bool _hasSubmitted = false;
   bool _isSaving = false;
   bool _isCreatingCorrespondent = false;
@@ -686,6 +688,7 @@ class _EditDocumentMetadataPageState
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = context.l10n;
+    final isWideScreen = useWideLayout(context);
     final repository = ref.watch(documentsRepositoryProvider);
     final correspondents = ref.watch(correspondentOptionsProvider);
     final documentTypes = ref.watch(documentTypeOptionsProvider);
@@ -725,22 +728,22 @@ class _EditDocumentMetadataPageState
         (left, right) =>
             left.value.toLowerCase().compareTo(right.value.toLowerCase()),
       );
-    final heroEyebrow =
-        (selectedCorrespondentLabel ??
-                selectedDocumentTypeLabel ??
-                l10n.metadataTitle)
-            .toUpperCase();
     final heroBadges = <String>[
       if (widget.document.mimeType?.trim().isNotEmpty == true)
         widget.document.mimeType!.toUpperCase(),
-      if (widget.document.pageCount != null)
-        l10n.documentPages(widget.document.pageCount!),
     ];
 
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.editMetadataTitle),
         actions: [
+          if (isWideScreen)
+            TextButton(
+              onPressed: _isBusy
+                  ? null
+                  : () => Navigator.of(context).maybePop(),
+              child: Text(l10n.cancelAction),
+            ),
           TextButton(
             onPressed: _isBusy ? null : _save,
             child: Text(_isSaving ? l10n.savingAction : l10n.saveAction),
@@ -758,197 +761,521 @@ class _EditDocumentMetadataPageState
             end: Alignment.bottomCenter,
           ),
         ),
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 600),
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+        child: isWideScreen
+            ? _buildWideMetadataEditor(
+                context,
+                theme,
+                l10n,
+                repository,
+                correspondents,
+                documentTypes,
+                tags,
+                selectedCorrespondentLabel,
+                selectedDocumentTypeLabel,
+                selectedTags,
+                heroBadges,
+              )
+            : _buildCompactMetadataEditor(
+                context,
+                theme,
+                l10n,
+                repository,
+                correspondents,
+                documentTypes,
+                tags,
+                selectedCorrespondentLabel,
+                selectedDocumentTypeLabel,
+                selectedTags,
+                heroBadges,
+              ),
+      ),
+    );
+  }
+
+  Widget _buildCompactMetadataEditor(
+    BuildContext context,
+    ThemeData theme,
+    AppLocalizations l10n,
+    DocumentsRepository repository,
+    AsyncValue<List<PaperlessFilterOption>> correspondents,
+    AsyncValue<List<PaperlessFilterOption>> documentTypes,
+    AsyncValue<List<PaperlessFilterOption>> tags,
+    String? selectedCorrespondentLabel,
+    String? selectedDocumentTypeLabel,
+    List<MapEntry<int, String>> selectedTags,
+    List<String> heroBadges,
+  ) {
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 600),
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+          children: [
+            ..._buildBasicInfoFields(l10n),
+            const SizedBox(height: 18),
+            _buildCompactCorrespondentField(
+              l10n,
+              correspondents,
+              selectedCorrespondentLabel,
+            ),
+            const SizedBox(height: 18),
+            _buildCompactDocumentTypeField(
+              l10n,
+              documentTypes,
+              selectedDocumentTypeLabel,
+            ),
+            const SizedBox(height: 18),
+            _buildCompactTagsField(context, theme, l10n, tags, selectedTags),
+            const SizedBox(height: 30),
+            _EditMetadataHero(
+              document: widget.document,
+              repository: repository,
+              selectedPage: _selectedPreviewPage,
+              onSelectPage: (pageNumber) {
+                final pageCount = widget.document.pageCount ?? 1;
+                setState(() {
+                  _selectedPreviewPage = pageNumber.clamp(1, pageCount);
+                });
+              },
+              badges: heroBadges,
+            ),
+            const SizedBox(height: 30),
+            Text(
+              'END OF ARCHIVE METADATA',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant.withValues(
+                  alpha: 0.7,
+                ),
+                fontWeight: FontWeight.w700,
+                letterSpacing: 3,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildWideMetadataEditor(
+    BuildContext context,
+    ThemeData theme,
+    AppLocalizations l10n,
+    DocumentsRepository repository,
+    AsyncValue<List<PaperlessFilterOption>> correspondents,
+    AsyncValue<List<PaperlessFilterOption>> documentTypes,
+    AsyncValue<List<PaperlessFilterOption>> tags,
+    String? selectedCorrespondentLabel,
+    String? selectedDocumentTypeLabel,
+    List<MapEntry<int, String>> selectedTags,
+    List<String> heroBadges,
+  ) {
+    return SafeArea(
+      bottom: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final previewWidth = constraints.maxWidth >= 1200 ? 500.0 : 420.0;
+
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _EditFieldSection(
-                  label: l10n.titleLabel,
-                  child: _EditMetadataTextField(
-                    controller: _titleController,
-                    enabled: !_isBusy,
-                    hintText: l10n.titleLabel,
-                    textInputAction: TextInputAction.next,
-                    errorText: _titleError,
-                  ),
-                ),
-                const SizedBox(height: 18),
-                _EditFieldSection(
-                  label: l10n.createdDateLabel,
-                  child: _EditMetadataTextField(
-                    controller: _createdController,
-                    enabled: !_isBusy,
-                    hintText: l10n.createdDateHint,
-                    keyboardType: TextInputType.datetime,
-                    errorText: _createdError,
-                    suffix: IconButton(
-                      onPressed: _isBusy ? null : _pickCreatedDate,
-                      icon: const Icon(Icons.calendar_today_outlined),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 18),
-                _EditFieldSection(
-                  label: l10n.correspondentLabel,
-                  child: correspondents.when(
-                    data: (items) => Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: _EditSelectionField(
-                            icon: Icons.business_outlined,
-                            value: selectedCorrespondentLabel,
-                            placeholder: l10n.noCorrespondentOption,
-                            actionIcon: Icons.unfold_more,
-                            enabled: !_isBusy,
-                            onTap: _isBusy
-                                ? null
-                                : () => _openCorrespondentSelection(items),
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.only(right: 24, bottom: 24),
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 640),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _EditSectionCard(
+                            child: Column(
+                              children: _buildBasicInfoFields(l10n),
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 12),
-                        _EditSquareActionButton(
-                          icon: _isCreatingCorrespondent
-                              ? null
-                              : Icons.add_rounded,
-                          onTap: _isBusy || _isCreatingCorrespondent
-                              ? null
-                              : _createCorrespondent,
-                          isLoading: _isCreatingCorrespondent,
-                        ),
-                      ],
-                    ),
-                    error: (error, stackTrace) => _EditInlineStatusCard(
-                      message: l10n.couldNotLoadCorrespondents,
-                      isError: true,
-                    ),
-                    loading: () => const _EditLoadingCard(),
-                  ),
-                ),
-                const SizedBox(height: 18),
-                _EditFieldSection(
-                  label: l10n.documentTypeLabel,
-                  child: documentTypes.when(
-                    data: (items) => Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: _EditSelectionField(
-                            icon: Icons.description_outlined,
-                            value: selectedDocumentTypeLabel,
-                            placeholder: l10n.noDocumentTypeOption,
-                            actionIcon: Icons.unfold_more,
-                            enabled: !_isBusy,
-                            onTap: _isBusy
-                                ? null
-                                : () => _openDocumentTypeSelection(items),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        _EditSquareActionButton(
-                          icon: _isCreatingDocumentType
-                              ? null
-                              : Icons.add_rounded,
-                          onTap: _isBusy || _isCreatingDocumentType
-                              ? null
-                              : _createDocumentType,
-                          isLoading: _isCreatingDocumentType,
-                        ),
-                      ],
-                    ),
-                    error: (error, stackTrace) => _EditInlineStatusCard(
-                      message: l10n.couldNotLoadDocumentTypes,
-                      isError: true,
-                    ),
-                    loading: () => const _EditLoadingCard(),
-                  ),
-                ),
-                const SizedBox(height: 18),
-                _EditFieldSection(
-                  label: l10n.tagsLabel,
-                  child: tags.when(
-                    data: (items) => Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: selectedTags.isEmpty
-                              ? Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 18,
-                                  ),
-                                  child: Text(
-                                    l10n.noTagsSelected,
-                                    style: theme.textTheme.bodyMedium?.copyWith(
-                                      color: theme.colorScheme.onSurfaceVariant,
-                                    ),
-                                  ),
-                                )
-                              : Wrap(
-                                  spacing: 10,
-                                  runSpacing: 10,
-                                  children: [
-                                    for (final tag in selectedTags)
-                                      _EditSelectionChip(
-                                        label: tag.value,
-                                        icon: Icons.sell_outlined,
-                                        selected: true,
-                                        enabled: !_isBusy,
-                                        onPressed: _isBusy
-                                            ? null
-                                            : () => _openTagSelection(items),
-                                        onDeleted: _isBusy
-                                            ? null
-                                            : () => _removeSelectedTag(tag.key),
-                                      ),
-                                  ],
+                          const SizedBox(height: 20),
+                          _EditSectionCard(
+                            child: Column(
+                              children: [
+                                _buildWideCorrespondentField(
+                                  l10n,
+                                  correspondents,
+                                  selectedCorrespondentLabel,
                                 ),
+                                const SizedBox(height: 18),
+                                _buildWideDocumentTypeField(
+                                  l10n,
+                                  documentTypes,
+                                  selectedDocumentTypeLabel,
+                                ),
+                                const SizedBox(height: 18),
+                                _buildWideTagsField(
+                                  context,
+                                  theme,
+                                  l10n,
+                                  tags,
+                                  selectedTags,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(
+                  width: previewWidth,
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.only(bottom: 24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          l10n.thumbnailPreviewTitle.toUpperCase(),
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 2.2,
+                          ),
                         ),
-                        const SizedBox(width: 12),
-                        _EditSquareActionButton(
-                          icon: Icons.add_rounded,
-                          onTap: _isBusy
-                              ? null
-                              : () => _openTagSelection(items),
-                          isLoading: false,
+                        const SizedBox(height: 12),
+                        _EditMetadataHero(
+                          document: widget.document,
+                          repository: repository,
+                          selectedPage: _selectedPreviewPage,
+                          onSelectPage: (pageNumber) {
+                            final pageCount = widget.document.pageCount ?? 1;
+                            setState(() {
+                              _selectedPreviewPage = pageNumber.clamp(
+                                1,
+                                pageCount,
+                              );
+                            });
+                          },
+                          badges: heroBadges,
                         ),
                       ],
                     ),
-                    error: (error, stackTrace) => _EditInlineStatusCard(
-                      message: l10n.retryTagLoadingAction,
-                      isError: true,
-                      actionLabel: l10n.retryAction,
-                      onAction: _isBusy
-                          ? null
-                          : () => ref.invalidate(tagOptionsProvider),
-                    ),
-                    loading: () => const _EditLoadingCard(),
-                  ),
-                ),
-                const SizedBox(height: 30),
-                _EditMetadataHero(
-                  document: widget.document,
-                  repository: repository,
-                  eyebrow: heroEyebrow,
-                  badges: heroBadges,
-                ),
-                const SizedBox(height: 30),
-                Text(
-                  'END OF ARCHIVE METADATA',
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant.withValues(
-                      alpha: 0.7,
-                    ),
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 3,
                   ),
                 ),
               ],
-            ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  List<Widget> _buildBasicInfoFields(AppLocalizations l10n) {
+    return [
+      _EditFieldSection(
+        label: l10n.titleLabel,
+        child: _EditMetadataTextField(
+          controller: _titleController,
+          enabled: !_isBusy,
+          hintText: l10n.titleLabel,
+          textInputAction: TextInputAction.next,
+          errorText: _titleError,
+        ),
+      ),
+      const SizedBox(height: 18),
+      _EditFieldSection(
+        label: l10n.createdDateLabel,
+        child: _EditMetadataTextField(
+          controller: _createdController,
+          enabled: !_isBusy,
+          hintText: l10n.createdDateHint,
+          keyboardType: TextInputType.datetime,
+          errorText: _createdError,
+          suffix: IconButton(
+            onPressed: _isBusy ? null : _pickCreatedDate,
+            icon: const Icon(Icons.calendar_today_outlined),
           ),
         ),
+      ),
+    ];
+  }
+
+  Widget _buildCompactCorrespondentField(
+    AppLocalizations l10n,
+    AsyncValue<List<PaperlessFilterOption>> correspondents,
+    String? selectedCorrespondentLabel,
+  ) {
+    return _EditFieldSection(
+      label: l10n.correspondentLabel,
+      child: correspondents.when(
+        data: (items) => Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: _EditSelectionField(
+                icon: Icons.business_outlined,
+                value: selectedCorrespondentLabel,
+                placeholder: l10n.noCorrespondentOption,
+                actionIcon: Icons.unfold_more,
+                enabled: !_isBusy,
+                onTap: _isBusy
+                    ? null
+                    : () => _openCorrespondentSelection(items),
+              ),
+            ),
+            const SizedBox(width: 12),
+            _EditSquareActionButton(
+              icon: _isCreatingCorrespondent ? null : Icons.add_rounded,
+              onTap: _isBusy || _isCreatingCorrespondent
+                  ? null
+                  : _createCorrespondent,
+              isLoading: _isCreatingCorrespondent,
+            ),
+          ],
+        ),
+        error: (error, stackTrace) => _EditInlineStatusCard(
+          message: l10n.couldNotLoadCorrespondents,
+          isError: true,
+        ),
+        loading: () => const _EditLoadingCard(),
+      ),
+    );
+  }
+
+  Widget _buildCompactDocumentTypeField(
+    AppLocalizations l10n,
+    AsyncValue<List<PaperlessFilterOption>> documentTypes,
+    String? selectedDocumentTypeLabel,
+  ) {
+    return _EditFieldSection(
+      label: l10n.documentTypeLabel,
+      child: documentTypes.when(
+        data: (items) => Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: _EditSelectionField(
+                icon: Icons.description_outlined,
+                value: selectedDocumentTypeLabel,
+                placeholder: l10n.noDocumentTypeOption,
+                actionIcon: Icons.unfold_more,
+                enabled: !_isBusy,
+                onTap: _isBusy ? null : () => _openDocumentTypeSelection(items),
+              ),
+            ),
+            const SizedBox(width: 12),
+            _EditSquareActionButton(
+              icon: _isCreatingDocumentType ? null : Icons.add_rounded,
+              onTap: _isBusy || _isCreatingDocumentType
+                  ? null
+                  : _createDocumentType,
+              isLoading: _isCreatingDocumentType,
+            ),
+          ],
+        ),
+        error: (error, stackTrace) => _EditInlineStatusCard(
+          message: l10n.couldNotLoadDocumentTypes,
+          isError: true,
+        ),
+        loading: () => const _EditLoadingCard(),
+      ),
+    );
+  }
+
+  Widget _buildCompactTagsField(
+    BuildContext context,
+    ThemeData theme,
+    AppLocalizations l10n,
+    AsyncValue<List<PaperlessFilterOption>> tags,
+    List<MapEntry<int, String>> selectedTags,
+  ) {
+    return _EditFieldSection(
+      label: l10n.tagsLabel,
+      child: tags.when(
+        data: (items) => Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: selectedTags.isEmpty
+                  ? Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 18),
+                      child: Text(
+                        l10n.noTagsSelected,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    )
+                  : Wrap(
+                      spacing: 10,
+                      runSpacing: 10,
+                      children: [
+                        for (final tag in selectedTags)
+                          _EditSelectionChip(
+                            label: tag.value,
+                            icon: Icons.sell_outlined,
+                            selected: true,
+                            enabled: !_isBusy,
+                            onPressed: _isBusy
+                                ? null
+                                : () => _openTagSelection(items),
+                            onDeleted: _isBusy
+                                ? null
+                                : () => _removeSelectedTag(tag.key),
+                          ),
+                      ],
+                    ),
+            ),
+            const SizedBox(width: 12),
+            _EditSquareActionButton(
+              icon: Icons.add_rounded,
+              onTap: _isBusy ? null : () => _openTagSelection(items),
+              isLoading: false,
+            ),
+          ],
+        ),
+        error: (error, stackTrace) => _EditInlineStatusCard(
+          message: l10n.retryTagLoadingAction,
+          isError: true,
+          actionLabel: l10n.retryAction,
+          onAction: _isBusy ? null : () => ref.invalidate(tagOptionsProvider),
+        ),
+        loading: () => const _EditLoadingCard(),
+      ),
+    );
+  }
+
+  Widget _buildWideCorrespondentField(
+    AppLocalizations l10n,
+    AsyncValue<List<PaperlessFilterOption>> correspondents,
+    String? selectedCorrespondentLabel,
+  ) {
+    return _EditFieldSection(
+      label: l10n.correspondentLabel,
+      trailing: TextButton.icon(
+        onPressed: _isBusy || _isCreatingCorrespondent
+            ? null
+            : _createCorrespondent,
+        icon: _isCreatingCorrespondent
+            ? const SizedBox(
+                width: 14,
+                height: 14,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : const Icon(Icons.add_rounded),
+        label: Text(l10n.newCorrespondentAction),
+      ),
+      child: correspondents.when(
+        data: (items) => _EditSelectionField(
+          icon: Icons.business_outlined,
+          value: selectedCorrespondentLabel,
+          placeholder: l10n.noCorrespondentOption,
+          actionIcon: Icons.unfold_more,
+          enabled: !_isBusy,
+          onTap: _isBusy ? null : () => _openCorrespondentSelection(items),
+        ),
+        error: (error, stackTrace) => _EditInlineStatusCard(
+          message: l10n.couldNotLoadCorrespondents,
+          isError: true,
+        ),
+        loading: () => const _EditLoadingCard(),
+      ),
+    );
+  }
+
+  Widget _buildWideDocumentTypeField(
+    AppLocalizations l10n,
+    AsyncValue<List<PaperlessFilterOption>> documentTypes,
+    String? selectedDocumentTypeLabel,
+  ) {
+    return _EditFieldSection(
+      label: l10n.documentTypeLabel,
+      trailing: TextButton.icon(
+        onPressed: _isBusy || _isCreatingDocumentType
+            ? null
+            : _createDocumentType,
+        icon: _isCreatingDocumentType
+            ? const SizedBox(
+                width: 14,
+                height: 14,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : const Icon(Icons.add_rounded),
+        label: Text(l10n.newDocumentTypeAction),
+      ),
+      child: documentTypes.when(
+        data: (items) => _EditSelectionField(
+          icon: Icons.description_outlined,
+          value: selectedDocumentTypeLabel,
+          placeholder: l10n.noDocumentTypeOption,
+          actionIcon: Icons.unfold_more,
+          enabled: !_isBusy,
+          onTap: _isBusy ? null : () => _openDocumentTypeSelection(items),
+        ),
+        error: (error, stackTrace) => _EditInlineStatusCard(
+          message: l10n.couldNotLoadDocumentTypes,
+          isError: true,
+        ),
+        loading: () => const _EditLoadingCard(),
+      ),
+    );
+  }
+
+  Widget _buildWideTagsField(
+    BuildContext context,
+    ThemeData theme,
+    AppLocalizations l10n,
+    AsyncValue<List<PaperlessFilterOption>> tags,
+    List<MapEntry<int, String>> selectedTags,
+  ) {
+    return _EditFieldSection(
+      label: l10n.tagsLabel,
+      trailing: TextButton.icon(
+        onPressed: _isBusy ? null : _createTag,
+        icon: const Icon(Icons.add_rounded),
+        label: Text(l10n.newTagAction),
+      ),
+      child: tags.when(
+        data: (items) => Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _EditSelectionField(
+              icon: Icons.sell_outlined,
+              value: selectedTags.isEmpty ? null : l10n.tagsLabel,
+              placeholder: l10n.noTagsSelected,
+              actionIcon: Icons.unfold_more,
+              enabled: !_isBusy,
+              onTap: _isBusy ? null : () => _openTagSelection(items),
+            ),
+            if (selectedTags.isNotEmpty) ...[
+              const SizedBox(height: 14),
+              Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                children: [
+                  for (final tag in selectedTags)
+                    _EditSelectionChip(
+                      label: tag.value,
+                      icon: Icons.sell_outlined,
+                      selected: true,
+                      enabled: !_isBusy,
+                      onPressed: _isBusy
+                          ? null
+                          : () => _openTagSelection(items),
+                      onDeleted: _isBusy
+                          ? null
+                          : () => _removeSelectedTag(tag.key),
+                    ),
+                ],
+              ),
+            ],
+          ],
+        ),
+        error: (error, stackTrace) => _EditInlineStatusCard(
+          message: l10n.retryTagLoadingAction,
+          isError: true,
+          actionLabel: l10n.retryAction,
+          onAction: _isBusy ? null : () => ref.invalidate(tagOptionsProvider),
+        ),
+        loading: () => const _EditLoadingCard(),
       ),
     );
   }
@@ -1279,79 +1606,210 @@ class _EditMetadataHero extends StatelessWidget {
   const _EditMetadataHero({
     required this.document,
     required this.repository,
-    required this.eyebrow,
+    required this.selectedPage,
+    required this.onSelectPage,
     required this.badges,
   });
 
   final PaperlessDocument document;
   final DocumentsRepository repository;
-  final String eyebrow;
+  final int selectedPage;
+  final ValueChanged<int> onSelectPage;
   final List<String> badges;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
+    final previewUri = repository.buildDocumentPreviewUri(
+      documentId: document.id,
+    );
+    final headers = repository.buildAuthenticatedHeaders();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        DecoratedBox(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(28),
-            boxShadow: [
-              BoxShadow(
-                color: theme.colorScheme.shadow.withValues(alpha: 0.18),
-                blurRadius: 30,
-                offset: const Offset(0, 18),
-              ),
-            ],
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(28),
-            child: AspectRatio(
-              aspectRatio: 0.74,
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  _DocumentThumbnailImage(
-                    imageUri: repository.buildDocumentThumbnailUri(document.id),
-                    headers: repository.buildAuthenticatedHeaders(),
-                  ),
-                  DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          Colors.black.withValues(alpha: 0.1),
-                          Colors.black.withValues(alpha: 0.48),
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
+        PdfDocumentViewBuilder.uri(
+          previewUri,
+          headers: headers,
+          builder: (context, pdfDocument) {
+            final effectivePageCount = pdfDocument?.pages.length ?? 0;
+            final effectiveSelectedPage = effectivePageCount > 0
+                ? selectedPage.clamp(1, effectivePageCount)
+                : 1;
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(28),
+                    boxShadow: [
+                      BoxShadow(
+                        color: theme.colorScheme.shadow.withValues(alpha: 0.18),
+                        blurRadius: 30,
+                        offset: const Offset(0, 18),
                       ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(28),
+                    child: AspectRatio(
+                      aspectRatio: 0.74,
+                      child: pdfDocument == null
+                          ? Stack(
+                              fit: StackFit.expand,
+                              children: [
+                                _DocumentThumbnailImage(
+                                  imageUri: repository
+                                      .buildDocumentThumbnailUri(document.id),
+                                  headers: headers,
+                                ),
+                                DecoratedBox(
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      colors: [
+                                        Colors.black.withValues(alpha: 0.1),
+                                        Colors.black.withValues(alpha: 0.48),
+                                      ],
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            )
+                          : ColoredBox(
+                              color: Colors.white,
+                              child: Padding(
+                                padding: const EdgeInsets.all(12),
+                                child: PdfPageView(
+                                  key: ValueKey<int>(effectiveSelectedPage),
+                                  document: pdfDocument,
+                                  pageNumber: effectiveSelectedPage,
+                                  alignment: Alignment.topCenter,
+                                  decoration: const BoxDecoration(
+                                    color: Colors.white,
+                                  ),
+                                  backgroundColor: Colors.white,
+                                ),
+                              ),
+                            ),
                     ),
                   ),
+                ),
+                if (effectivePageCount > 1) ...[
+                  const SizedBox(height: 14),
+                  Row(
+                    children: [
+                      IconButton.filledTonal(
+                        onPressed: effectiveSelectedPage > 1
+                            ? () => onSelectPage(effectiveSelectedPage - 1)
+                            : null,
+                        tooltip: l10n.previousAction,
+                        icon: const Icon(Icons.chevron_left_rounded),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          children: [
+                            Text(
+                              l10n.scannedPageLabel(effectiveSelectedPage),
+                              textAlign: TextAlign.center,
+                              style: theme.textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            Text(
+                              l10n.documentPages(effectivePageCount),
+                              textAlign: TextAlign.center,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      IconButton.filledTonal(
+                        onPressed: effectiveSelectedPage < effectivePageCount
+                            ? () => onSelectPage(effectiveSelectedPage + 1)
+                            : null,
+                        tooltip: l10n.nextAction,
+                        icon: const Icon(Icons.chevron_right_rounded),
+                      ),
+                    ],
+                  ),
                 ],
+              ],
+            );
+          },
+          loadingBuilder: (context) => DecoratedBox(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(28),
+              boxShadow: [
+                BoxShadow(
+                  color: theme.colorScheme.shadow.withValues(alpha: 0.18),
+                  blurRadius: 30,
+                  offset: const Offset(0, 18),
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(28),
+              child: const AspectRatio(
+                aspectRatio: 0.74,
+                child: ColoredBox(
+                  color: Colors.white,
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+              ),
+            ),
+          ),
+          errorBuilder: (context, error, stackTrace) => DecoratedBox(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(28),
+              boxShadow: [
+                BoxShadow(
+                  color: theme.colorScheme.shadow.withValues(alpha: 0.18),
+                  blurRadius: 30,
+                  offset: const Offset(0, 18),
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(28),
+              child: AspectRatio(
+                aspectRatio: 0.74,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    _DocumentThumbnailImage(
+                      imageUri: repository.buildDocumentThumbnailUri(
+                        document.id,
+                      ),
+                      headers: headers,
+                    ),
+                    DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            Colors.black.withValues(alpha: 0.1),
+                            Colors.black.withValues(alpha: 0.48),
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
         ),
         const SizedBox(height: 18),
-        Text(
-          eyebrow,
-          style: theme.textTheme.labelMedium?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-            fontWeight: FontWeight.w800,
-            letterSpacing: 3,
-          ),
-        ),
-        const SizedBox(height: 10),
-        Text(
-          document.preferredFileName,
-          style: theme.textTheme.headlineMedium?.copyWith(
-            fontWeight: FontWeight.w900,
-            letterSpacing: -1.1,
-            height: 1.05,
-          ),
-        ),
         if (badges.isNotEmpty) ...[
           const SizedBox(height: 14),
           Wrap(
@@ -1368,10 +1826,15 @@ class _EditMetadataHero extends StatelessWidget {
 }
 
 class _EditFieldSection extends StatelessWidget {
-  const _EditFieldSection({required this.label, required this.child});
+  const _EditFieldSection({
+    required this.label,
+    required this.child,
+    this.trailing,
+  });
 
   final String label;
   final Widget child;
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
@@ -1380,17 +1843,47 @@ class _EditFieldSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label.toUpperCase(),
-          style: theme.textTheme.labelMedium?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-            fontWeight: FontWeight.w800,
-            letterSpacing: 2.2,
-          ),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(
+              child: Text(
+                label.toUpperCase(),
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 2.2,
+                ),
+              ),
+            ),
+            if (trailing != null) ...[const SizedBox(width: 12), trailing!],
+          ],
         ),
         const SizedBox(height: 10),
         child,
       ],
+    );
+  }
+}
+
+class _EditSectionCard extends StatelessWidget {
+  const _EditSectionCard({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface.withValues(alpha: 0.85),
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(
+          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.55),
+        ),
+      ),
+      child: Padding(padding: const EdgeInsets.all(20), child: child),
     );
   }
 }
