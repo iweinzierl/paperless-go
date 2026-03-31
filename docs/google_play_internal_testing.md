@@ -158,6 +158,14 @@ Each selector may be either an adb serial such as `emulator-5554` or a running e
 
 If more than one Android device is connected, set `ANDROID_PHONE_SCREENSHOT_DEVICE` as well so Fastlane does not hit ADB's multi-device ambiguity.
 
+You can also limit a run to a specific screenshot bucket or locale. For example, capture only German 10-inch tablet screenshots:
+
+```bash
+./scripts/android/run_fastlane.sh screenshots device_type:"tenInch" locales:"de-DE"
+```
+
+Supported `device_type` values are `phone` and `tenInch`.
+
 ### Validate the upload without publishing it
 
 ```bash

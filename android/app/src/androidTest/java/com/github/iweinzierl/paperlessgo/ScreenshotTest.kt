@@ -1,22 +1,18 @@
 package com.github.iweinzierl.paperlessgo
 
 import android.content.Context
-import android.graphics.Bitmap
+import android.os.Environment
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
-import java.io.BufferedOutputStream
 import java.io.File
-import java.io.FileOutputStream
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import tools.fastlane.screengrab.Screengrab
-import tools.fastlane.screengrab.ScreenshotCallback
-import tools.fastlane.screengrab.UiAutomatorScreenshotStrategy
 import tools.fastlane.screengrab.locale.LocaleTestRule
 
 @RunWith(AndroidJUnit4::class)
@@ -24,14 +20,12 @@ class ScreenshotTest {
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val targetContext: Context = instrumentation.targetContext
     private val device: UiDevice = UiDevice.getInstance(instrumentation)
-    private val screenshotStrategy = UiAutomatorScreenshotStrategy()
 
     @get:Rule
     val localeTestRule = LocaleTestRule()
 
     @Before
     fun setUp() {
-        Screengrab.setDefaultScreenshotStrategy(screenshotStrategy)
         clearFlutterPreferences()
     }
 
@@ -46,7 +40,7 @@ class ScreenshotTest {
 
         launchMainActivity().use {
             waitForFlutterToSettle()
-            captureScreenshot("01-login-screen")
+            captureScreenshot("01-login-screen", it)
         }
     }
 
@@ -56,7 +50,7 @@ class ScreenshotTest {
 
         launchMainActivity().use {
             waitForFlutterToSettle()
-            captureScreenshot("02-document-list")
+            captureScreenshot("02-document-list", it)
         }
     }
 
@@ -66,7 +60,7 @@ class ScreenshotTest {
 
         launchMainActivity().use {
             waitForFlutterToSettle()
-            captureScreenshot("03-document-list-condensed")
+            captureScreenshot("03-document-list-condensed", it)
         }
     }
 
@@ -76,7 +70,7 @@ class ScreenshotTest {
 
         launchMainActivity().use {
             waitForFlutterToSettle()
-            captureScreenshot("04-filter-sort")
+            captureScreenshot("04-filter-sort", it)
         }
     }
 
@@ -86,7 +80,7 @@ class ScreenshotTest {
 
         launchMainActivity().use {
             waitForFlutterToSettle()
-            captureScreenshot("07-documents-drawer")
+            captureScreenshot("07-documents-drawer", it)
         }
     }
 
@@ -96,7 +90,7 @@ class ScreenshotTest {
 
         launchMainActivity().use {
             waitForFlutterToSettle()
-            captureScreenshot("05-document-detail")
+            captureScreenshot("05-document-detail", it)
         }
     }
 
@@ -106,7 +100,7 @@ class ScreenshotTest {
 
         launchMainActivity().use {
             waitForFlutterToSettle()
-            captureScreenshot("06-document-metadata-edit")
+            captureScreenshot("06-document-metadata-edit", it)
         }
     }
 
@@ -116,19 +110,20 @@ class ScreenshotTest {
 
         launchMainActivity().use {
             waitForFlutterToSettle()
-            captureScreenshot("08-settings-screen")
+            captureScreenshot("08-settings-screen", it)
         }
     }
 
-    private fun captureScreenshot(name: String) {
-        Screengrab.screenshot(
-            name,
-            screenshotStrategy,
-            ExternalFileWritingScreenshotCallback(
-                context = targetContext.applicationContext,
-                locale = Screengrab.getLocale(),
-            ),
-        )
+    private fun captureScreenshot(name: String, scenario: ActivityScenario<MainActivity>) {
+        scenario.onActivity {
+            device.waitForIdle()
+            Thread.sleep(500)
+
+            val outputFile = createScreenshotOutputFile(name)
+            check(device.takeScreenshot(outputFile)) {
+                "Failed to capture screenshot: ${outputFile.absolutePath}"
+            }
+        }
     }
 
     private fun launchMainActivity(): ActivityScenario<MainActivity> {
@@ -185,27 +180,24 @@ class ScreenshotTest {
 
     private fun flutterPreferences() =
         targetContext.getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
-}
 
-private class ExternalFileWritingScreenshotCallback(
-    private val context: Context,
-    private val locale: String,
-) : ScreenshotCallback {
-    override fun screenshotCaptured(name: String, screenshot: Bitmap) {
+    private fun createScreenshotOutputFile(name: String): File {
+        val sharedBaseDirectory =
+            File(Environment.getExternalStorageDirectory(), "${targetContext.packageName}/screengrab")
         val baseDirectory =
-            context.getExternalFilesDir("screengrab")
-                ?: error("Unable to access external Screengrab directory")
+            if (sharedBaseDirectory.exists() || sharedBaseDirectory.mkdirs()) {
+                sharedBaseDirectory
+            } else {
+                targetContext.applicationContext.getExternalFilesDir("screengrab")
+                    ?: error("Unable to access external Screengrab directory")
+            }
         val screenshotDirectory =
-            File(baseDirectory, "$locale/images/screenshots").apply { mkdirs() }
-        val outputFile = File(
+            File(baseDirectory, "${Screengrab.getLocale()}/images/screenshots").apply { mkdirs() }
+
+        return File(
             screenshotDirectory,
             "${name}_${System.currentTimeMillis()}.png",
         )
-
-        BufferedOutputStream(FileOutputStream(outputFile)).use { output ->
-            screenshot.compress(Bitmap.CompressFormat.PNG, 100, output)
-        }
-        screenshot.recycle()
     }
 }
 

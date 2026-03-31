@@ -145,8 +145,59 @@ def android_resolve_device_selector(device_selector, connected_devices)
   named_matches.first&.dig(:serial)
 end
 
+def android_requested_device_types(options)
+  raw_values = [options[:only_device_type], options[:device_type]]
+    .flat_map do |value|
+      case value
+      when nil
+        []
+      when Array
+        value
+      else
+        value.to_s.split(",")
+      end
+    end
+    .map(&:to_s)
+    .map(&:strip)
+    .reject(&:empty?)
+
+  return nil if raw_values.empty?
+
+  requested_types = raw_values.uniq
+  known_types = ANDROID_SCREENSHOT_TARGETS.map { |target| target[:device_type] }
+  unknown_types = requested_types - known_types
+  unless unknown_types.empty?
+    UI.user_error!(
+      "Unsupported Android screenshot device_type value(s): #{unknown_types.join(", ")}. Supported values: #{known_types.join(", ")}",
+    )
+  end
+
+  requested_types
+end
+
+def android_requested_locales(options)
+  value = options[:locales]
+  return nil if value.nil?
+
+  locales = case value
+  when Array
+    value
+  else
+    value.to_s.split(",")
+  end
+    .map(&:to_s)
+    .map(&:strip)
+    .reject(&:empty?)
+
+  locales.empty? ? nil : locales
+end
+
 def android_screenshot_targets(options, connected_devices)
+  requested_device_types = android_requested_device_types(options)
+
   ANDROID_SCREENSHOT_TARGETS.each_with_object([]) do |target, targets|
+    next if !requested_device_types.nil? && !requested_device_types.include?(target[:device_type])
+
     device_selector = options[target[:option_key]].to_s.strip
     device_selector = ENV[target[:env_key]].to_s.strip if device_selector.empty?
     device_selector = target[:default_device_name].to_s.strip if device_selector.empty?
@@ -924,6 +975,12 @@ platform :android do
     end
 
     screenshot_targets = android_screenshot_targets(options, connected_devices)
+    if screenshot_targets.empty?
+      UI.user_error!(
+        "No Android screenshot targets selected. Pass device_type:<#{ANDROID_SCREENSHOT_TARGETS.map { |target| target[:device_type] }.join('|')}> or configure at least one matching screenshot device.",
+      )
+    end
+    requested_locales = android_requested_locales(options)
 
     gradle(
       project_dir: "android",
@@ -946,6 +1003,7 @@ platform :android do
         skip_open_summary: index < screenshot_targets.length - 1,
         reinstall_app: true,
       }
+      screengrab_options[:locales] = requested_locales unless requested_locales.nil?
       screengrab_options[:specific_device] = target[:specific_device] unless target[:specific_device].nil?
 
       screengrab(**screengrab_options)

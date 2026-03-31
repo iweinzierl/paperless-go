@@ -5,6 +5,7 @@ import 'package:paperless_ngx_app/l10n/generated/app_localizations.dart';
 import 'package:paperless_ngx_app/src/features/app_shell/presentation/providers/app_behavior_providers.dart';
 import 'package:paperless_ngx_app/src/features/app_shell/presentation/pages/app_shell_page.dart';
 import 'package:paperless_ngx_app/src/features/app_shell/presentation/providers/app_shell_providers.dart';
+import 'package:paperless_ngx_app/src/core/presentation/layout/adaptive_layout.dart';
 import 'package:paperless_ngx_app/src/features/app_shell/presentation/pages/settings_page.dart';
 import 'package:paperless_ngx_app/src/core/theme/app_theme.dart';
 import 'package:paperless_ngx_app/src/features/auth/domain/models/paperless_auth_session.dart';
@@ -15,6 +16,7 @@ import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless
 import 'package:paperless_ngx_app/src/features/documents/presentation/pages/document_detail_page.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/pages/documents_filters_page.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/pages/documents_page.dart';
+import 'package:paperless_ngx_app/src/features/documents/presentation/providers/selected_document_provider.dart';
 import 'package:paperless_ngx_app/src/features/documents/data/repositories/documents_repository.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/models/documents_filter_state.dart';
 
@@ -58,9 +60,13 @@ class ScreenshotHarnessApp extends ConsumerWidget {
         .locale;
     final child = switch (scenario) {
       ScreenshotScenario.login => const LoginPage(),
-      ScreenshotScenario.documents => const _ScreenshotShellPage(initialTab: 0),
+      ScreenshotScenario.documents => const _ScreenshotShellPage(
+        initialTab: 0,
+        selectedDocumentId: ScreenshotDocumentsRepository.primaryDocumentId,
+      ),
       ScreenshotScenario.documentsList => const _ScreenshotShellPage(
         initialTab: 0,
+        selectedDocumentId: ScreenshotDocumentsRepository.primaryDocumentId,
       ),
       ScreenshotScenario.documentsFilters => const DocumentsFiltersPage(
         initialFilterState: DocumentsFilterState(
@@ -70,9 +76,10 @@ class ScreenshotHarnessApp extends ConsumerWidget {
         ),
         initialOrdering: '-added',
       ),
-      ScreenshotScenario.documentsDrawer => const DocumentsPage(
-        openDrawerOnLoad: true,
-      ),
+      ScreenshotScenario.documentsDrawer =>
+        const _ScreenshotDocumentsDrawerPage(
+          selectedDocumentId: ScreenshotDocumentsRepository.primaryDocumentId,
+        ),
       ScreenshotScenario.documentDetail => const DocumentDetailPage(
         documentId: ScreenshotDocumentsRepository.primaryDocumentId,
       ),
@@ -97,15 +104,50 @@ class ScreenshotHarnessApp extends ConsumerWidget {
 }
 
 class _ScreenshotShellPage extends StatelessWidget {
-  const _ScreenshotShellPage({required this.initialTab});
+  const _ScreenshotShellPage({
+    required this.initialTab,
+    this.selectedDocumentId,
+  });
 
   final int initialTab;
+  final int? selectedDocumentId;
 
   @override
   Widget build(BuildContext context) {
     return ProviderScope(
-      overrides: [appShellTabProvider.overrideWith((ref) => initialTab)],
+      overrides: [
+        appShellTabProvider.overrideWith((ref) => initialTab),
+        appDrawerMinimizedProvider.overrideWith((ref) => false),
+        if (selectedDocumentId != null)
+          selectedDocumentIdProvider.overrideWith((ref) => selectedDocumentId),
+      ],
       child: const AppShellPage(),
+    );
+  }
+}
+
+class _ScreenshotDocumentsDrawerPage extends StatelessWidget {
+  const _ScreenshotDocumentsDrawerPage({required this.selectedDocumentId});
+
+  final int selectedDocumentId;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isWideLayout = useWideLayoutForSize(
+          Size(constraints.maxWidth, constraints.maxHeight),
+        );
+
+        if (isWideLayout) {
+          return _ScreenshotShellPage(
+            initialTab: 0,
+            selectedDocumentId: selectedDocumentId,
+          );
+        }
+
+        return const DocumentsPage(openDrawerOnLoad: true);
+      },
     );
   }
 }

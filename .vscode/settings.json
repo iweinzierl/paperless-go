@@ -10,6 +10,9 @@
         },
         "setopt": true,
         "/usr/bin/wc": true,
-        "adb": true
+        "adb": true,
+        "./android/gradlew": true,
+        "true": true,
+        "./scripts/android/run_fastlane.sh": true
     }
 }
