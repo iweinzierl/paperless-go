@@ -71,21 +71,6 @@ class _DocumentsFiltersPageState extends ConsumerState<DocumentsFiltersPage> {
             letterSpacing: -0.3,
           ),
         ),
-        actions: [
-          if (!isWideScreen) ...[
-            TextButton(
-              onPressed: _reset,
-              style: TextButton.styleFrom(
-                textStyle: theme.textTheme.labelMedium?.copyWith(
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0.7,
-                ),
-              ),
-              child: Text(l10n.resetAction),
-            ),
-            const SizedBox(width: 8),
-          ],
-        ],
       ),
       body: isWideScreen
           ? _buildWideLayout(
@@ -106,9 +91,13 @@ class _DocumentsFiltersPageState extends ConsumerState<DocumentsFiltersPage> {
               correspondentOptions,
               documentTypeOptions,
             ),
-      bottomNavigationBar: isWideScreen
-          ? null
-          : _buildBottomActionBar(context, theme, l10n),
+      bottomNavigationBar: _buildBottomActionBar(
+        context,
+        theme,
+        l10n,
+        isWideScreen: isWideScreen,
+        hasActiveSelections: hasActiveSelections,
+      ),
     );
   }
 
@@ -190,19 +179,7 @@ class _DocumentsFiltersPageState extends ConsumerState<DocumentsFiltersPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 360),
-                        child: _WideActionButtons(
-                          onCancel: () => Navigator.of(context).maybePop(),
-                          onReset: _reset,
-                          onApply: _apply,
-                        ),
-                      ),
-                    ),
                     if (hasActiveSelections) ...[
-                      const SizedBox(height: 24),
                       _SectionTitle(title: l10n.filtersTitle),
                       const SizedBox(height: 14),
                       _ActiveFiltersWrap(
@@ -372,13 +349,20 @@ class _DocumentsFiltersPageState extends ConsumerState<DocumentsFiltersPage> {
   Widget _buildBottomActionBar(
     BuildContext context,
     ThemeData theme,
-    AppLocalizations l10n,
-  ) {
+    AppLocalizations l10n, {
+    required bool isWideScreen,
+    required bool hasActiveSelections,
+  }) {
     return SafeArea(
       top: false,
       child: DecoratedBox(
         decoration: BoxDecoration(
           color: theme.colorScheme.surface,
+          border: Border(
+            top: BorderSide(
+              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.45),
+            ),
+          ),
           boxShadow: [
             BoxShadow(
               color: theme.colorScheme.shadow.withValues(alpha: 0.08),
@@ -389,8 +373,9 @@ class _DocumentsFiltersPageState extends ConsumerState<DocumentsFiltersPage> {
         ),
         child: LayoutBuilder(
           builder: (context, constraints) {
-            final horizontalInset = constraints.maxWidth > 800
-                ? (constraints.maxWidth - 800) / 2
+            final maxContentWidth = isWideScreen ? 1080.0 : 800.0;
+            final horizontalInset = constraints.maxWidth > maxContentWidth
+                ? (constraints.maxWidth - maxContentWidth) / 2
                 : 0.0;
 
             return Padding(
@@ -400,67 +385,64 @@ class _DocumentsFiltersPageState extends ConsumerState<DocumentsFiltersPage> {
                 18 + horizontalInset,
                 18,
               ),
-              child: Row(
-                children: [
-                  SizedBox(
-                    width: 160,
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.of(context).maybePop(),
-                      style: OutlinedButton.styleFrom(
-                        minimumSize: const Size.fromHeight(66),
-                        textStyle: theme.textTheme.labelMedium?.copyWith(
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 1.0,
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.close),
-                          const SizedBox(width: 10),
-                          Flexible(
-                            child: Text(
-                              l10n.cancelAction.toUpperCase(),
-                              maxLines: 1,
-                              overflow: TextOverflow.fade,
-                              softWrap: false,
+              child: isWideScreen
+                  ? Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      mainAxisSize: MainAxisSize.max,
+                      children: [
+                        if (hasActiveSelections) ...[
+                          TextButton.icon(
+                            onPressed: _reset,
+                            icon: const Icon(Icons.restart_alt_rounded),
+                            label: Text(l10n.resetAction),
+                            style: TextButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 14,
+                              ),
+                              textStyle: theme.textTheme.labelLarge?.copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
                             ),
                           ),
+                          const SizedBox(width: 16),
                         ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: FilledButton(
-                      onPressed: _apply,
-                      style: FilledButton.styleFrom(
-                        minimumSize: const Size.fromHeight(66),
-                        shape: const StadiumBorder(),
-                        textStyle: theme.textTheme.labelMedium?.copyWith(
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 1.0,
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 520),
+                          child: _ActionButtonsRow(
+                            onCancel: () => Navigator.of(context).maybePop(),
+                            onApply: _apply,
+                          ),
                         ),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.check_circle_rounded),
-                          const SizedBox(width: 10),
-                          Flexible(
-                            child: Text(
-                              l10n.applyFiltersAction.toUpperCase(),
-                              maxLines: 1,
-                              overflow: TextOverflow.fade,
-                              softWrap: false,
+                      ],
+                    )
+                  : Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (hasActiveSelections) ...[
+                          TextButton.icon(
+                            onPressed: _reset,
+                            icon: const Icon(Icons.restart_alt_rounded),
+                            label: Text(l10n.resetAction),
+                            style: TextButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 10,
+                              ),
+                              textStyle: theme.textTheme.labelLarge?.copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
                             ),
                           ),
+                          const SizedBox(height: 10),
                         ],
-                      ),
+                        _ActionButtonsRow(
+                          onCancel: () => Navigator.of(context).maybePop(),
+                          onApply: _apply,
+                        ),
+                      ],
                     ),
-                  ),
-                ],
-              ),
             );
           },
         ),
@@ -535,6 +517,82 @@ class _DocumentsFiltersPageState extends ConsumerState<DocumentsFiltersPage> {
   void _apply() {
     Navigator.of(context).pop(
       DocumentsFiltersResult(filterState: _filterState, ordering: _ordering),
+    );
+  }
+}
+
+class _ActionButtonsRow extends StatelessWidget {
+  const _ActionButtonsRow({required this.onCancel, required this.onApply});
+
+  final VoidCallback onCancel;
+  final VoidCallback onApply;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final l10n = context.l10n;
+
+    return Row(
+      children: [
+        Expanded(
+          flex: 5,
+          child: OutlinedButton(
+            onPressed: onCancel,
+            style: OutlinedButton.styleFrom(
+              minimumSize: const Size.fromHeight(66),
+              textStyle: theme.textTheme.labelMedium?.copyWith(
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1.0,
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.close),
+                const SizedBox(width: 10),
+                Flexible(
+                  child: Text(
+                    l10n.cancelAction.toUpperCase(),
+                    maxLines: 1,
+                    overflow: TextOverflow.fade,
+                    softWrap: false,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(width: 14),
+        Expanded(
+          flex: 7,
+          child: FilledButton(
+            onPressed: onApply,
+            style: FilledButton.styleFrom(
+              minimumSize: const Size.fromHeight(66),
+              shape: const StadiumBorder(),
+              textStyle: theme.textTheme.labelMedium?.copyWith(
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1.0,
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.check_circle_rounded),
+                const SizedBox(width: 10),
+                Flexible(
+                  child: Text(
+                    l10n.applyFiltersAction.toUpperCase(),
+                    maxLines: 1,
+                    overflow: TextOverflow.fade,
+                    softWrap: false,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -716,77 +774,6 @@ class _SortOptionsGrid extends StatelessWidget {
           onTap: () => onChanged(option.ordering),
         );
       },
-    );
-  }
-}
-
-class _WideActionButtons extends StatelessWidget {
-  const _WideActionButtons({
-    required this.onCancel,
-    required this.onReset,
-    required this.onApply,
-  });
-
-  final VoidCallback onCancel;
-  final VoidCallback onReset;
-  final VoidCallback onApply;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final l10n = context.l10n;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Align(
-          alignment: Alignment.centerRight,
-          child: TextButton(
-            onPressed: onReset,
-            style: TextButton.styleFrom(
-              textStyle: theme.textTheme.labelMedium?.copyWith(
-                fontWeight: FontWeight.w800,
-                letterSpacing: 0.7,
-              ),
-            ),
-            child: Text(l10n.resetAction),
-          ),
-        ),
-        const SizedBox(height: 10),
-        Row(
-          children: [
-            Expanded(
-              child: OutlinedButton(
-                onPressed: onCancel,
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size.fromHeight(56),
-                  textStyle: theme.textTheme.labelMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.9,
-                  ),
-                ),
-                child: Text(l10n.cancelAction.toUpperCase()),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              flex: 2,
-              child: FilledButton(
-                onPressed: onApply,
-                style: FilledButton.styleFrom(
-                  minimumSize: const Size.fromHeight(56),
-                  shape: const StadiumBorder(),
-                  textStyle: theme.textTheme.labelMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.9,
-                  ),
-                ),
-                child: Text(l10n.applyFiltersAction.toUpperCase()),
-              ),
-            ),
-          ],
-        ),
-      ],
     );
   }
 }
