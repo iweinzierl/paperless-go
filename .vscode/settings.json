@@ -9,6 +9,7 @@
             "matchCommandLine": true
         },
         "setopt": true,
-        "/usr/bin/wc": true
+        "/usr/bin/wc": true,
+        "adb": true
     }
 }

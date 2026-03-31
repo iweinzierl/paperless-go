@@ -32,6 +32,12 @@
 			"problemMatcher": []
 		},
 		{
+			"label": "Android: Capture Play screenshots",
+			"type": "shell",
+			"command": "${workspaceFolder}/scripts/android/run_fastlane.sh screenshots",
+			"problemMatcher": []
+		},
+		{
 			"label": "iOS: Validate App Store setup",
 			"type": "shell",
 			"command": "${workspaceFolder}/scripts/ios/run_fastlane.sh check_app_store_setup",

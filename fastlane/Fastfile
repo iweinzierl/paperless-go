@@ -23,6 +23,24 @@ IOS_SNAPSHOT_RAW_DIRECTORY = File.expand_path(".generated/ios/screenshots", FAST
 IOS_METADATA_UPLOAD_DIRECTORY = File.expand_path("../build/fastlane/ios-metadata-upload", FASTLANE_DIR)
 IOS_SCREENSHOTS_UPLOAD_DIRECTORY = File.expand_path("../build/fastlane/ios-screenshots-upload", FASTLANE_DIR)
 IOS_PROJECT_FILE = File.expand_path("../ios/Runner.xcodeproj/project.pbxproj", FASTLANE_DIR)
+ANDROID_SCREENSHOT_TARGETS = [
+  {
+    description: "phone",
+    device_type: "phone",
+    option_key: :phone_device,
+    env_key: "ANDROID_PHONE_SCREENSHOT_DEVICE",
+    default_device_name: "Pixel_9",
+    required: true,
+  },
+  {
+    description: "10-inch tablet",
+    device_type: "tenInch",
+    option_key: :ten_inch_device,
+    env_key: "ANDROID_TEN_INCH_SCREENSHOT_DEVICE",
+    default_device_name: "Pixel_Tablet",
+    required: false,
+  },
+].freeze
 APP_STORE_CONNECT_API_KEY_CONFIG = File.expand_path(
   ENV["APP_STORE_CONNECT_API_KEY_JSON_PATH"] || "app-store-connect-api-key.json",
   FASTLANE_DIR,
@@ -52,6 +70,111 @@ def current_version_code
   UI.user_error!("Missing build number in #{PUBSPEC_FILE}") if version_code.to_s.empty?
 
   version_code
+end
+
+def android_connected_devices
+  adb_output = sh("adb devices", log: false)
+
+  adb_output.each_line.filter_map do |line|
+    entry = line.strip
+    next if entry.empty? || entry.start_with?("List of devices attached")
+
+    serial, state = entry.split(/\s+/, 2)
+    next unless state == "device"
+
+    {
+      serial: serial,
+      avd_name: android_device_avd_name(serial),
+      model_name: android_device_model_name(serial),
+    }
+  end
+end
+
+def android_device_avd_name(serial)
+  return nil unless serial.start_with?("emulator-")
+
+  avd_name = `adb -s #{Shellwords.escape(serial)} emu avd name 2>/dev/null`
+    .each_line
+    .map(&:strip)
+    .reject(&:empty?)
+    .reject { |line| line.casecmp("ok").zero? }
+    .first
+  return nil if avd_name.empty? || avd_name.casecmp("unknown").zero?
+
+  avd_name
+end
+
+def android_device_model_name(serial)
+  model_name = `adb -s #{Shellwords.escape(serial)} shell getprop ro.product.model 2>/dev/null`.strip
+  return nil if model_name.empty?
+
+  model_name
+end
+
+def android_connected_device_labels(connected_devices)
+  connected_devices.map do |device|
+    labels = [device[:serial], device[:avd_name], device[:model_name]].compact.uniq
+    labels.join(" / ")
+  end
+end
+
+def android_normalize_device_selector(value)
+  value.to_s.strip.downcase.gsub(/[ _-]+/, " ")
+end
+
+def android_resolve_device_selector(device_selector, connected_devices)
+  return nil if device_selector.empty?
+
+  serial_match = connected_devices.find { |device| device[:serial] == device_selector }
+  return serial_match[:serial] unless serial_match.nil?
+
+  normalized_selector = android_normalize_device_selector(device_selector)
+
+  named_matches = connected_devices.select do |device|
+    [device[:avd_name], device[:model_name]].compact.any? do |candidate|
+      android_normalize_device_selector(candidate) == normalized_selector
+    end
+  end
+
+  if named_matches.length > 1
+    UI.user_error!(
+      "Configured Android screenshot device '#{device_selector}' matches multiple connected devices: #{android_connected_device_labels(named_matches).join(", ")}",
+    )
+  end
+
+  named_matches.first&.dig(:serial)
+end
+
+def android_screenshot_targets(options, connected_devices)
+  ANDROID_SCREENSHOT_TARGETS.each_with_object([]) do |target, targets|
+    device_selector = options[target[:option_key]].to_s.strip
+    device_selector = ENV[target[:env_key]].to_s.strip if device_selector.empty?
+    device_selector = target[:default_device_name].to_s.strip if device_selector.empty?
+    specific_device = android_resolve_device_selector(device_selector, connected_devices)
+
+    if specific_device.nil?
+      if device_selector.empty?
+        if target[:required] && connected_devices.length > 1
+          UI.user_error!(
+            "Multiple Android devices are connected. Set #{target[:env_key]} or pass #{target[:option_key]}:<serial-or-name> for #{target[:description]} screenshots.",
+          )
+        end
+
+        next unless target[:required]
+      else
+        UI.user_error!(
+          "Configured Android screenshot device '#{device_selector}' for #{target[:description]} screenshots is not connected. Connected devices: #{android_connected_device_labels(connected_devices).join(", ")}",
+        )
+      end
+
+      next
+    end
+
+    targets << target.merge(
+      specific_device: specific_device,
+      device_selector: device_selector.empty? ? specific_device : device_selector,
+    )
+  end
 end
 
 def app_store_connect_api_key_path
@@ -792,7 +915,16 @@ platform :android do
   end
 
   desc "Build screenshot artifacts and capture Play Store screenshots with Screengrab"
-  lane :screenshots do
+  lane :screenshots do |options|
+    connected_devices = android_connected_devices
+    if connected_devices.empty?
+      UI.user_error!(
+        "No connected Android devices or emulators found. Start the phone emulator and any tablet emulators before running 'fastlane android screenshots'.",
+      )
+    end
+
+    screenshot_targets = android_screenshot_targets(options, connected_devices)
+
     gradle(
       project_dir: "android",
       task: "app:assembleDebug",
@@ -803,7 +935,21 @@ platform :android do
       task: "app:assembleAndroidTest",
     )
 
-    screengrab
+    screenshot_targets.each_with_index do |target, index|
+      UI.message(
+        "Capturing #{target[:description]} screenshots#{target[:specific_device] ? " on #{target[:device_selector]} (#{target[:specific_device]})" : ""}.",
+      )
+
+      screengrab_options = {
+        device_type: target[:device_type],
+        clear_previous_screenshots: index.zero?,
+        skip_open_summary: index < screenshot_targets.length - 1,
+        reinstall_app: true,
+      }
+      screengrab_options[:specific_device] = target[:specific_device] unless target[:specific_device].nil?
+
+      screengrab(**screengrab_options)
+    end
   end
 
   lane :generate_screenshots do

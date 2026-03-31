@@ -132,6 +132,32 @@ All commands are run from the project root.
 ./scripts/android/build_signed_aab.sh
 ```
 
+### Capture Play Store screenshots
+
+```bash
+./scripts/android/run_fastlane.sh screenshots
+```
+
+The screenshots lane always captures the phone set. To capture tablet screenshots in the same run, start the matching emulator and provide either its adb serial number or its emulator name.
+
+For a phone plus Pixel Tablet setup:
+
+```bash
+ANDROID_PHONE_SCREENSHOT_DEVICE="Pixel 9" \
+ANDROID_TEN_INCH_SCREENSHOT_DEVICE="Pixel Tablet" \
+./scripts/android/run_fastlane.sh screenshots
+```
+
+Optional screenshot device overrides:
+
+- `ANDROID_PHONE_SCREENSHOT_DEVICE` for `phoneScreenshots`
+- `ANDROID_SEVEN_INCH_SCREENSHOT_DEVICE` for `sevenInchScreenshots`
+- `ANDROID_TEN_INCH_SCREENSHOT_DEVICE` for `tenInchScreenshots` such as a Pixel Tablet emulator
+
+Each selector may be either an adb serial such as `emulator-5554` or a running emulator name such as `Pixel Tablet`.
+
+If more than one Android device is connected, set `ANDROID_PHONE_SCREENSHOT_DEVICE` as well so Fastlane does not hit ADB's multi-device ambiguity.
+
 ### Validate the upload without publishing it
 
 ```bash
