@@ -17,51 +17,60 @@ class HelpFeedbackPage extends ConsumerWidget {
       data: (value) => '${value.version}+${value.buildNumber}',
       orElse: () => l10n.unknownLabel,
     );
+    final actions = [
+      _SupportAction(
+        icon: Icons.help_outline,
+        title: l10n.documentationTitle,
+        description: l10n.documentationDescription,
+        onTap: () => _openLink(
+          context,
+          ref,
+          Uri.parse('https://github.com/iweinzierl/paperless-go/wiki'),
+        ),
+      ),
+      _SupportAction(
+        icon: Icons.feedback_outlined,
+        title: l10n.reportIssueTitle,
+        description: l10n.reportIssueDescription,
+        onTap: () => _openLink(
+          context,
+          ref,
+          _buildIssueUri(serverUrl: session.serverUrl, appVersion: appVersion),
+        ),
+      ),
+      _SupportAction(
+        icon: Icons.content_copy_outlined,
+        title: l10n.copySupportSummaryTitle,
+        description: l10n.copySupportSummaryDescription,
+        onTap: () => _openLink(
+          context,
+          ref,
+          _buildCopyUri(serverUrl: session.serverUrl, appVersion: appVersion),
+        ),
+      ),
+    ];
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.helpFeedbackTitle)),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-        children: [
-          _SupportTile(
-            icon: Icons.help_outline,
-            title: l10n.documentationTitle,
-            description: l10n.documentationDescription,
-            onTap: () => _openLink(
-              context,
-              ref,
-              Uri.parse('https://github.com/iweinzierl/paperless-go/wiki'),
-            ),
-          ),
-          const SizedBox(height: 12),
-          _SupportTile(
-            icon: Icons.feedback_outlined,
-            title: l10n.reportIssueTitle,
-            description: l10n.reportIssueDescription,
-            onTap: () => _openLink(
-              context,
-              ref,
-              _buildIssueUri(
-                serverUrl: session.serverUrl,
-                appVersion: appVersion,
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final isWideLayout = constraints.maxWidth >= 840;
+
+          return Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: isWideLayout ? 960 : 800),
+              child: ListView(
+                padding: EdgeInsets.fromLTRB(
+                  isWideLayout ? 24 : 16,
+                  16,
+                  isWideLayout ? 24 : 16,
+                  24,
+                ),
+                children: [_SupportActionsLayout(actions: actions)],
               ),
             ),
-          ),
-          const SizedBox(height: 12),
-          _SupportTile(
-            icon: Icons.content_copy_outlined,
-            title: l10n.copySupportSummaryTitle,
-            description: l10n.copySupportSummaryDescription,
-            onTap: () => _openLink(
-              context,
-              ref,
-              _buildCopyUri(
-                serverUrl: session.serverUrl,
-                appVersion: appVersion,
-              ),
-            ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }
@@ -124,6 +133,60 @@ class HelpFeedbackPage extends ConsumerWidget {
       scheme: 'copy',
       query:
           'Flutter app version: $appVersion\npaperless-ngx server: $serverUrl',
+    );
+  }
+}
+
+class _SupportAction {
+  const _SupportAction({
+    required this.icon,
+    required this.title,
+    required this.description,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final String description;
+  final VoidCallback onTap;
+}
+
+class _SupportActionsLayout extends StatelessWidget {
+  const _SupportActionsLayout({required this.actions});
+
+  final List<_SupportAction> actions;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final useTwoColumns = constraints.maxWidth >= 720;
+
+        if (!useTwoColumns) {
+          return Column(
+            children: [
+              for (var index = 0; index < actions.length; index++) ...[
+                _SupportTile(action: actions[index]),
+                if (index != actions.length - 1) const SizedBox(height: 12),
+              ],
+            ],
+          );
+        }
+
+        final cardWidth = (constraints.maxWidth - 16) / 2;
+
+        return Wrap(
+          spacing: 16,
+          runSpacing: 16,
+          children: [
+            for (final action in actions)
+              SizedBox(
+                width: cardWidth,
+                child: _SupportTile(action: action),
+              ),
+          ],
+        );
+      },
     );
   }
 }
@@ -258,26 +321,22 @@ class _DonateDialogState extends State<_DonateDialog> {
 }
 
 class _SupportTile extends StatelessWidget {
-  const _SupportTile({
-    required this.icon,
-    required this.title,
-    required this.description,
-    required this.onTap,
-  });
+  const _SupportTile({required this.action});
 
-  final IconData icon;
-  final String title;
-  final String description;
-  final VoidCallback onTap;
+  final _SupportAction action;
 
   @override
   Widget build(BuildContext context) {
     return Card(
       child: ListTile(
-        onTap: onTap,
-        leading: Icon(icon),
-        title: Text(title),
-        subtitle: Text(description),
+        onTap: action.onTap,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 20,
+          vertical: 10,
+        ),
+        leading: Icon(action.icon),
+        title: Text(action.title),
+        subtitle: Text(action.description),
         trailing: const Icon(Icons.open_in_new),
       ),
     );
