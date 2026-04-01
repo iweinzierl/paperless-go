@@ -1,1 +1,0 @@
-Add 10-inch tablet screenshots here when available.
