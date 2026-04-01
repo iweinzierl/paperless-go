@@ -1,0 +1,3 @@
+- Unterstuetzung fuer die randlose Anzeige unter Android 15 verbessert
+- Scanner-Ausrichtungssperren fuer Tablets und Foldables entfernt
+- allgemeine Stabilitaetsverbesserungen fuer die naechste Android-Release-Runde

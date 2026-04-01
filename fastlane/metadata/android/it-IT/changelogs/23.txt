@@ -1,0 +1,3 @@
+- migliorato il supporto alla visualizzazione edge-to-edge su Android 15
+- rimossi i blocchi di orientamento dello scanner su tablet e dispositivi pieghevoli
+- miglioramenti generali della stabilita per il prossimo ciclo Android

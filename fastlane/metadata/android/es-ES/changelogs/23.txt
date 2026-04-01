@@ -1,0 +1,3 @@
+- mejora la compatibilidad con la vista de borde a borde en Android 15
+- elimina los bloqueos de orientacion del escaner en tablets y plegables
+- mejoras generales de estabilidad para el proximo ciclo de Android

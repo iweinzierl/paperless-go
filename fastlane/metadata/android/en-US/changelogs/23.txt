@@ -1,0 +1,3 @@
+- improved Android 15 edge-to-edge support on newer devices
+- removed scanner orientation locks for tablets and foldables
+- general stability improvements for the next Android release cycle

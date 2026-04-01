@@ -1,0 +1,2 @@
+- General stability and compatibility improvements.
+- Minor interface polish updates.

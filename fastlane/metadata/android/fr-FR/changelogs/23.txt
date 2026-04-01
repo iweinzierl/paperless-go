@@ -1,0 +1,3 @@
+- prise en charge amelioree de l'affichage bord a bord sur Android 15
+- suppression du verrouillage d'orientation du scanner sur tablettes et appareils pliables
+- ameliorations generales de stabilite pour le prochain cycle Android
