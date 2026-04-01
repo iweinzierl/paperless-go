@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:paperless_ngx_app/src/core/presentation/localization/app_localizations_x.dart';
@@ -50,7 +51,8 @@ class AppDrawer extends ConsumerWidget {
         title: l10n.drawerHelpFeedback,
         onTap: () => _openPage(context, const HelpFeedbackPage()),
       ),
-      if (donationConfiguration.isEnabled)
+      if (donationConfiguration.isEnabled &&
+          defaultTargetPlatform != TargetPlatform.iOS)
         _DrawerAction(
           icon: Icons.volunteer_activism_outlined,
           title: l10n.donateTitle,
