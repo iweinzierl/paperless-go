@@ -1,3 +1,3 @@
-- migliorati i layout per schermi grandi in documenti, caricamenti recenti, inbox e filtri
-- aggiunta la ricerca per titolo in caricamenti recenti e inbox
-- i dettagli del documento mostrano ora in modo piu chiaro data e titolo
+- migliorata la schermata di modifica dei documenti con un layout piu pulito
+- aggiornate le schermate di aiuto e filtri per una navigazione piu rapida e azioni piu chiare
+- rimossa la voce Donate dal drawer su iOS

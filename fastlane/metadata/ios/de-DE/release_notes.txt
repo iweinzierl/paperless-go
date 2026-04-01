@@ -1,3 +1,3 @@
-- grosses Bildschirmlayout fuer Dokumente, letzte Uploads, Inbox und Filter verbessert
-- Titelsuche fuer letzte Uploads und Inbox hinzugefuegt
-- Dokumentdetails zeigen Datum und Titel nun klarer an
+- Bearbeitungsansicht fuer Dokumente mit klarerem und aufgeraumterem Layout verbessert
+- Hilfe- und Filterseiten fuer schnellere Navigation und klarere Aktionen ueberarbeitet
+- Donate-Eintrag im Drawer auf iOS entfernt

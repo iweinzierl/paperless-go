@@ -1,3 +1,3 @@
-- improved large-screen layouts across documents, recent uploads, inbox, and filters
-- added title search to recent uploads and inbox
-- document details now use cleaner date and title presentation
+- improved the document edit experience with a cleaner, more polished layout
+- refreshed the help and filter screens for faster navigation and clearer actions
+- removed the Donate drawer entry on iOS
