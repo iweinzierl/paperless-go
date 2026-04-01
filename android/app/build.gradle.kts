@@ -86,6 +86,7 @@ android {
 }
 
 dependencies {
+    implementation("androidx.core:core-ktx:1.16.0")
     androidTestImplementation("androidx.test:core:1.6.1")
     androidTestImplementation("androidx.test:rules:1.6.1")
     androidTestImplementation("androidx.test:runner:1.6.2")

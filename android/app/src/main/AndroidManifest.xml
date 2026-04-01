@@ -1,10 +1,17 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
     <uses-permission android:name="android.permission.INTERNET"/>
 
     <application
         android:label="@string/app_name"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
+        <activity
+            android:name="biz.cunning.cunning_document_scanner.fallback.DocumentScannerActivity"
+            tools:remove="android:screenOrientation" />
+        <activity
+            android:name="com.google.mlkit.vision.documentscanner.internal.GmsDocumentScanningDelegateActivity"
+            tools:remove="android:screenOrientation" />
         <activity
             android:name=".MainActivity"
             android:exported="true"
