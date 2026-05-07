@@ -9,7 +9,9 @@ import 'package:paperless_ngx_app/src/features/auth/presentation/controllers/aut
 import 'package:paperless_ngx_app/src/features/auth/presentation/formatters/auth_text.dart';
 
 class SettingsPage extends ConsumerStatefulWidget {
-  const SettingsPage({super.key});
+  const SettingsPage({super.key, this.stateOverride});
+
+  final SettingsFormState? stateOverride;
 
   @override
   ConsumerState<SettingsPage> createState() => _SettingsPageState();
@@ -23,7 +25,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   @override
   void initState() {
     super.initState();
-    final state = ref.read(settingsControllerProvider);
+    final SettingsFormState state =
+        widget.stateOverride ?? ref.read(settingsControllerProvider);
     _serverUrlController = TextEditingController(text: state.serverUrl);
     _usernameController = TextEditingController(text: state.username);
     _passwordController = TextEditingController(text: state.password);
@@ -40,37 +43,46 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final isReadOnlyOverride = widget.stateOverride != null;
 
-    ref.listen<SettingsFormState>(settingsControllerProvider, (previous, next) {
-      if (!context.mounted) {
-        return;
-      }
+    if (!isReadOnlyOverride) {
+      ref.listen<SettingsFormState>(settingsControllerProvider, (
+        previous,
+        next,
+      ) {
+        if (!context.mounted) {
+          return;
+        }
 
-      final completedSave = previous?.isSaving == true && !next.isSaving;
-      if (!completedSave) {
-        return;
-      }
+        final completedSave = previous?.isSaving == true && !next.isSaving;
+        if (!completedSave) {
+          return;
+        }
 
-      final messenger = ScaffoldMessenger.of(context)..hideCurrentSnackBar();
-      if (next.saveStatus.hasError) {
-        messenger.showSnackBar(
-          SnackBar(
-            content: Text(
-              localizeAuthFailure(
-                l10n,
-                next.saveStatus.error!,
-                genericFallback: l10n.settingsSaveFailedGeneric,
+        final messenger = ScaffoldMessenger.of(context)..hideCurrentSnackBar();
+        if (next.saveStatus.hasError) {
+          messenger.showSnackBar(
+            SnackBar(
+              content: Text(
+                localizeAuthFailure(
+                  l10n,
+                  next.saveStatus.error!,
+                  genericFallback: l10n.settingsSaveFailedGeneric,
+                ),
               ),
             ),
-          ),
+          );
+          return;
+        }
+
+        messenger.showSnackBar(
+          SnackBar(content: Text(l10n.settingsSaveSuccess)),
         );
-        return;
-      }
+      });
+    }
 
-      messenger.showSnackBar(SnackBar(content: Text(l10n.settingsSaveSuccess)));
-    });
-
-    final state = ref.watch(settingsControllerProvider);
+    final SettingsFormState state =
+        widget.stateOverride ?? ref.watch(settingsControllerProvider);
     final behaviorSettings = ref.watch(appBehaviorSettingsProvider);
     _syncControllers(state);
 
@@ -98,9 +110,12 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                     subtitle: l10n.settingsServerUrlSubtitle,
                     child: TextField(
                       controller: _serverUrlController,
+                      enabled: !isReadOnlyOverride,
                       keyboardType: TextInputType.url,
                       decoration: InputDecoration(
-                        hintText: '${l10n.serverUrlHint}/',
+                        hintText: isReadOnlyOverride
+                            ? null
+                            : '${l10n.serverUrlHint}/',
                         errorText: state.serverUrlError(
                           l10n.loginValidationServerUrlRequired,
                           l10n.loginValidationFullUrl,
@@ -118,6 +133,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                     subtitle: l10n.settingsUsernameSubtitle,
                     child: TextField(
                       controller: _usernameController,
+                      enabled: !isReadOnlyOverride,
                       decoration: InputDecoration(
                         errorText: state.usernameError(
                           l10n.loginValidationUsernameRequired,
@@ -135,6 +151,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                     subtitle: l10n.settingsPasswordSubtitle,
                     child: TextField(
                       controller: _passwordController,
+                      enabled: !isReadOnlyOverride,
                       obscureText: true,
                       decoration: InputDecoration(
                         errorText: state.passwordError(
@@ -154,6 +171,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                       child: FilledButton.icon(
                         onPressed: state.isSaving
                             ? null
+                            : isReadOnlyOverride
+                            ? null
                             : () => ref
                                   .read(settingsControllerProvider.notifier)
                                   .submit(),
@@ -161,7 +180,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                             ? const SizedBox(
                                 width: 18,
                                 height: 18,
-                                child: CircularProgressIndicator(strokeWidth: 2),
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
                               )
                             : const Icon(Icons.save_outlined),
                         label: Text(

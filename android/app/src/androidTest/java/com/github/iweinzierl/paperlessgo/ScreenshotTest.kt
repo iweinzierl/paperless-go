@@ -5,6 +5,7 @@ import android.os.Environment
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiDevice
 import java.io.File
 import org.junit.After
@@ -17,7 +18,12 @@ import tools.fastlane.screengrab.locale.LocaleTestRule
 
 @RunWith(AndroidJUnit4::class)
 class ScreenshotTest {
+    private companion object {
+        private const val screenshotStatePreferenceKey = "flutter.debug.screenshot_state"
+    }
+
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
+    private val launchArguments = InstrumentationRegistry.getArguments()
     private val targetContext: Context = instrumentation.targetContext
     private val device: UiDevice = UiDevice.getInstance(instrumentation)
 
@@ -133,8 +139,11 @@ class ScreenshotTest {
 
     private fun writeScenario(scenario: ScreenshotScenario, authenticated: Boolean) {
         val preferences = flutterPreferences()
+        val dataSource = screenshotDataSource(authenticated)
         with(preferences.edit()) {
             putString("flutter.debug.screenshot_scenario", scenario.preferenceValue)
+            putString("flutter.debug.screenshot_data_source", dataSource)
+            putString(screenshotStatePreferenceKey, "loading")
             putString("flutter.app_behavior.app_language", appLanguageForLocale())
             putString("flutter.sync.documents.last_success_at", "2026-03-21T09:30:00.000Z")
             putString(
@@ -146,15 +155,58 @@ class ScreenshotTest {
             )
 
             if (authenticated) {
-                putString("flutter.auth.server_url", "https://demo.paperless-ngx.local/")
-                putString("flutter.auth.username", "demo.user")
-                putString("flutter.auth.password", "not-used")
-                putString("flutter.auth.token", "demo-token")
-                putString("flutter.auth.display_name", "Demo User")
+                when (dataSource) {
+                    "live" -> {
+                        putString(
+                            "flutter.auth.server_url",
+                            requiredLaunchArgument("paperlessScreenshotServerUrl"),
+                        )
+                        putString(
+                            "flutter.auth.username",
+                            requiredLaunchArgument("paperlessScreenshotUsername"),
+                        )
+                        putString(
+                            "flutter.auth.password",
+                            requiredLaunchArgument("paperlessScreenshotPassword"),
+                        )
+                        remove("flutter.auth.token")
+
+                        optionalLaunchArgument("paperlessScreenshotDisplayName")
+                            ?.let { putString("flutter.auth.display_name", it) }
+                            ?: remove("flutter.auth.display_name")
+                    }
+
+                    else -> {
+                        putString("flutter.auth.server_url", "https://demo.paperless-ngx.local/")
+                        putString("flutter.auth.username", "demo.user")
+                        putString("flutter.auth.password", "not-used")
+                        putString("flutter.auth.token", "demo-token")
+                        putString("flutter.auth.display_name", "Demo User")
+                    }
+                }
             }
 
             commit()
         }
+    }
+
+    private fun screenshotDataSource(authenticated: Boolean): String {
+        val configuredValue = optionalLaunchArgument("paperlessScreenshotDataSource")?.lowercase()
+        if (!configuredValue.isNullOrEmpty()) {
+            return configuredValue
+        }
+
+        return if (authenticated) "live" else "mock"
+    }
+
+    private fun requiredLaunchArgument(name: String): String {
+        return optionalLaunchArgument(name)
+            ?: error("Missing required screenshot launch argument '$name'.")
+    }
+
+    private fun optionalLaunchArgument(name: String): String? {
+        val value = launchArguments.getString(name)?.trim()
+        return value?.takeIf { it.isNotEmpty() }
     }
 
     private fun appLanguageForLocale(): String {
@@ -168,10 +220,33 @@ class ScreenshotTest {
     }
 
     private fun waitForFlutterToSettle() {
+        waitForScreenshotReady()
         instrumentation.waitForIdleSync()
         device.waitForIdle()
-        Thread.sleep(1500)
+        Thread.sleep(500)
         instrumentation.waitForIdleSync()
+    }
+
+    private fun waitForScreenshotReady(timeoutMillis: Long = 30_000L) {
+        val deadline = System.currentTimeMillis() + timeoutMillis
+        while (System.currentTimeMillis() < deadline) {
+            instrumentation.waitForIdleSync()
+            device.waitForIdle()
+            val screenshotState = flutterPreferences().getString(screenshotStatePreferenceKey, null)
+
+            if (screenshotState == "error") {
+                error("Screenshot harness entered an error state.")
+            }
+
+            if (screenshotState == "ready") {
+                return
+            }
+
+            Thread.sleep(250)
+        }
+
+        val finalState = flutterPreferences().getString(screenshotStatePreferenceKey, null)
+        error("Timed out waiting for screenshot harness ready state. Last state=$finalState")
     }
 
     private fun clearFlutterPreferences() {

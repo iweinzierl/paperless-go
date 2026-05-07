@@ -16,10 +16,12 @@ class AppDrawer extends ConsumerWidget {
     super.key,
     this.isPermanent = false,
     this.isMinimized = false,
+    this.userCardSubtitleOverride,
   });
 
   final bool isPermanent;
   final bool isMinimized;
+  final String? userCardSubtitleOverride;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -27,7 +29,7 @@ class AppDrawer extends ConsumerWidget {
     final l10n = context.l10n;
     final stats = ref.watch(appDrawerStatisticsProvider);
     final donationConfiguration = ref.watch(donationConfigurationProvider);
-    final session = ref.watch(authSessionProvider);
+    final session = ref.watch(authDisplaySessionProvider);
     final displayName = (session.displayName?.trim().isNotEmpty ?? false)
         ? session.displayName!.trim()
         : session.username;
@@ -191,9 +193,11 @@ class AppDrawer extends ConsumerWidget {
             _DrawerUserCard(
               initials: initials,
               title: displayName,
-              subtitle: serverHost == null || serverHost.isEmpty
-                  ? session.serverUrl
-                  : 'Server: $serverHost',
+              subtitle:
+                  userCardSubtitleOverride ??
+                  (serverHost == null || serverHost.isEmpty
+                      ? session.serverUrl
+                      : 'Server: $serverHost'),
               isMinimized: isMinimized,
               onTap: () => _openPage(context, const SettingsPage()),
             ),

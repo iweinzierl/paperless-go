@@ -26,9 +26,14 @@ import 'package:paperless_ngx_app/src/features/documents/presentation/widgets/pa
 enum _DocumentsPageAction { refresh }
 
 class DocumentsPage extends ConsumerStatefulWidget {
-  const DocumentsPage({this.openDrawerOnLoad = false, super.key});
+  const DocumentsPage({
+    this.openDrawerOnLoad = false,
+    this.drawerUserCardSubtitleOverride,
+    super.key,
+  });
 
   final bool openDrawerOnLoad;
+  final String? drawerUserCardSubtitleOverride;
 
   @override
   ConsumerState<DocumentsPage> createState() => _DocumentsPageState();
@@ -289,7 +294,11 @@ class _DocumentsPageState extends ConsumerState<DocumentsPage> {
 
     return Scaffold(
       key: _scaffoldKey,
-      drawer: isWideScreen ? null : const AppDrawer(),
+      drawer: isWideScreen
+          ? null
+          : AppDrawer(
+              userCardSubtitleOverride: widget.drawerUserCardSubtitleOverride,
+            ),
       appBar: isWideScreen
           ? null
           : AppBar(

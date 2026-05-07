@@ -8,6 +8,10 @@ final authSessionProvider =
       AuthSessionController.new,
     );
 
+final authDisplaySessionProvider = Provider<PaperlessAuthSession>((ref) {
+  return ref.watch(authSessionProvider);
+});
+
 class AuthSessionController extends Notifier<PaperlessAuthSession> {
   AuthPreferences get _authPreferences => ref.read(authPreferencesProvider);
 

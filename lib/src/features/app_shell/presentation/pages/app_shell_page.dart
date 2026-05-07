@@ -10,7 +10,9 @@ import 'package:paperless_ngx_app/src/features/home/presentation/pages/home_page
 import 'package:paperless_ngx_app/src/features/app_shell/presentation/widgets/app_drawer.dart';
 
 class AppShellPage extends ConsumerWidget {
-  const AppShellPage({super.key});
+  const AppShellPage({super.key, this.drawerUserCardSubtitleOverride});
+
+  final String? drawerUserCardSubtitleOverride;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -40,6 +42,7 @@ class AppShellPage extends ConsumerWidget {
                   child: AppDrawer(
                     isPermanent: true,
                     isMinimized: isDrawerMinimized,
+                    userCardSubtitleOverride: drawerUserCardSubtitleOverride,
                   ),
                 ),
                 Expanded(child: page),

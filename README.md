@@ -71,6 +71,16 @@ flutter test
 dart run build_runner build --delete-conflicting-outputs
 ```
 
+### Automated store screenshots
+
+Android and iOS screenshot lanes can now run against a live demo server instead of the mock screenshot repository.
+
+1. Copy `scripts/screenshot-env.sh.example` to `scripts/screenshot-env.sh`.
+2. Set `PAPERLESS_SCREENSHOT_DATA_SOURCE=live` together with `PAPERLESS_SCREENSHOT_SERVER_URL`, `PAPERLESS_SCREENSHOT_USERNAME`, and `PAPERLESS_SCREENSHOT_PASSWORD`.
+3. Run `./scripts/android/run_fastlane.sh screenshots` for Play Store screenshots or `./scripts/ios/run_fastlane.sh screenshots` for App Store screenshots.
+
+The local `scripts/screenshot-env.sh` file is ignored by git and is sourced automatically by both Fastlane wrapper scripts.
+
 ## Tech Stack
 
 - Flutter for the shared mobile UI

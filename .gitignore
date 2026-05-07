@@ -54,6 +54,7 @@ app.*.map.json
 /fastlane/app-store-connect-api-key.json
 /fastlane/play-store-service-account.json
 /fastlane/.generated/
+/scripts/screenshot-env.sh
 
 # Fastlane metadata and screenshots
 fastlane/report.xml

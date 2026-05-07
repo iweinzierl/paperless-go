@@ -17,11 +17,15 @@ Future<void> main() async {
   final screenshotScenario = maybeParseScreenshotScenario(
     sharedPreferences.getString(screenshotScenarioPreferenceKey),
   );
+  final screenshotDataSource = maybeParseScreenshotDataSource(
+    sharedPreferences.getString(screenshotDataSourcePreferenceKey),
+  );
   final screenshotLanguageCode =
       sharedPreferences.getString('app_behavior.app_language') ?? 'en';
   final overrides = <Override>[
     sharedPreferencesProvider.overrideWithValue(sharedPreferences),
-    if (screenshotScenario != null)
+    if (screenshotScenario != null &&
+        screenshotDataSource == ScreenshotDataSource.mock)
       documentsRepositoryProvider.overrideWithValue(
         ScreenshotDocumentsRepository(languageCode: screenshotLanguageCode),
       ),
@@ -32,7 +36,10 @@ Future<void> main() async {
       overrides: overrides,
       child: screenshotScenario == null
           ? const PaperlessNgxApp()
-          : ScreenshotHarnessApp(scenario: screenshotScenario),
+          : ScreenshotHarnessApp(
+              scenario: screenshotScenario,
+              dataSource: screenshotDataSource,
+            ),
     ),
   );
 }

@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+export PAPERLESS_SCREENSHOT_DATA_SOURCE="live"
+export PAPERLESS_SCREENSHOT_SERVER_URL="https://your-paperless-demo.example.com"
+export PAPERLESS_SCREENSHOT_USERNAME="demo"
+export PAPERLESS_SCREENSHOT_PASSWORD="replace-me"
+# Optional. Used only for display purposes in some screenshot flows.
+export PAPERLESS_SCREENSHOT_DISPLAY_NAME="Demo User"

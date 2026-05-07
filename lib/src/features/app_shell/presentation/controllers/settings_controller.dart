@@ -18,7 +18,7 @@ class SettingsController extends Notifier<SettingsFormState> {
 
   @override
   SettingsFormState build() {
-    final session = ref.watch(authSessionProvider);
+    final session = ref.watch(authDisplaySessionProvider);
     return SettingsFormState.fromSession(session);
   }
 

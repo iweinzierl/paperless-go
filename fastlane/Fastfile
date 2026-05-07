@@ -29,7 +29,7 @@ ANDROID_SCREENSHOT_TARGETS = [
     device_type: "phone",
     option_key: :phone_device,
     env_key: "ANDROID_PHONE_SCREENSHOT_DEVICE",
-    default_device_name: "Pixel_9",
+    default_device_name: "Pixel_10",
     required: true,
   },
   {
@@ -41,6 +41,20 @@ ANDROID_SCREENSHOT_TARGETS = [
     required: false,
   },
 ].freeze
+IOS_SCREENSHOT_DEVICE_TARGETS = [
+  {
+    description: "6.3-inch iPhone",
+    preferred_names: ["iPhone 16 Pro", "iPhone 17 Pro", "iPhone 15 Pro", "iPhone 14 Pro"],
+  },
+  {
+    description: "6.5-inch iPhone",
+    preferred_names: ["iPhone 11 Pro Max", "iPhone 17 Pro Max", "iPhone 16 Pro Max", "iPhone 15 Pro Max", "iPhone 14 Pro Max"],
+  },
+  {
+    description: "13-inch iPad",
+    preferred_names: ["iPad Air 13-inch (M4)", "iPad Pro 13-inch (M5)", "iPad Pro 13-inch (M4)", "iPad Air 11-inch (M4)", "iPad (A16)"],
+  },
+].freeze
 APP_STORE_CONNECT_API_KEY_CONFIG = File.expand_path(
   ENV["APP_STORE_CONNECT_API_KEY_JSON_PATH"] || "app-store-connect-api-key.json",
   FASTLANE_DIR,
@@ -49,6 +63,105 @@ IOS_SCREENSHOT_DEVICE_DIR = "phoneScreenshots"
 IOS_DELIVER_LOCALE_ALIASES = {
   "it-IT" => "it",
 }.freeze
+SCREENSHOT_ENV_FALLBACK_FILE = File.expand_path("../scripts/screenshot-env.sh", FASTLANE_DIR)
+
+def patch_snapshot_destination_generation!
+  return if defined?(@snapshot_destination_generation_patched) && @snapshot_destination_generation_patched
+
+  require "snapshot/test_command_generator"
+  require "snapshot/test_command_generator_xcode_8"
+
+  patched_destination = lambda do |devices|
+    unless verify_devices_share_os(devices)
+      UI.user_error!("All devices provided to snapshot should run the same operating system")
+    end
+
+    return ["-destination 'platform=macOS'"] if devices.first.to_s =~ /^Mac/
+
+    os = case devices.first.to_s
+    when /^Apple TV/
+      "tvOS"
+    when /^Apple Watch/
+      "watchOS"
+    else
+      "iOS"
+    end
+
+    os_version = Snapshot.config[:ios_version] || Snapshot::LatestOsVersion.version(os)
+
+    destinations = devices.map do |device_name|
+      device = find_device(device_name, os_version)
+      if device.nil?
+        UI.user_error!("No device found named '#{device_name}' for version '#{os_version}'")
+      elsif device.os_version != os_version
+        UI.important(
+          "Using device named '#{device.name}' with version '#{device.os_version}' because no match was found for version '#{os_version}'",
+        )
+      end
+
+      "-destination 'platform=#{os} Simulator,id=#{device.udid}'"
+    end
+
+    [destinations.join(" ")]
+  end
+
+  Snapshot::TestCommandGenerator.singleton_class.send(:define_method, :destination, &patched_destination)
+
+  Snapshot::TestCommandGeneratorXcode8.singleton_class.send(:define_method, :destination) do |device_name|
+    return ["-destination 'platform=macOS'"] if device_name =~ /^Mac/
+
+    os = device_name =~ /^Apple TV/ ? "tvOS" : "iOS"
+    os_version = Snapshot.config[:ios_version] || Snapshot::LatestOsVersion.version(os)
+
+    device = find_device(device_name, os_version)
+    if device.nil?
+      UI.user_error!("No device found named '#{device_name}' for version '#{os_version}'")
+    elsif device.os_version != os_version
+      UI.important(
+        "Using device named '#{device_name}' with version '#{device.os_version}' because no match was found for version '#{os_version}'",
+      )
+    end
+
+    ["-destination 'platform=#{os} Simulator,id=#{device.udid}'"]
+  end
+
+  @snapshot_destination_generation_patched = true
+end
+
+def patch_snapshot_boot_wait!
+  return if defined?(@snapshot_boot_wait_patched) && @snapshot_boot_wait_patched
+
+  require "snapshot/simulator_launchers/simulator_launcher_base"
+
+  Snapshot::SimulatorLauncherBase.class_eval(
+    <<~'RUBY',
+      def override_status_bar(device_type, arguments = nil)
+        device_udid = Snapshot::TestCommandGenerator.device_udid(device_type)
+
+        UI.message("Launch Simulator #{device_type}")
+        Helper.backticks("xcrun simctl boot #{device_udid} &> /dev/null || true")
+
+        boot_sleep = ENV.fetch("SNAPSHOT_SIMULATOR_WAIT_FOR_BOOT_TIMEOUT", "10").to_i
+        UI.message("Waiting #{boot_sleep} seconds for device to fully boot before overriding status bar... Set 'SNAPSHOT_SIMULATOR_WAIT_FOR_BOOT_TIMEOUT' environment variable to adjust timeout")
+        sleep(boot_sleep) if boot_sleep > 0
+
+        UI.message("Overriding Status Bar")
+
+        if arguments.nil? || arguments.empty?
+          time = Time.new(2007, 1, 9, 9, 41, 0)
+          time_str = time.strftime("%H:%M")
+          arguments = "--time #{time_str} --dataNetwork wifi --wifiMode active --wifiBars 3 --cellularMode active --operatorName '' --cellularBars 4 --batteryState charged --batteryLevel 100"
+        end
+
+        Helper.backticks("xcrun simctl status_bar #{device_udid} override #{arguments} &> /dev/null")
+      end
+    RUBY
+    __FILE__,
+    __LINE__ + 1,
+  )
+
+  @snapshot_boot_wait_patched = true
+end
 
 def current_version_line
   pubspec_contents = File.read(PUBSPEC_FILE)
@@ -56,6 +169,54 @@ def current_version_line
   UI.user_error!("Missing version in #{PUBSPEC_FILE}") if version_line.nil?
 
   version_line
+end
+
+def screenshot_data_source
+  configured_value = ENV["PAPERLESS_SCREENSHOT_DATA_SOURCE"].to_s.strip.downcase
+  return "live" if configured_value.empty?
+
+  unless ["mock", "live"].include?(configured_value)
+    UI.user_error!(
+      "Unsupported PAPERLESS_SCREENSHOT_DATA_SOURCE value '#{configured_value}'. Use 'mock' or 'live'.",
+    )
+  end
+
+  configured_value
+end
+
+def live_screenshot_data_source?
+  screenshot_data_source == "live"
+end
+
+def ensure_live_screenshot_configuration!(platform_name)
+  return unless live_screenshot_data_source?
+
+  required_keys = %w[
+    PAPERLESS_SCREENSHOT_SERVER_URL
+    PAPERLESS_SCREENSHOT_USERNAME
+    PAPERLESS_SCREENSHOT_PASSWORD
+  ]
+  missing_keys = required_keys.select { |key| ENV[key].to_s.strip.empty? }
+  return if missing_keys.empty?
+
+  UI.user_error!(
+    "Missing #{platform_name} screenshot configuration: #{missing_keys.join(', ')}. Set them in the environment or source #{SCREENSHOT_ENV_FALLBACK_FILE} locally.",
+  )
+end
+
+def android_screengrab_launch_arguments
+  arguments = [
+    "paperlessScreenshotDataSource #{Shellwords.escape(screenshot_data_source)}",
+  ]
+
+  return arguments unless live_screenshot_data_source?
+
+  ensure_live_screenshot_configuration!("Android")
+  arguments << "paperlessScreenshotServerUrl #{Shellwords.escape(ENV.fetch('PAPERLESS_SCREENSHOT_SERVER_URL'))}"
+  arguments << "paperlessScreenshotUsername #{Shellwords.escape(ENV.fetch('PAPERLESS_SCREENSHOT_USERNAME'))}"
+  arguments << "paperlessScreenshotPassword #{Shellwords.escape(ENV.fetch('PAPERLESS_SCREENSHOT_PASSWORD'))}"
+
+  arguments
 end
 
 def current_version_name
@@ -363,6 +524,81 @@ def ensure_ios_metadata_inputs!(options)
   if !options[:skip_screenshots] && !Dir.exist?(screenshots_path)
     UI.user_error!("Missing iOS screenshots directory: #{screenshots_path}")
   end
+end
+
+def ios_available_simulator_names
+  simulator_list = JSON.parse(sh("xcrun simctl list devices available -j", log: false))
+
+  simulator_list.fetch("devices", {}).values.flatten.filter_map do |device|
+    next unless device["isAvailable"]
+
+    name = device["name"].to_s.strip
+    next if name.empty?
+
+    name
+  end.uniq
+end
+
+def ios_available_simulators
+  simulator_list = JSON.parse(sh("xcrun simctl list devices available -j", log: false))
+
+  simulator_list.fetch("devices", {}).values.flatten.filter_map do |device|
+    next unless device["isAvailable"]
+
+    name = device["name"].to_s.strip
+    os_version = device["os"].to_s.strip
+    next if name.empty? || os_version.empty?
+
+    {
+      name: name,
+      os_version: os_version,
+    }
+  end
+end
+
+def ios_default_screenshot_devices
+  available_names = ios_available_simulator_names
+  missing_targets = []
+
+  selected_devices = IOS_SCREENSHOT_DEVICE_TARGETS.filter_map do |target|
+    selected_name = target[:preferred_names].find { |name| available_names.include?(name) }
+    missing_targets << target[:description] if selected_name.nil?
+    selected_name
+  end
+
+  return selected_devices if missing_targets.empty?
+
+  UI.user_error!(
+    "Could not resolve iOS screenshot simulators for #{missing_targets.join(', ')}. Available simulators: #{available_names.join(', ')}",
+  )
+end
+
+def ios_destination_runtime_version(workspace:, scheme:, device_names:)
+  showdestinations_output = sh(
+    "xcodebuild -showdestinations -workspace #{Shellwords.escape(workspace)} -scheme #{Shellwords.escape(scheme)}",
+    log: false,
+  )
+
+  matching_versions = showdestinations_output.each_line.filter_map do |line|
+    stripped_line = line.strip
+    next unless stripped_line.include?("platform:iOS Simulator")
+
+    match = stripped_line.match(/OS:(?<os_version>[^,}]+), name:(?<name>[^}]+)/)
+    next if match.nil?
+
+    device_name = match[:name].strip
+    next unless device_names.include?(device_name)
+
+    match[:os_version].strip
+  end.uniq
+
+  UI.user_error!("Could not determine iOS simulator runtime version for #{device_names.join(', ')}") if matching_versions.empty?
+
+  return matching_versions.first if matching_versions.length == 1
+
+  UI.user_error!(
+    "Selected iOS screenshot simulators do not share a runtime version: #{matching_versions.join(', ')}",
+  )
 end
 
 def ios_structured_screenshot_paths(root_path)
@@ -967,6 +1203,8 @@ platform :android do
 
   desc "Build screenshot artifacts and capture Play Store screenshots with Screengrab"
   lane :screenshots do |options|
+    ensure_live_screenshot_configuration!("Android")
+
     connected_devices = android_connected_devices
     if connected_devices.empty?
       UI.user_error!(
@@ -1002,6 +1240,7 @@ platform :android do
         clear_previous_screenshots: index.zero?,
         skip_open_summary: index < screenshot_targets.length - 1,
         reinstall_app: true,
+        launch_arguments: android_screengrab_launch_arguments,
       }
       screengrab_options[:locales] = requested_locales unless requested_locales.nil?
       screengrab_options[:specific_device] = target[:specific_device] unless target[:specific_device].nil?
@@ -1050,21 +1289,31 @@ platform :ios do
   lane :screenshots do |options|
     configure_ios_build_environment
     ensure_ios_screenshot_setup!(options)
+    ensure_live_screenshot_configuration!("iOS")
+    patch_snapshot_destination_generation!
+    patch_snapshot_boot_wait!
 
     raw_output_directory = File.expand_path(options[:output_directory] || IOS_SNAPSHOT_RAW_DIRECTORY, PROJECT_ROOT)
+    snapshot_workspace = IOS_WORKSPACE
+    snapshot_scheme = options[:scheme] || ENV["IOS_SNAPSHOT_SCHEME"] || "RunnerScreenshots"
 
     snapshot_options = {
-      workspace: IOS_WORKSPACE,
-      scheme: options[:scheme] || ENV["IOS_SNAPSHOT_SCHEME"] || "RunnerScreenshots",
+      workspace: snapshot_workspace,
+      scheme: snapshot_scheme,
       output_directory: raw_output_directory,
       clear_previous_screenshots: options.key?(:clear_previous_screenshots) ? options[:clear_previous_screenshots] : true,
       reinstall_app: options.key?(:reinstall_app) ? options[:reinstall_app] : true,
       erase_simulator: options.key?(:erase_simulator) ? options[:erase_simulator] : true,
       stop_after_first_error: options.key?(:stop_after_first_error) ? options[:stop_after_first_error] : true,
+      concurrent_simulators: options.key?(:concurrent_simulators) ? options[:concurrent_simulators] : false,
     }
-    snapshot_options[:devices] = Array(options[:devices]) if options[:devices]
+    snapshot_options[:devices] = options[:devices] ? Array(options[:devices]) : ios_default_screenshot_devices
     snapshot_options[:languages] = Array(options[:languages]) if options[:languages]
-    snapshot_options[:ios_version] = options[:ios_version] if options[:ios_version]
+    snapshot_options[:ios_version] = options[:ios_version] || ios_destination_runtime_version(
+      workspace: snapshot_workspace,
+      scheme: snapshot_scheme,
+      device_names: snapshot_options[:devices],
+    )
 
     snapshot(**snapshot_options)
 
