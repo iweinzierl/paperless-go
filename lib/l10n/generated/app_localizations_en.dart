@@ -209,7 +209,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get themeModeSubtitle =>
-      'Choose whether the app uses the light or dark color palette.';
+      'Choose whether the app follows the system appearance or always uses the light or dark color palette.';
+
+  @override
+  String get themeModeSystem => 'System default';
 
   @override
   String get themeModeLight => 'Light';

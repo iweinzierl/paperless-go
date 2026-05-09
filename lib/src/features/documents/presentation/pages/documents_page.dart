@@ -121,133 +121,116 @@ class _DocumentsPageState extends ConsumerState<DocumentsPage> {
         ? DocumentsLayoutMode.list
         : layoutMode;
 
-    final bodyContent = DecoratedBox(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            theme.colorScheme.surface,
-            theme.colorScheme.surfaceContainerHigh,
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
+    final bodyContent = ColoredBox(
+      color: theme.colorScheme.surface,
       child: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 10),
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(0, 8, 0, 4),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 10),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (isWideScreen) ...[
                   Row(
                     children: [
                       Expanded(
-                        child: TextField(
-                          controller: _searchController,
-                          focusNode: _searchFocusNode,
-                          textInputAction: TextInputAction.search,
-                          onSubmitted: _submitSearch,
-                          decoration: InputDecoration(
-                            hintText: l10n.searchByTitleHint,
-                            prefixIcon: const Icon(Icons.search),
-                            suffixIcon: query.isNotEmpty
-                                ? IconButton(
-                                    tooltip: l10n.clearSearchTooltip,
-                                    onPressed: _clearSearch,
-                                    icon: const Icon(Icons.close),
-                                  )
-                                : null,
+                        child: Text(
+                          l10n.navigationDocuments,
+                          style: theme.textTheme.headlineLarge?.copyWith(
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      IconButton.filledTonal(
-                        tooltip: l10n.filtersTooltip,
-                        onPressed: () => _openFilters(context),
-                        style: IconButton.styleFrom(
-                          minimumSize: const Size(56, 56),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
+                      Flexible(
+                        child: Align(
+                          alignment: Alignment.centerRight,
+                          child: RefreshStatusText(
+                            lastUpdatedAt: _lastUpdatedAt,
+                            isRefreshing: documentsPage.isRefreshing,
+                            lastRefreshFailedAt: _lastRefreshFailedAt,
                           ),
-                        ),
-                        icon: Badge.count(
-                          isLabelVisible: activeFilterCount > 0,
-                          count: activeFilterCount,
-                          child: const Icon(Icons.tune),
                         ),
                       ),
                     ],
                   ),
-                  if (isWideScreen) ...[
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            l10n.navigationDocuments,
-                            style: theme.textTheme.headlineSmall?.copyWith(
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                        Flexible(
-                          child: Align(
-                            alignment: Alignment.centerRight,
-                            child: RefreshStatusText(
-                              lastUpdatedAt: _lastUpdatedAt,
-                              isRefreshing: documentsPage.isRefreshing,
-                              lastRefreshFailedAt: _lastRefreshFailedAt,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                  if (activeFilterCount > 0) ...[
-                    const SizedBox(height: 14),
-                    _ActiveDocumentsControls(
-                      filterState: filterState,
-                      ordering: ordering,
-                      onRemoveTag: (tagId) => _updateFilters(
-                        filterState.copyWith(
-                          tagIds: filterState.tagIds
-                              .where((currentTagId) => currentTagId != tagId)
-                              .toList(growable: false),
-                          clearTag: filterState.tagIds.length == 1,
-                        ),
-                      ),
-                      onClearCorrespondent: filterState.correspondentId != null
-                          ? () => _updateFilters(
-                              filterState.copyWith(clearCorrespondent: true),
-                            )
-                          : null,
-                      onClearDocumentType: filterState.documentTypeId != null
-                          ? () => _updateFilters(
-                              filterState.copyWith(clearDocumentType: true),
-                            )
-                          : null,
-                      onResetOrdering:
-                          ordering != documentsSortOptions.first.ordering
-                          ? () => _updateOrdering(
-                              documentsSortOptions.first.ordering,
-                            )
-                          : null,
-                    ),
-                  ],
-                  const SizedBox(height: 12),
-                  if (!isWideScreen)
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: RefreshStatusText(
-                        lastUpdatedAt: _lastUpdatedAt,
-                        isRefreshing: documentsPage.isRefreshing,
-                        lastRefreshFailedAt: _lastRefreshFailedAt,
-                      ),
-                    ),
+                  const SizedBox(height: 16),
                 ],
-              ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _searchController,
+                        focusNode: _searchFocusNode,
+                        textInputAction: TextInputAction.search,
+                        onSubmitted: _submitSearch,
+                        decoration: InputDecoration(
+                          hintText: l10n.searchByTitleHint,
+                          prefixIcon: const Icon(Icons.search),
+                          suffixIcon: query.isNotEmpty
+                              ? IconButton(
+                                  tooltip: l10n.clearSearchTooltip,
+                                  onPressed: _clearSearch,
+                                  icon: const Icon(Icons.close),
+                                )
+                              : null,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    IconButton.outlined(
+                      tooltip: l10n.filtersTooltip,
+                      onPressed: () => _openFilters(context),
+                      style: IconButton.styleFrom(
+                        minimumSize: const Size(52, 52),
+                        side: BorderSide(
+                          color: theme.colorScheme.outlineVariant,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        backgroundColor: theme.colorScheme.surfaceContainer,
+                        foregroundColor: theme.colorScheme.onSurface,
+                      ),
+                      icon: Badge.count(
+                        isLabelVisible: activeFilterCount > 0,
+                        count: activeFilterCount,
+                        child: const Icon(Icons.tune),
+                      ),
+                    ),
+                  ],
+                ),
+                if (activeFilterCount > 0) ...[
+                  const SizedBox(height: 12),
+                  _ActiveDocumentsControls(
+                    filterState: filterState,
+                    ordering: ordering,
+                    onRemoveTag: (tagId) => _updateFilters(
+                      filterState.copyWith(
+                        tagIds: filterState.tagIds
+                            .where((currentTagId) => currentTagId != tagId)
+                            .toList(growable: false),
+                        clearTag: filterState.tagIds.length == 1,
+                      ),
+                    ),
+                    onClearCorrespondent: filterState.correspondentId != null
+                        ? () => _updateFilters(
+                            filterState.copyWith(clearCorrespondent: true),
+                          )
+                        : null,
+                    onClearDocumentType: filterState.documentTypeId != null
+                        ? () => _updateFilters(
+                            filterState.copyWith(clearDocumentType: true),
+                          )
+                        : null,
+                    onResetOrdering:
+                        ordering != documentsSortOptions.first.ordering
+                        ? () => _updateOrdering(
+                            documentsSortOptions.first.ordering,
+                          )
+                        : null,
+                  ),
+                ],
+              ],
             ),
           ),
           Expanded(
@@ -259,6 +242,9 @@ class _DocumentsPageState extends ConsumerState<DocumentsPage> {
                       ? _DocumentsList(
                           page: page,
                           layoutMode: effectiveLayoutMode,
+                          lastUpdatedAt: _lastUpdatedAt,
+                          isRefreshing: documentsPage.isRefreshing,
+                          lastRefreshFailedAt: _lastRefreshFailedAt,
                           onPreviousPage:
                               page.count > 0 &&
                                   ref.read(documentsCurrentPageProvider) > 1
@@ -348,22 +334,17 @@ class _DocumentsPageState extends ConsumerState<DocumentsPage> {
           ? SafeArea(
               bottom: false,
               minimum: const EdgeInsets.only(top: 8),
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      theme.colorScheme.surface,
-                      theme.colorScheme.surfaceContainerHigh,
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                ),
+              child: ColoredBox(
+                color: theme.colorScheme.surface,
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Expanded(flex: 1, child: bodyContent),
-                    const VerticalDivider(width: 1, thickness: 1),
+                    VerticalDivider(
+                      width: 1,
+                      thickness: 1,
+                      color: theme.colorScheme.outlineVariant,
+                    ),
                     Expanded(
                       flex: 2,
                       child: Consumer(
@@ -590,12 +571,18 @@ class _DocumentsList extends ConsumerWidget {
   const _DocumentsList({
     required this.page,
     required this.layoutMode,
+    required this.lastUpdatedAt,
+    required this.isRefreshing,
+    required this.lastRefreshFailedAt,
     required this.onPreviousPage,
     required this.onNextPage,
   });
 
   final PaperlessDocumentPage page;
   final DocumentsLayoutMode layoutMode;
+  final DateTime? lastUpdatedAt;
+  final bool isRefreshing;
+  final DateTime? lastRefreshFailedAt;
   final VoidCallback? onPreviousPage;
   final VoidCallback? onNextPage;
 
@@ -613,14 +600,15 @@ class _DocumentsList extends ConsumerWidget {
         children: [
           DecoratedBox(
             decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerLow,
-              borderRadius: BorderRadius.circular(28),
+              color: theme.colorScheme.surfaceContainer,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: theme.colorScheme.outlineVariant),
             ),
             child: Padding(
-              padding: const EdgeInsets.all(28),
+              padding: const EdgeInsets.all(20),
               child: Text(
                 l10n.noDocumentsMatchSearch,
-                style: theme.textTheme.titleMedium?.copyWith(
+                style: theme.textTheme.bodyLarge?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
@@ -634,14 +622,43 @@ class _DocumentsList extends ConsumerWidget {
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
       children: [
-        Text(
-          l10n.documentCount(page.count),
-          style: theme.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w700,
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final countLabel = Text(
+              l10n.documentCount(page.count),
+              style: theme.textTheme.labelLarge?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            );
+            final refreshStatus = RefreshStatusText(
+              lastUpdatedAt: lastUpdatedAt,
+              isRefreshing: isRefreshing,
+              lastRefreshFailedAt: lastRefreshFailedAt,
+            );
+
+            if (constraints.maxWidth < 280) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  countLabel,
+                  const SizedBox(height: 8),
+                  Align(alignment: Alignment.centerRight, child: refreshStatus),
+                ],
+              );
+            }
+
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(child: countLabel),
+                const SizedBox(width: 12),
+                refreshStatus,
+              ],
+            );
+          },
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 12),
         for (final document in page.results) ...[
           if (layoutMode == DocumentsLayoutMode.card)
             PaperlessDocumentCard(
@@ -650,42 +667,34 @@ class _DocumentsList extends ConsumerWidget {
               footer: Row(
                 children: [
                   SizedBox(
-                    width: 148,
+                    width: 140,
                     child: FilledButton(
                       onPressed: openingIds.contains(document.id)
                           ? null
                           : () => _openDocument(context, ref, document),
                       style: FilledButton.styleFrom(
-                        minimumSize: const Size.fromHeight(58),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 18,
-                          vertical: 12,
-                        ),
-                        shape: const StadiumBorder(),
+                        minimumSize: const Size.fromHeight(52),
                         textStyle: theme.textTheme.labelLarge?.copyWith(
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 1.2,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                       child: Text(
-                        (openingIds.contains(document.id)
-                                ? l10n.openingAction
-                                : l10n.openAction)
-                            .toUpperCase(),
+                        openingIds.contains(document.id)
+                            ? l10n.openingAction
+                            : l10n.openAction,
                       ),
                     ),
                   ),
                   const Spacer(),
-                  TextButton(
+                  OutlinedButton(
                     onPressed: () => _openDetails(context, ref, document),
-                    style: TextButton.styleFrom(
-                      foregroundColor: theme.colorScheme.primary,
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size(116, 52),
                       textStyle: theme.textTheme.labelLarge?.copyWith(
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 1.2,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
-                    child: Text(l10n.detailsAction.toUpperCase()),
+                    child: Text(l10n.detailsAction),
                   ),
                 ],
               ),
@@ -702,8 +711,9 @@ class _DocumentsList extends ConsumerWidget {
         const SizedBox(height: 6),
         DecoratedBox(
           decoration: BoxDecoration(
-            color: theme.colorScheme.surfaceContainerLow,
-            borderRadius: BorderRadius.circular(24),
+            color: theme.colorScheme.surfaceContainer,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: theme.colorScheme.outlineVariant),
           ),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -789,11 +799,12 @@ class _DocumentsError extends StatelessWidget {
       children: [
         DecoratedBox(
           decoration: BoxDecoration(
-            color: theme.colorScheme.surfaceContainerLow,
-            borderRadius: BorderRadius.circular(28),
+            color: theme.colorScheme.surfaceContainer,
+            border: Border.all(color: theme.colorScheme.outlineVariant),
+            borderRadius: BorderRadius.circular(12),
           ),
           child: Padding(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(20),
             child: Column(
               children: [
                 Text(context.l10n.couldNotLoadDocuments),
@@ -824,11 +835,12 @@ class _DocumentsLoading extends StatelessWidget {
       children: [
         DecoratedBox(
           decoration: BoxDecoration(
-            color: theme.colorScheme.surfaceContainerLow,
-            borderRadius: BorderRadius.circular(28),
+            color: theme.colorScheme.surfaceContainer,
+            border: Border.all(color: theme.colorScheme.outlineVariant),
+            borderRadius: BorderRadius.circular(12),
           ),
           child: const Padding(
-            padding: EdgeInsets.all(28),
+            padding: EdgeInsets.all(20),
             child: Center(child: CircularProgressIndicator()),
           ),
         ),

@@ -45,257 +45,203 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     _syncController(_passwordController, formState.password);
 
     return Scaffold(
-      body: DecoratedBox(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              theme.colorScheme.surface,
-              theme.colorScheme.surfaceContainerHigh,
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
+      body: ColoredBox(
+        color: theme.colorScheme.surface,
         child: SafeArea(
           child: LayoutBuilder(
             builder: (context, constraints) {
               final isCompactHeight = constraints.maxHeight < 820;
               final horizontalPadding = isCompactHeight ? 20.0 : 24.0;
               final topPadding = isCompactHeight ? 16.0 : 28.0;
-              final cardRadius = isCompactHeight ? 32.0 : 40.0;
+              final cardRadius = 12.0;
               final cardPadding = isCompactHeight
-                  ? const EdgeInsets.fromLTRB(22, 22, 22, 24)
-                  : const EdgeInsets.fromLTRB(28, 28, 28, 30);
+                  ? const EdgeInsets.fromLTRB(20, 20, 20, 22)
+                  : const EdgeInsets.fromLTRB(24, 24, 24, 26);
 
-              return Stack(
-                children: [
-                  Positioned(
-                    top: -80,
-                    left: -60,
-                    child: _GlowOrb(
-                      color: theme.colorScheme.primary.withValues(alpha: 0.16),
-                      size: isCompactHeight ? 180 : 220,
-                    ),
+              return Center(
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.fromLTRB(
+                    horizontalPadding,
+                    topPadding,
+                    horizontalPadding,
+                    16,
                   ),
-                  Positioned(
-                    right: -90,
-                    bottom: 80,
-                    child: _GlowOrb(
-                      color: theme.colorScheme.secondary.withValues(alpha: 0.2),
-                      size: isCompactHeight ? 200 : 240,
-                    ),
-                  ),
-                  Center(
-                    child: SingleChildScrollView(
-                      padding: EdgeInsets.fromLTRB(
-                        horizontalPadding,
-                        topPadding,
-                        horizontalPadding,
-                        16,
-                      ),
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 560),
-                        child: Column(
-                          children: [
-                            _LogoMark(
-                              title: l10n.appTitle,
-                              compact: isCompactHeight,
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 560),
+                    child: Column(
+                      children: [
+                        _LogoMark(
+                          title: l10n.appTitle,
+                          compact: isCompactHeight,
+                        ),
+                        SizedBox(height: isCompactHeight ? 10 : 18),
+                        DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.surfaceContainer,
+                            borderRadius: BorderRadius.circular(cardRadius),
+                            border: Border.all(
+                              color: theme.colorScheme.outlineVariant,
                             ),
-                            SizedBox(height: isCompactHeight ? 10 : 18),
-                            DecoratedBox(
-                              decoration: BoxDecoration(
-                                color: theme.colorScheme.surfaceContainerLow,
-                                borderRadius: BorderRadius.circular(cardRadius),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: theme.colorScheme.shadow.withValues(
-                                      alpha: 0.08,
+                          ),
+                          child: Padding(
+                            padding: cardPadding,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if (formState.loginStatus.hasError) ...[
+                                  _LoginStatusBanner(
+                                    message: localizeAuthFailure(
+                                      l10n,
+                                      formState.loginStatus.error!,
+                                      genericFallback: l10n.loginFailedGeneric,
                                     ),
-                                    blurRadius: 28,
-                                    offset: const Offset(0, 16),
+                                    isError: true,
+                                  ),
+                                  SizedBox(height: isCompactHeight ? 14 : 20),
+                                ],
+                                Text(
+                                  l10n.loginConnectTitle,
+                                  style:
+                                      (isCompactHeight
+                                              ? theme.textTheme.headlineSmall
+                                              : theme.textTheme.headlineMedium)
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                ),
+                                SizedBox(height: isCompactHeight ? 10 : 14),
+                                Text(
+                                  l10n.loginConnectDescription,
+                                  style: theme.textTheme.bodyLarge?.copyWith(
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                    height: 1.4,
+                                  ),
+                                ),
+                                SizedBox(height: isCompactHeight ? 22 : 30),
+                                _LoginTextField(
+                                  controller: _serverUrlController,
+                                  label: l10n.serverUrlLabel,
+                                  hintText: l10n.serverUrlHint,
+                                  keyboardType: TextInputType.url,
+                                  prefixIcon: Icons.link,
+                                  errorText: formState.serverUrlError(
+                                    l10n.loginValidationServerUrlRequired,
+                                    l10n.loginValidationFullUrl,
+                                  ),
+                                  onChanged: controller.updateServerUrl,
+                                  compact: isCompactHeight,
+                                ),
+                                SizedBox(height: isCompactHeight ? 14 : 18),
+                                _LoginTextField(
+                                  controller: _usernameController,
+                                  label: l10n.usernameLabel,
+                                  hintText: l10n.usernameHint,
+                                  keyboardType: TextInputType.emailAddress,
+                                  prefixIcon: Icons.person_outline,
+                                  errorText: formState.usernameError(
+                                    l10n.loginValidationUsernameRequired,
+                                  ),
+                                  onChanged: controller.updateUsername,
+                                  compact: isCompactHeight,
+                                ),
+                                SizedBox(height: isCompactHeight ? 14 : 18),
+                                _LoginTextField(
+                                  controller: _passwordController,
+                                  label: l10n.passwordLabel,
+                                  hintText: l10n.passwordHint,
+                                  keyboardType: TextInputType.visiblePassword,
+                                  obscureText: formState.obscurePassword,
+                                  prefixIcon: Icons.lock_outline,
+                                  errorText: formState.passwordError(
+                                    l10n.loginValidationPasswordRequired,
+                                  ),
+                                  onChanged: controller.updatePassword,
+                                  compact: isCompactHeight,
+                                  suffixIcon: IconButton(
+                                    onPressed:
+                                        controller.togglePasswordVisibility,
+                                    icon: Icon(
+                                      formState.obscurePassword
+                                          ? Icons.visibility_outlined
+                                          : Icons.visibility_off_outlined,
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(height: isCompactHeight ? 20 : 28),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: FilledButton.icon(
+                                    onPressed: formState.isSubmitting
+                                        ? null
+                                        : controller.submit,
+                                    icon: formState.isSubmitting
+                                        ? const SizedBox(
+                                            width: 18,
+                                            height: 18,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                            ),
+                                          )
+                                        : const Icon(Icons.arrow_forward),
+                                    iconAlignment: IconAlignment.end,
+                                    label: Text(l10n.loginButton),
+                                  ),
+                                ),
+                                if (formState.connectedDisplayName != null) ...[
+                                  SizedBox(height: isCompactHeight ? 12 : 16),
+                                  Center(
+                                    child: Text(
+                                      l10n.connectedAs(
+                                        formState.connectedDisplayName!,
+                                      ),
+                                      style: theme.textTheme.bodyMedium
+                                          ?.copyWith(
+                                            color: theme.colorScheme.primary,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                    ),
                                   ),
                                 ],
-                              ),
-                              child: Padding(
-                                padding: cardPadding,
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    if (formState.loginStatus.hasError) ...[
-                                      _LoginStatusBanner(
-                                        message: localizeAuthFailure(
-                                          l10n,
-                                          formState.loginStatus.error!,
-                                          genericFallback:
-                                              l10n.loginFailedGeneric,
-                                        ),
-                                        isError: true,
-                                      ),
-                                      SizedBox(
-                                        height: isCompactHeight ? 14 : 20,
-                                      ),
-                                    ],
-                                    Text(
-                                      l10n.loginConnectTitle,
-                                      style:
-                                          (isCompactHeight
-                                                  ? theme
-                                                        .textTheme
-                                                        .headlineSmall
-                                                  : theme
-                                                        .textTheme
-                                                        .headlineMedium)
-                                              ?.copyWith(
-                                                fontWeight: FontWeight.w800,
-                                                letterSpacing: -0.8,
-                                              ),
-                                    ),
-                                    SizedBox(height: isCompactHeight ? 10 : 14),
-                                    Text(
-                                      l10n.loginConnectDescription,
-                                      style: theme.textTheme.bodyLarge
-                                          ?.copyWith(
-                                            color: theme
-                                                .colorScheme
-                                                .onSurfaceVariant,
-                                            height: 1.4,
-                                          ),
-                                    ),
-                                    SizedBox(height: isCompactHeight ? 22 : 30),
-                                    _LoginTextField(
-                                      controller: _serverUrlController,
-                                      label: l10n.serverUrlLabel,
-                                      hintText: l10n.serverUrlHint,
-                                      keyboardType: TextInputType.url,
-                                      prefixIcon: Icons.link,
-                                      errorText: formState.serverUrlError(
-                                        l10n.loginValidationServerUrlRequired,
-                                        l10n.loginValidationFullUrl,
-                                      ),
-                                      onChanged: controller.updateServerUrl,
-                                      compact: isCompactHeight,
-                                    ),
-                                    SizedBox(height: isCompactHeight ? 14 : 18),
-                                    _LoginTextField(
-                                      controller: _usernameController,
-                                      label: l10n.usernameLabel,
-                                      hintText: l10n.usernameHint,
-                                      keyboardType: TextInputType.emailAddress,
-                                      prefixIcon: Icons.person_outline,
-                                      errorText: formState.usernameError(
-                                        l10n.loginValidationUsernameRequired,
-                                      ),
-                                      onChanged: controller.updateUsername,
-                                      compact: isCompactHeight,
-                                    ),
-                                    SizedBox(height: isCompactHeight ? 14 : 18),
-                                    _LoginTextField(
-                                      controller: _passwordController,
-                                      label: l10n.passwordLabel,
-                                      hintText: l10n.passwordHint,
-                                      keyboardType:
-                                          TextInputType.visiblePassword,
-                                      obscureText: formState.obscurePassword,
-                                      prefixIcon: Icons.lock_outline,
-                                      errorText: formState.passwordError(
-                                        l10n.loginValidationPasswordRequired,
-                                      ),
-                                      onChanged: controller.updatePassword,
-                                      compact: isCompactHeight,
-                                      suffixIcon: IconButton(
-                                        onPressed:
-                                            controller.togglePasswordVisibility,
-                                        icon: Icon(
-                                          formState.obscurePassword
-                                              ? Icons.visibility_outlined
-                                              : Icons.visibility_off_outlined,
-                                        ),
-                                      ),
-                                    ),
-                                    SizedBox(height: isCompactHeight ? 20 : 28),
-                                    SizedBox(
-                                      width: double.infinity,
-                                      child: FilledButton.icon(
-                                        onPressed: formState.isSubmitting
-                                            ? null
-                                            : controller.submit,
-                                        icon: formState.isSubmitting
-                                            ? const SizedBox(
-                                                width: 18,
-                                                height: 18,
-                                                child:
-                                                    CircularProgressIndicator(
-                                                      strokeWidth: 2,
-                                                    ),
-                                              )
-                                            : const Icon(Icons.arrow_forward),
-                                        iconAlignment: IconAlignment.end,
-                                        label: Text(
-                                          l10n.loginButton.toUpperCase(),
-                                        ),
-                                      ),
-                                    ),
-                                    if (formState.connectedDisplayName !=
-                                        null) ...[
-                                      SizedBox(
-                                        height: isCompactHeight ? 12 : 16,
-                                      ),
-                                      Center(
-                                        child: Text(
-                                          l10n.connectedAs(
-                                            formState.connectedDisplayName!,
-                                          ),
-                                          style: theme.textTheme.bodyMedium
-                                              ?.copyWith(
-                                                color:
-                                                    theme.colorScheme.primary,
-                                                fontWeight: FontWeight.w700,
-                                              ),
-                                        ),
-                                      ),
-                                    ],
-                                  ],
-                                ),
-                              ),
-                            ),
-                            SizedBox(height: isCompactHeight ? 14 : 20),
-                            Wrap(
-                              alignment: WrapAlignment.center,
-                              crossAxisAlignment: WrapCrossAlignment.center,
-                              spacing: 12,
-                              runSpacing: 6,
-                              children: [
-                                TextButton(
-                                  onPressed: _openSupport,
-                                  child: Text(l10n.helpFeedbackTitle),
-                                ),
-                                Text(
-                                  '•',
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    color: theme.colorScheme.onSurfaceVariant,
-                                  ),
-                                ),
-                                TextButton(
-                                  onPressed: _openDocumentation,
-                                  child: Text(l10n.documentationTitle),
-                                ),
                               ],
                             ),
-                            SizedBox(height: isCompactHeight ? 12 : 18),
+                          ),
+                        ),
+                        SizedBox(height: isCompactHeight ? 14 : 20),
+                        Wrap(
+                          alignment: WrapAlignment.center,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          spacing: 12,
+                          runSpacing: 6,
+                          children: [
+                            TextButton(
+                              onPressed: _openSupport,
+                              child: Text(l10n.helpFeedbackTitle),
+                            ),
                             Text(
-                              'POWERED BY PAPERLESS-NGX',
-                              style: theme.textTheme.labelMedium?.copyWith(
+                              '•',
+                              style: theme.textTheme.bodySmall?.copyWith(
                                 color: theme.colorScheme.onSurfaceVariant,
-                                letterSpacing: 2.0,
-                                fontWeight: FontWeight.w800,
                               ),
+                            ),
+                            TextButton(
+                              onPressed: _openDocumentation,
+                              child: Text(l10n.documentationTitle),
                             ),
                           ],
                         ),
-                      ),
+                        SizedBox(height: isCompactHeight ? 12 : 18),
+                        Text(
+                          'Powered by Paperless-ngx',
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                            letterSpacing: 0.5,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ],
+                ),
               );
             },
           ),
@@ -367,29 +313,6 @@ class _LogoMark extends StatelessWidget {
   }
 }
 
-class _GlowOrb extends StatelessWidget {
-  const _GlowOrb({required this.color, required this.size});
-
-  final Color color;
-  final double size;
-
-  @override
-  Widget build(BuildContext context) {
-    return IgnorePointer(
-      child: Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(color: color, blurRadius: 80, spreadRadius: 10),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class _LoginTextField extends StatelessWidget {
   const _LoginTextField({
     required this.controller,
@@ -422,10 +345,10 @@ class _LoginTextField extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          label.toUpperCase(),
+          label,
           style: theme.textTheme.labelLarge?.copyWith(
-            fontWeight: FontWeight.w800,
-            letterSpacing: 1.1,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.5,
             color: theme.colorScheme.onSurfaceVariant,
           ),
         ),
@@ -469,7 +392,7 @@ class _LoginStatusBanner extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         color: backgroundColor,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(color: foregroundColor.withValues(alpha: 0.14)),
       ),
       child: Padding(

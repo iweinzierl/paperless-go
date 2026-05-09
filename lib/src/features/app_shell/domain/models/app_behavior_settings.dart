@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 enum AppThemeMode {
+  system('system', ThemeMode.system),
   light('light', ThemeMode.light),
   dark('dark', ThemeMode.dark);
 
@@ -12,7 +13,7 @@ enum AppThemeMode {
   static AppThemeMode fromStorageValue(String? value) {
     return AppThemeMode.values.firstWhere(
       (mode) => mode.storageValue == value,
-      orElse: () => AppThemeMode.light,
+      orElse: () => AppThemeMode.system,
     );
   }
 }
@@ -69,7 +70,7 @@ class AppBehaviorSettings {
   const AppBehaviorSettings.defaults()
     : cachePreviewsEnabled = true,
       appLanguage = AppLanguage.system,
-      themeMode = AppThemeMode.light,
+      themeMode = AppThemeMode.system,
       biometricLockEnabled = false,
       appLockTimeout = AppLockTimeout.after30Seconds;
 

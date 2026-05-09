@@ -233,6 +233,10 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                       value: behaviorSettings.themeMode,
                       entries: [
                         DropdownMenuEntry(
+                          value: AppThemeMode.system,
+                          label: l10n.themeModeSystem,
+                        ),
+                        DropdownMenuEntry(
                           value: AppThemeMode.light,
                           label: l10n.themeModeLight,
                         ),
@@ -442,12 +446,14 @@ class _ConnectionStatusBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final theme = Theme.of(context);
 
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primaryContainer,
-        borderRadius: BorderRadius.circular(22),
+        color: theme.colorScheme.primaryContainer,
+        border: Border.all(color: theme.colorScheme.outlineVariant),
+        borderRadius: BorderRadius.circular(12),
       ),
       padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
       child: Row(
@@ -455,7 +461,7 @@ class _ConnectionStatusBanner extends StatelessWidget {
         children: [
           Icon(
             Icons.verified_user_outlined,
-            color: Theme.of(context).colorScheme.onPrimaryContainer,
+            color: theme.colorScheme.onPrimaryContainer,
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -464,16 +470,16 @@ class _ConnectionStatusBanner extends StatelessWidget {
               children: [
                 Text(
                   l10n.connectedAs(displayName),
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onPrimaryContainer,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: theme.colorScheme.onPrimaryContainer,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   serverUrl,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onPrimaryContainer,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onPrimaryContainer,
                   ),
                 ),
               ],
@@ -512,13 +518,13 @@ class _SettingsGroup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Container(
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: Theme.of(context).dividerColor.withValues(alpha: 0.35),
-        ),
+        color: theme.colorScheme.surfaceContainer,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: theme.colorScheme.outlineVariant),
       ),
       child: Column(children: children),
     );

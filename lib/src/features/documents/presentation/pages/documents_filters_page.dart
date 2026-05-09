@@ -68,8 +68,8 @@ class _DocumentsFiltersPageState extends ConsumerState<DocumentsFiltersPage> {
         title: Text(
           '${l10n.filtersTitle} & ${l10n.sortByLabel}',
           style: theme.textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.w800,
-            letterSpacing: -0.3,
+            fontWeight: FontWeight.w700,
+            letterSpacing: -0.2,
           ),
         ),
         actions: [
@@ -127,17 +127,8 @@ class _DocumentsFiltersPageState extends ConsumerState<DocumentsFiltersPage> {
     AsyncValue<List<PaperlessFilterOption>> correspondentOptions,
     AsyncValue<List<PaperlessFilterOption>> documentTypeOptions,
   ) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            theme.colorScheme.surface,
-            theme.colorScheme.surfaceContainerLowest,
-          ],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-        ),
-      ),
+    return ColoredBox(
+      color: theme.colorScheme.surface,
       child: LayoutBuilder(
         builder: (context, constraints) {
           final horizontalInset = constraints.maxWidth > 800
@@ -175,17 +166,8 @@ class _DocumentsFiltersPageState extends ConsumerState<DocumentsFiltersPage> {
     AsyncValue<List<PaperlessFilterOption>> correspondentOptions,
     AsyncValue<List<PaperlessFilterOption>> documentTypeOptions,
   ) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            theme.colorScheme.surface,
-            theme.colorScheme.surfaceContainerLowest,
-          ],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-        ),
-      ),
+    return ColoredBox(
+      color: theme.colorScheme.surface,
       child: SafeArea(
         bottom: false,
         child: Center(
@@ -200,7 +182,7 @@ class _DocumentsFiltersPageState extends ConsumerState<DocumentsFiltersPage> {
                   children: [
                     if (hasActiveFilters) ...[
                       _SectionTitle(title: l10n.filtersTitle),
-                      const SizedBox(height: 14),
+                      const SizedBox(height: 12),
                       _ActiveFiltersWrap(
                         filterState: _filterState,
                         tagOptions: tagOptions,
@@ -210,12 +192,13 @@ class _DocumentsFiltersPageState extends ConsumerState<DocumentsFiltersPage> {
                         onClearCorrespondent: _clearCorrespondent,
                         onClearDocumentType: _clearDocumentType,
                       ),
-                      const SizedBox(height: 28),
+                      const SizedBox(height: 24),
                     ],
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Expanded(
+                          flex: 5,
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -230,14 +213,14 @@ class _DocumentsFiltersPageState extends ConsumerState<DocumentsFiltersPage> {
                             ],
                           ),
                         ),
-                        const SizedBox(width: 28),
+                        const SizedBox(width: 24),
                         SizedBox(
-                          width: 360,
+                          width: 344,
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               _SectionTitle(title: l10n.sortByLabel),
-                              const SizedBox(height: 14),
+                              const SizedBox(height: 12),
                               _SortSectionCard(
                                 ordering: _ordering,
                                 onChanged: (value) {
@@ -273,7 +256,7 @@ class _DocumentsFiltersPageState extends ConsumerState<DocumentsFiltersPage> {
     return [
       if (hasActiveFilters) ...[
         _SectionTitle(title: l10n.filtersTitle),
-        const SizedBox(height: 14),
+        const SizedBox(height: 12),
         _ActiveFiltersWrap(
           filterState: _filterState,
           tagOptions: tagOptions,
@@ -283,19 +266,10 @@ class _DocumentsFiltersPageState extends ConsumerState<DocumentsFiltersPage> {
           onClearCorrespondent: _clearCorrespondent,
           onClearDocumentType: _clearDocumentType,
         ),
-        const SizedBox(height: 28),
+        const SizedBox(height: 24),
       ],
-      _SectionTitle(title: l10n.filtersTitle),
-      const SizedBox(height: 14),
-      ..._buildFilterCards(
-        l10n,
-        tagOptions,
-        correspondentOptions,
-        documentTypeOptions,
-      ),
-      const SizedBox(height: 32),
       _SectionTitle(title: l10n.sortByLabel),
-      const SizedBox(height: 14),
+      const SizedBox(height: 12),
       _SortSectionCard(
         ordering: _ordering,
         onChanged: (value) {
@@ -304,7 +278,15 @@ class _DocumentsFiltersPageState extends ConsumerState<DocumentsFiltersPage> {
           });
         },
       ),
-      if (hasActiveSelections) const SizedBox(height: 8),
+      const SizedBox(height: 28),
+      _SectionTitle(title: l10n.filtersTitle),
+      const SizedBox(height: 14),
+      ..._buildFilterCards(
+        l10n,
+        tagOptions,
+        correspondentOptions,
+        documentTypeOptions,
+      ),
     ];
   }
 
@@ -365,17 +347,8 @@ class _DocumentsFiltersPageState extends ConsumerState<DocumentsFiltersPage> {
         decoration: BoxDecoration(
           color: theme.colorScheme.surface,
           border: Border(
-            top: BorderSide(
-              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.45),
-            ),
+            top: BorderSide(color: theme.colorScheme.outlineVariant),
           ),
-          boxShadow: [
-            BoxShadow(
-              color: theme.colorScheme.shadow.withValues(alpha: 0.08),
-              blurRadius: 18,
-              offset: const Offset(0, -6),
-            ),
-          ],
         ),
         child: LayoutBuilder(
           builder: (context, constraints) {
@@ -405,16 +378,9 @@ class _DocumentsFiltersPageState extends ConsumerState<DocumentsFiltersPage> {
                         ),
                       ],
                     )
-                  : Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _CompactApplyButton(
-                          onApply: _apply,
-                          label: Text(l10n.applyFiltersAction),
-                          icon: const Icon(Icons.arrow_forward_rounded),
-                        ),
-                      ],
+                  : _ActionButtonsRow(
+                      onCancel: () => Navigator.of(context).maybePop(),
+                      onApply: _apply,
                     ),
             );
           },
@@ -506,10 +472,9 @@ class _ActionButtonsRow extends StatelessWidget {
           child: OutlinedButton(
             onPressed: onCancel,
             style: OutlinedButton.styleFrom(
-              minimumSize: const Size.fromHeight(66),
+              minimumSize: const Size.fromHeight(52),
               textStyle: theme.textTheme.labelMedium?.copyWith(
-                fontWeight: FontWeight.w800,
-                letterSpacing: 1.0,
+                fontWeight: FontWeight.w700,
               ),
             ),
             child: Row(
@@ -535,11 +500,9 @@ class _ActionButtonsRow extends StatelessWidget {
           child: FilledButton(
             onPressed: onApply,
             style: FilledButton.styleFrom(
-              minimumSize: const Size.fromHeight(66),
-              shape: const StadiumBorder(),
+              minimumSize: const Size.fromHeight(52),
               textStyle: theme.textTheme.labelMedium?.copyWith(
-                fontWeight: FontWeight.w800,
-                letterSpacing: 1.0,
+                fontWeight: FontWeight.w700,
               ),
             ),
             child: Row(
@@ -564,42 +527,6 @@ class _ActionButtonsRow extends StatelessWidget {
   }
 }
 
-class _CompactApplyButton extends StatelessWidget {
-  const _CompactApplyButton({
-    required this.onApply,
-    required this.label,
-    required this.icon,
-  });
-
-  final VoidCallback onApply;
-  final Widget label;
-  final Widget icon;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return SizedBox(
-      width: double.infinity,
-      child: FilledButton.icon(
-        onPressed: onApply,
-        style: FilledButton.styleFrom(
-          minimumSize: const Size.fromHeight(64),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(22),
-          ),
-          textStyle: theme.textTheme.titleSmall?.copyWith(
-            fontWeight: FontWeight.w800,
-            letterSpacing: 0.2,
-          ),
-        ),
-        icon: icon,
-        label: label,
-      ),
-    );
-  }
-}
-
 class _SectionTitle extends StatelessWidget {
   const _SectionTitle({required this.title});
 
@@ -612,8 +539,8 @@ class _SectionTitle extends StatelessWidget {
       title.toUpperCase(),
       style: theme.textTheme.labelMedium?.copyWith(
         color: theme.colorScheme.onSurfaceVariant,
-        fontWeight: FontWeight.w800,
-        letterSpacing: 1.25,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 0.7,
       ),
     );
   }
@@ -708,35 +635,33 @@ class _FilterChip extends StatelessWidget {
 
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: tint,
-        border: Border.all(
-          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
-        ),
-        borderRadius: BorderRadius.circular(999),
+        color: theme.colorScheme.surfaceContainerHigh,
+        border: Border.all(color: theme.colorScheme.outlineVariant),
+        borderRadius: BorderRadius.circular(8),
       ),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(14, 10, 10, 10),
+        padding: const EdgeInsets.fromLTRB(10, 8, 8, 8),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 18, color: theme.colorScheme.primary),
-            const SizedBox(width: 8),
+            Icon(icon, size: 16, color: theme.colorScheme.secondary),
+            const SizedBox(width: 6),
             Flexible(
               child: Text(
                 label,
                 style: theme.textTheme.bodyMedium?.copyWith(
                   fontWeight: FontWeight.w600,
-                  color: theme.colorScheme.primary,
+                  color: theme.colorScheme.onSurface,
                 ),
               ),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 8),
             GestureDetector(
               onTap: onRemoved,
               child: Icon(
                 Icons.close,
-                size: 18,
-                color: theme.colorScheme.primary,
+                size: 16,
+                color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
           ],
@@ -762,60 +687,52 @@ class _SortSectionCard extends StatelessWidget {
     final theme = Theme.of(context);
     final field = _sortFieldForOrdering(ordering);
     final descending = _isDescendingOrdering(ordering);
+    const fields = <String>['created', 'added', 'title'];
 
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: compact ? 0 : 2),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            context.l10n.sortByLabel,
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w500,
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-          const SizedBox(height: 14),
-          DropdownButtonFormField<String>(
-            value: field,
-            decoration: InputDecoration(
-              filled: true,
-              fillColor: theme.colorScheme.surfaceContainerLow,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(20),
-                borderSide: BorderSide.none,
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(20),
-                borderSide: BorderSide.none,
-              ),
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 18,
-                vertical: 18,
-              ),
-            ),
-            icon: const Icon(Icons.unfold_more_rounded),
-            items: [
-              for (final candidate in const ['created', 'added', 'title'])
-                DropdownMenuItem<String>(
-                  value: candidate,
-                  child: Text(_sortFieldLabel(context, candidate)),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surfaceContainer,
+          border: Border.all(color: theme.colorScheme.outlineVariant),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              for (var index = 0; index < fields.length; index++) ...[
+                _PrimarySortOptionRow(
+                  label: _sortFieldLabel(context, fields[index]),
+                  selected: field == fields[index],
+                  onTap: () => onChanged(
+                    _orderingFor(
+                      fields[index],
+                      field == fields[index]
+                          ? descending
+                          : _defaultDescendingForField(fields[index]),
+                    ),
+                  ),
                 ),
+                if (index != fields.length - 1)
+                  Divider(
+                    height: 1,
+                    thickness: 1,
+                    color: theme.colorScheme.outlineVariant,
+                  ),
+              ],
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: _SortDirectionToggle(
+                  field: field,
+                  descending: descending,
+                  onChanged: (value) => onChanged(_orderingFor(field, value)),
+                ),
+              ),
             ],
-            onChanged: (value) {
-              if (value == null) {
-                return;
-              }
-              onChanged(_orderingFor(value, descending));
-            },
           ),
-          const SizedBox(height: 18),
-          _SortDirectionToggle(
-            field: field,
-            descending: descending,
-            onChanged: (value) => onChanged(_orderingFor(field, value)),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -832,14 +749,9 @@ class _FilterOptionsSection extends StatelessWidget {
 
     return DecoratedBox(
       decoration: BoxDecoration(
-        border: Border(
-          top: BorderSide(
-            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.42),
-          ),
-          bottom: BorderSide(
-            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.42),
-          ),
-        ),
+        color: theme.colorScheme.surfaceContainer,
+        border: Border.all(color: theme.colorScheme.outlineVariant),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
         children: [
@@ -849,7 +761,7 @@ class _FilterOptionsSection extends StatelessWidget {
               Divider(
                 height: 1,
                 thickness: 1,
-                color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
+                color: theme.colorScheme.outlineVariant,
               ),
           ],
         ],
@@ -878,7 +790,8 @@ class _SortDirectionToggle extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         color: inactiveColor,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: theme.colorScheme.outlineVariant),
       ),
       child: Padding(
         padding: const EdgeInsets.all(4),
@@ -946,12 +859,12 @@ class _SortDirectionButton extends StatelessWidget {
       message: tooltip,
       child: Material(
         color: selected ? backgroundColor : Colors.transparent,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(8),
         child: InkWell(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(8),
           onTap: onTap,
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -1165,28 +1078,17 @@ class _CategoryCard extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(0, 18, 0, 18),
+          padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
           child: Row(
             children: [
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: iconBackgroundColor,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Icon(icon, size: 26, color: theme.colorScheme.primary),
-              ),
-              const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       title,
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -1396,26 +1298,9 @@ class _SingleFilterOptionSheetState extends State<_SingleFilterOptionSheet> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                ListTile(
-                  dense: true,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  tileColor: widget.selectedId == null
-                      ? theme.colorScheme.secondaryContainer.withValues(
-                          alpha: 0.45,
-                        )
-                      : null,
-                  leading: Icon(
-                    widget.selectedId == null
-                        ? Icons.radio_button_checked
-                        : Icons.radio_button_off,
-                    color: widget.selectedId == null
-                        ? theme.colorScheme.primary
-                        : theme.colorScheme.onSurfaceVariant,
-                  ),
-                  title: Text(widget.anyLabel),
+                _SelectableOptionRow(
+                  label: widget.anyLabel,
+                  selected: widget.selectedId == null,
                   onTap: () => Navigator.of(context).pop<int?>(null),
                 ),
                 const SizedBox(height: 8),
@@ -1436,27 +1321,9 @@ class _SingleFilterOptionSheetState extends State<_SingleFilterOptionSheet> {
                             final option = visibleOptions[index];
                             final isSelected = option.id == widget.selectedId;
 
-                            return ListTile(
-                              dense: true,
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              tileColor: isSelected
-                                  ? theme.colorScheme.secondaryContainer
-                                        .withValues(alpha: 0.45)
-                                  : null,
-                              leading: Icon(
-                                isSelected
-                                    ? Icons.radio_button_checked
-                                    : Icons.radio_button_off,
-                                color: isSelected
-                                    ? theme.colorScheme.primary
-                                    : theme.colorScheme.onSurfaceVariant,
-                              ),
-                              title: Text(option.name),
+                            return _SelectableOptionRow(
+                              label: option.name,
+                              selected: isSelected,
                               onTap: () =>
                                   Navigator.of(context).pop<int?>(option.id),
                             );
@@ -1676,23 +1543,11 @@ class _MultiFilterOptionSheetState extends State<_MultiFilterOptionSheet> {
                             final option = visibleOptions[index];
                             final isSelected = _selection.contains(option.id);
 
-                            return CheckboxListTile(
-                              value: isSelected,
-                              title: Text(option.name),
-                              dense: true,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              tileColor: isSelected
-                                  ? theme.colorScheme.secondaryContainer
-                                        .withValues(alpha: 0.45)
-                                  : null,
-                              controlAffinity: ListTileControlAffinity.leading,
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                              ),
+                            return _CheckboxOptionRow(
+                              label: option.name,
+                              selected: isSelected,
                               onChanged: (checked) =>
-                                  _toggleOption(option.id, checked == true),
+                                  _toggleOption(option.id, checked),
                             );
                           },
                         ),
@@ -1720,4 +1575,145 @@ class _MultiFilterOptionSheetState extends State<_MultiFilterOptionSheet> {
       ),
     );
   }
+}
+
+class _PrimarySortOptionRow extends StatelessWidget {
+  const _PrimarySortOptionRow({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  label,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                    color: selected
+                        ? theme.colorScheme.primary
+                        : theme.colorScheme.onSurface,
+                  ),
+                ),
+              ),
+              Icon(
+                selected
+                    ? Icons.check_circle_outline_rounded
+                    : Icons.radio_button_unchecked_rounded,
+                color: selected
+                    ? theme.colorScheme.primary
+                    : theme.colorScheme.onSurfaceVariant,
+                size: 26,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SelectableOptionRow extends StatelessWidget {
+  const _SelectableOptionRow({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Material(
+      color: selected
+          ? theme.colorScheme.secondaryContainer.withValues(alpha: 0.45)
+          : Colors.transparent,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          child: Row(
+            children: [
+              Icon(
+                selected ? Icons.radio_button_checked : Icons.radio_button_off,
+                color: selected
+                    ? theme.colorScheme.primary
+                    : theme.colorScheme.onSurfaceVariant,
+              ),
+              const SizedBox(width: 12),
+              Expanded(child: Text(label)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CheckboxOptionRow extends StatelessWidget {
+  const _CheckboxOptionRow({
+    required this.label,
+    required this.selected,
+    required this.onChanged,
+  });
+
+  final String label;
+  final bool selected;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Material(
+      color: selected
+          ? theme.colorScheme.secondaryContainer.withValues(alpha: 0.45)
+          : Colors.transparent,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () => onChanged(!selected),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          child: Row(
+            children: [
+              Checkbox(
+                value: selected,
+                onChanged: (value) => onChanged(value == true),
+              ),
+              Expanded(child: Text(label)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+bool _defaultDescendingForField(String field) {
+  return switch (field) {
+    'title' => false,
+    _ => true,
+  };
 }

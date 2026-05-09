@@ -211,7 +211,10 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get themeModeSubtitle =>
-      'Choisissez si l\'application utilise la palette claire ou sombre.';
+      'Choisissez si l\'application suit l\'apparence du système ou utilise toujours la palette claire ou sombre.';
+
+  @override
+  String get themeModeSystem => 'Par défaut du système';
 
   @override
   String get themeModeLight => 'Clair';

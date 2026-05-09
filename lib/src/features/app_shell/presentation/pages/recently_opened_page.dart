@@ -13,6 +13,7 @@ class RecentlyOpenedPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final documents = ref.watch(recentlyOpenedDocumentsProvider);
     final l10n = context.l10n;
+    final theme = Theme.of(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -31,9 +32,22 @@ class RecentlyOpenedPage extends ConsumerWidget {
           ? Center(
               child: Padding(
                 padding: const EdgeInsets.all(24),
-                child: Text(
-                  l10n.recentlyOpenedEmpty,
-                  textAlign: TextAlign.center,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surfaceContainer,
+                    border: Border.all(color: theme.colorScheme.outlineVariant),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Text(
+                      l10n.recentlyOpenedEmpty,
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
                 ),
               ),
             )
@@ -91,6 +105,7 @@ class _RecentDocumentTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final theme = Theme.of(context);
     final localizedSubtitle =
         document.added != null ||
             document.created != null ||
@@ -107,8 +122,14 @@ class _RecentDocumentTile extends StatelessWidget {
           )
         : document.legacySubtitle ?? '';
 
-    return Card(
-      child: ListTile(
+    return Material(
+      color: theme.colorScheme.surfaceContainer,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: theme.colorScheme.outlineVariant),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
         onTap: () {
           Navigator.of(context).push(
             MaterialPageRoute<void>(
@@ -116,12 +137,50 @@ class _RecentDocumentTile extends StatelessWidget {
             ),
           );
         },
-        leading: const CircleAvatar(child: Icon(Icons.history)),
-        title: Text(document.title),
-        subtitle: Text(
-          '${_formatOpenedAt(context, document.openedAt)} · $localizedSubtitle',
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Row(
+            children: [
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surfaceContainerHigh,
+                  border: Border.all(color: theme.colorScheme.outlineVariant),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(10),
+                  child: Icon(Icons.history, color: theme.colorScheme.primary),
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      document.title,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${_formatOpenedAt(context, document.openedAt)}${localizedSubtitle.isNotEmpty ? ' · $localizedSubtitle' : ''}',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              Icon(
+                Icons.chevron_right,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ],
+          ),
         ),
-        trailing: const Icon(Icons.chevron_right),
       ),
     );
   }

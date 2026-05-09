@@ -56,20 +56,23 @@ class PaperlessDocumentCard extends ConsumerWidget {
     return Card(
       margin: EdgeInsets.zero,
       elevation: 0,
-      color: colorScheme.surfaceContainerLow,
+      color: colorScheme.surfaceContainer,
       surfaceTintColor: Colors.transparent,
-      shadowColor: colorScheme.shadow.withValues(alpha: 0.08),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(34)),
+      shadowColor: colorScheme.shadow.withValues(alpha: 0.04),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: colorScheme.outlineVariant),
+      ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               ClipRRect(
-                borderRadius: BorderRadius.circular(24),
+                borderRadius: BorderRadius.circular(8),
                 child: AspectRatio(
                   aspectRatio: 1.52,
                   child:
@@ -104,23 +107,20 @@ class PaperlessDocumentCard extends ConsumerWidget {
                             )),
                 ),
               ),
-              const SizedBox(height: 18),
+              const SizedBox(height: 16),
               Text(
                 document.title,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.headlineSmall?.copyWith(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.9,
-                  height: 1.05,
+                style: theme.textTheme.headlineMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
               if (correspondentName != null || documentTypeName != null)
                 Wrap(
-                  spacing: 10,
-                  runSpacing: 10,
+                  spacing: 8,
+                  runSpacing: 8,
                   children: [
                     if (correspondentName != null)
                       _SoftChip(label: correspondentName, emphasized: true),
@@ -129,10 +129,10 @@ class PaperlessDocumentCard extends ConsumerWidget {
                   ],
                 ),
               if (tagNames.isNotEmpty) ...[
-                const SizedBox(height: 10),
+                const SizedBox(height: 8),
                 Wrap(
-                  spacing: 10,
-                  runSpacing: 10,
+                  spacing: 8,
+                  runSpacing: 8,
                   children: [
                     for (final tagName in tagNames.take(2))
                       _SoftChip(label: tagName),
@@ -142,11 +142,11 @@ class PaperlessDocumentCard extends ConsumerWidget {
                 ),
               ],
               if (metadata.isNotEmpty) ...[
-                const SizedBox(height: 18),
-                Wrap(spacing: 20, runSpacing: 10, children: metadata),
+                const SizedBox(height: 14),
+                Wrap(spacing: 16, runSpacing: 8, children: metadata),
               ],
               if (footer != null || trailingLabel != null) ...[
-                const SizedBox(height: 18),
+                const SizedBox(height: 14),
                 if (footer != null)
                   footer!
                 else if (trailingLabel != null)
@@ -229,14 +229,8 @@ class _ThumbnailFallback extends StatelessWidget {
     final theme = Theme.of(context);
     return DecoratedBox(
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            theme.colorScheme.primary.withValues(alpha: 0.85),
-            theme.colorScheme.primary.withValues(alpha: 0.55),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: theme.colorScheme.surfaceContainerHigh,
+        border: Border.all(color: theme.colorScheme.outlineVariant),
       ),
       child: Center(
         child: Padding(
@@ -244,7 +238,7 @@ class _ThumbnailFallback extends StatelessWidget {
           child: Icon(
             Icons.description_outlined,
             size: 52,
-            color: theme.colorScheme.onPrimary,
+            color: theme.colorScheme.onSurfaceVariant,
           ),
         ),
       ),
@@ -262,7 +256,7 @@ class _SoftChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final backgroundColor = emphasized
-        ? theme.colorScheme.secondaryContainer.withValues(alpha: 0.9)
+        ? theme.colorScheme.secondaryContainer
         : theme.colorScheme.surfaceContainerHigh;
     final foregroundColor = emphasized
         ? theme.colorScheme.onSecondaryContainer
@@ -271,16 +265,20 @@ class _SoftChip extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         color: backgroundColor,
-        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: emphasized
+              ? theme.colorScheme.secondaryContainer
+              : theme.colorScheme.outlineVariant,
+        ),
+        borderRadius: BorderRadius.circular(8),
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         child: Text(
-          label.toUpperCase(),
+          label,
           style: theme.textTheme.labelMedium?.copyWith(
             color: foregroundColor,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0.9,
+            fontWeight: FontWeight.w600,
           ),
         ),
       ),
@@ -301,10 +299,10 @@ class _MetadataItem extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Icon(icon, size: 20, color: theme.colorScheme.onSurfaceVariant),
-        const SizedBox(width: 8),
+        const SizedBox(width: 6),
         Text(
           label,
-          style: theme.textTheme.titleMedium?.copyWith(
+          style: theme.textTheme.bodyMedium?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
             fontWeight: FontWeight.w600,
           ),
@@ -326,8 +324,7 @@ class _TrailingLabel extends StatelessWidget {
       label,
       style: theme.textTheme.labelLarge?.copyWith(
         color: theme.colorScheme.primary,
-        fontWeight: FontWeight.w800,
-        letterSpacing: 0.8,
+        fontWeight: FontWeight.w700,
       ),
     );
   }

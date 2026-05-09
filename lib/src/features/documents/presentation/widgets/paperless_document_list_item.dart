@@ -58,18 +58,21 @@ class PaperlessDocumentListItem extends ConsumerWidget {
     return Card(
       margin: EdgeInsets.zero,
       elevation: 0,
-      color: colorScheme.surfaceContainerLow,
+      color: colorScheme.surfaceContainer,
       surfaceTintColor: Colors.transparent,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: colorScheme.outlineVariant),
+      ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.all(12),
           child: Row(
             children: [
               ClipRRect(
-                borderRadius: BorderRadius.circular(18),
+                borderRadius: BorderRadius.circular(8),
                 child: SizedBox(
                   width: 92,
                   height: 92,
@@ -107,7 +110,7 @@ class PaperlessDocumentListItem extends ConsumerWidget {
                             )),
                 ),
               ),
-              const SizedBox(width: 14),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -118,10 +121,8 @@ class PaperlessDocumentListItem extends ConsumerWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.titleLarge?.copyWith(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.4,
-                        height: 1.1,
+                        fontWeight: FontWeight.w600,
+                        height: 1.2,
                       ),
                     ),
                     if (labelChips.isNotEmpty) ...[
@@ -158,7 +159,7 @@ class PaperlessDocumentListItem extends ConsumerWidget {
                   style: IconButton.styleFrom(
                     minimumSize: const Size(46, 46),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(8),
                     ),
                   ),
                   icon: isOpening
@@ -182,8 +183,7 @@ class PaperlessDocumentListItem extends ConsumerWidget {
                         trailingLabel!,
                         style: theme.textTheme.labelLarge?.copyWith(
                           color: colorScheme.primary,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 0.7,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                     const SizedBox(height: 4),
@@ -214,15 +214,16 @@ class _CompactChip extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: theme.colorScheme.outlineVariant),
+        borderRadius: BorderRadius.circular(8),
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
         child: Text(
           label,
           style: theme.textTheme.labelMedium?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w600,
           ),
         ),
       ),
@@ -240,20 +241,14 @@ class _ThumbnailFallback extends StatelessWidget {
     final theme = Theme.of(context);
     return DecoratedBox(
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            theme.colorScheme.primary.withValues(alpha: 0.85),
-            theme.colorScheme.primary.withValues(alpha: 0.55),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: theme.colorScheme.surfaceContainerHigh,
+        border: Border.all(color: theme.colorScheme.outlineVariant),
       ),
       child: Center(
         child: Icon(
           Icons.description_outlined,
           size: 34,
-          color: theme.colorScheme.onPrimary,
+          color: theme.colorScheme.onSurfaceVariant,
         ),
       ),
     );

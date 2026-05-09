@@ -78,22 +78,17 @@ class HomePage extends ConsumerWidget {
           ? SafeArea(
               bottom: false,
               minimum: const EdgeInsets.only(top: 8),
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      Theme.of(context).colorScheme.surface,
-                      Theme.of(context).colorScheme.surfaceContainerHigh,
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                ),
+              child: ColoredBox(
+                color: Theme.of(context).colorScheme.surface,
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Expanded(flex: 1, child: bodyContent),
-                    const VerticalDivider(width: 1, thickness: 1),
+                    VerticalDivider(
+                      width: 1,
+                      thickness: 1,
+                      color: Theme.of(context).colorScheme.outlineVariant,
+                    ),
                     Expanded(
                       flex: 2,
                       child: Consumer(
@@ -253,75 +248,64 @@ class _RecentUploadsTabState extends ConsumerState<_RecentUploadsTab> {
       });
     }
 
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            theme.colorScheme.surface,
-            theme.colorScheme.surfaceContainerHigh,
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
+    return ColoredBox(
+      color: theme.colorScheme.surface,
       child: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 10),
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(0, 8, 0, 4),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  TextField(
-                    controller: _searchController,
-                    focusNode: _searchFocusNode,
-                    textInputAction: TextInputAction.search,
-                    onChanged: _updateSearchQuery,
-                    decoration: InputDecoration(
-                      hintText: l10n.searchByTitleHint,
-                      prefixIcon: const Icon(Icons.search),
-                      suffixIcon: _searchQuery.isNotEmpty
-                          ? IconButton(
-                              tooltip: l10n.clearSearchTooltip,
-                              onPressed: _clearSearch,
-                              icon: const Icon(Icons.close),
-                            )
-                          : null,
-                    ),
-                  ),
-                  if (isWideScreen) ...[
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            l10n.navigationRecent,
-                            style: theme.textTheme.headlineSmall?.copyWith(
-                              fontWeight: FontWeight.w700,
-                            ),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 10),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (isWideScreen) ...[
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          l10n.navigationRecent,
+                          style: theme.textTheme.headlineLarge?.copyWith(
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
-                        RefreshStatusText(
-                          lastUpdatedAt: _lastUpdatedAt,
-                          isRefreshing: recentUploads.isRefreshing,
-                          lastRefreshFailedAt: _lastRefreshFailedAt,
-                        ),
-                      ],
-                    ),
-                  ],
-                  const SizedBox(height: 12),
-                  if (!isWideScreen)
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: RefreshStatusText(
+                      ),
+                      RefreshStatusText(
                         lastUpdatedAt: _lastUpdatedAt,
                         isRefreshing: recentUploads.isRefreshing,
                         lastRefreshFailedAt: _lastRefreshFailedAt,
                       ),
-                    ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
                 ],
-              ),
+                TextField(
+                  controller: _searchController,
+                  focusNode: _searchFocusNode,
+                  textInputAction: TextInputAction.search,
+                  onChanged: _updateSearchQuery,
+                  decoration: InputDecoration(
+                    hintText: l10n.searchByTitleHint,
+                    prefixIcon: const Icon(Icons.search),
+                    suffixIcon: _searchQuery.isNotEmpty
+                        ? IconButton(
+                            tooltip: l10n.clearSearchTooltip,
+                            onPressed: _clearSearch,
+                            icon: const Icon(Icons.close),
+                          )
+                        : null,
+                  ),
+                ),
+                if (!isWideScreen) ...[
+                  const SizedBox(height: 12),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: RefreshStatusText(
+                      lastUpdatedAt: _lastUpdatedAt,
+                      isRefreshing: recentUploads.isRefreshing,
+                      lastRefreshFailedAt: _lastRefreshFailedAt,
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
           Expanded(
@@ -379,31 +363,24 @@ class _RecentUploadsTabState extends ConsumerState<_RecentUploadsTab> {
                                                 ),
                                           style: FilledButton.styleFrom(
                                             minimumSize: const Size.fromHeight(
-                                              58,
+                                              52,
                                             ),
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 18,
-                                              vertical: 12,
-                                            ),
-                                            shape: const StadiumBorder(),
                                             textStyle: Theme.of(context)
                                                 .textTheme
                                                 .labelLarge
                                                 ?.copyWith(
-                                                  fontWeight: FontWeight.w800,
-                                                  letterSpacing: 1.2,
+                                                  fontWeight: FontWeight.w700,
                                                 ),
                                           ),
                                           child: Text(
-                                            (openingIds.contains(document.id)
-                                                    ? l10n.openingAction
-                                                    : l10n.openAction)
-                                                .toUpperCase(),
+                                            openingIds.contains(document.id)
+                                                ? l10n.openingAction
+                                                : l10n.openAction,
                                           ),
                                         ),
                                       ),
                                       const Spacer(),
-                                      TextButton(
+                                      OutlinedButton(
                                         onPressed: () {
                                           ref
                                                   .read(
@@ -420,21 +397,16 @@ class _RecentUploadsTabState extends ConsumerState<_RecentUploadsTab> {
                                             );
                                           }
                                         },
-                                        style: TextButton.styleFrom(
-                                          foregroundColor: Theme.of(
-                                            context,
-                                          ).colorScheme.primary,
+                                        style: OutlinedButton.styleFrom(
+                                          minimumSize: const Size(116, 52),
                                           textStyle: Theme.of(context)
                                               .textTheme
                                               .labelLarge
                                               ?.copyWith(
-                                                fontWeight: FontWeight.w800,
-                                                letterSpacing: 1.2,
+                                                fontWeight: FontWeight.w700,
                                               ),
                                         ),
-                                        child: Text(
-                                          l10n.detailsAction.toUpperCase(),
-                                        ),
+                                        child: Text(l10n.detailsAction),
                                       ),
                                     ],
                                   ),
@@ -588,11 +560,9 @@ class _LoadingCard extends StatelessWidget {
 
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerLow,
-        borderRadius: const BorderRadius.all(Radius.circular(20)),
-        border: Border.all(
-          color: theme.colorScheme.outline.withValues(alpha: 0.18),
-        ),
+        color: theme.colorScheme.surfaceContainer,
+        borderRadius: const BorderRadius.all(Radius.circular(12)),
+        border: Border.all(color: theme.colorScheme.outlineVariant),
       ),
       child: const Padding(
         padding: EdgeInsets.all(20),
@@ -614,11 +584,9 @@ class _EmptyStateCard extends StatelessWidget {
 
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: theme.colorScheme.outline.withValues(alpha: 0.18),
-        ),
+        color: theme.colorScheme.surfaceContainer,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: theme.colorScheme.outlineVariant),
       ),
       child: Padding(
         padding: const EdgeInsets.all(20),

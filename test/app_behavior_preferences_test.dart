@@ -36,7 +36,7 @@ void main() {
         const AppBehaviorSettings(
           cachePreviewsEnabled: true,
           appLanguage: AppLanguage.german,
-          themeMode: AppThemeMode.dark,
+          themeMode: AppThemeMode.system,
           biometricLockEnabled: true,
           appLockTimeout: AppLockTimeout.after1Minute,
         ),
@@ -48,7 +48,7 @@ void main() {
       );
       expect(
         sharedPreferences.getString('app_behavior.theme_mode'),
-        equals('dark'),
+        equals('system'),
       );
       expect(
         sharedPreferences.getBool('app_behavior.biometric_lock_enabled'),
@@ -69,7 +69,7 @@ void main() {
     },
   );
 
-  test('defaults to light mode for invalid stored theme values', () async {
+  test('defaults to system mode for invalid stored theme values', () async {
     SharedPreferences.setMockInitialValues(const <String, Object>{
       'app_behavior.theme_mode': 'sepia',
     });
@@ -79,8 +79,20 @@ void main() {
     final settings = preferences.readSettings();
 
     expect(settings.appLanguage, equals(AppLanguage.system));
-    expect(settings.themeMode, equals(AppThemeMode.light));
+    expect(settings.themeMode, equals(AppThemeMode.system));
     expect(settings.appLockTimeout, equals(AppLockTimeout.after30Seconds));
+  });
+
+  test('reads saved system theme mode', () async {
+    SharedPreferences.setMockInitialValues(const <String, Object>{
+      'app_behavior.theme_mode': 'system',
+    });
+    final sharedPreferences = await SharedPreferences.getInstance();
+    final preferences = AppBehaviorPreferences(sharedPreferences);
+
+    final settings = preferences.readSettings();
+
+    expect(settings.themeMode, equals(AppThemeMode.system));
   });
 
   test('reads saved app language override', () async {

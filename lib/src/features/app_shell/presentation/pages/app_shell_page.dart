@@ -58,19 +58,16 @@ class AppShellPage extends ConsumerWidget {
 
         return Scaffold(
           body: page,
-          floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-          floatingActionButton: FloatingActionButton(
-            onPressed: () => _openScanDocument(context),
-            child: const Icon(Icons.document_scanner_outlined, size: 24),
-          ),
           bottomNavigationBar: _ShellBottomBar(
             selectedIndex: selectedTab,
             reviewQueueCount: reviewQueueCount,
             onSelected: (index) =>
                 ref.read(appShellTabProvider.notifier).state = index,
+            onScan: () => _openScanDocument(context),
             documentsLabel: l10n.navigationDocuments,
             recentLabel: l10n.navigationRecent,
             inboxLabel: l10n.navigationInbox,
+            scanLabel: l10n.scanDocumentAction,
           ),
         );
       },
@@ -97,59 +94,79 @@ class _ShellBottomBar extends StatelessWidget {
     required this.selectedIndex,
     required this.reviewQueueCount,
     required this.onSelected,
+    required this.onScan,
     required this.documentsLabel,
     required this.recentLabel,
     required this.inboxLabel,
+    required this.scanLabel,
   });
 
   final int selectedIndex;
   final int reviewQueueCount;
   final ValueChanged<int> onSelected;
+  final VoidCallback onScan;
   final String documentsLabel;
   final String recentLabel;
   final String inboxLabel;
+  final String scanLabel;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return BottomAppBar(
-      height: 72,
-      padding: EdgeInsets.zero,
-      color: theme.colorScheme.surfaceContainerLow,
-      surfaceTintColor: Colors.transparent,
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10),
-          child: Row(
-            children: [
-              Expanded(
-                child: _ShellNavItem(
-                  icon: Icons.folder_outlined,
-                  label: documentsLabel,
-                  selected: selectedIndex == 0,
-                  onTap: () => onSelected(0),
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerLow,
+        border: Border(
+          top: BorderSide(color: theme.colorScheme.outlineVariant),
+        ),
+      ),
+      child: BottomAppBar(
+        height: 74,
+        padding: EdgeInsets.zero,
+        color: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        child: SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(10, 8, 10, 6),
+            child: Row(
+              children: [
+                Expanded(
+                  child: _ShellNavItem(
+                    icon: Icons.folder_outlined,
+                    label: documentsLabel,
+                    selected: selectedIndex == 0,
+                    onTap: () => onSelected(0),
+                  ),
                 ),
-              ),
-              Expanded(
-                child: _ShellNavItem(
-                  icon: Icons.schedule_outlined,
-                  label: recentLabel,
-                  selected: selectedIndex == 1,
-                  onTap: () => onSelected(1),
+                Expanded(
+                  child: _ShellNavItem(
+                    icon: Icons.schedule_outlined,
+                    label: recentLabel,
+                    selected: selectedIndex == 1,
+                    onTap: () => onSelected(1),
+                  ),
                 ),
-              ),
-              Expanded(
-                child: _ShellNavItem(
-                  icon: Icons.inbox_outlined,
-                  label: inboxLabel,
-                  selected: selectedIndex == 2,
-                  badgeCount: reviewQueueCount,
-                  onTap: () => onSelected(2),
+                Expanded(
+                  child: _ShellNavItem(
+                    icon: Icons.inbox_outlined,
+                    label: inboxLabel,
+                    selected: selectedIndex == 2,
+                    badgeCount: reviewQueueCount,
+                    onTap: () => onSelected(2),
+                  ),
                 ),
-              ),
-            ],
+                Expanded(
+                  child: _ShellNavItem(
+                    icon: Icons.document_scanner_outlined,
+                    label: scanLabel,
+                    selected: false,
+                    onTap: onScan,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -176,14 +193,24 @@ class _ShellNavItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final foreground = selected
-        ? theme.colorScheme.primary
+        ? theme.colorScheme.onPrimaryContainer
         : theme.colorScheme.onSurfaceVariant;
+    final background = selected
+        ? theme.colorScheme.primaryContainer
+        : Colors.transparent;
 
     return InkWell(
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(8),
       onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 6),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOutCubic,
+        margin: const EdgeInsets.symmetric(horizontal: 4),
+        padding: const EdgeInsets.symmetric(vertical: 7),
+        decoration: BoxDecoration(
+          color: background,
+          borderRadius: BorderRadius.circular(8),
+        ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -192,15 +219,14 @@ class _ShellNavItem extends StatelessWidget {
               count: badgeCount,
               child: Icon(icon, color: foreground, size: 22),
             ),
-            const SizedBox(height: 2),
+            const SizedBox(height: 3),
             Text(
               label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: theme.textTheme.labelSmall?.copyWith(
                 color: foreground,
-                fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
-                letterSpacing: 0.2,
+                fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
               ),
             ),
           ],

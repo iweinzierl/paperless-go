@@ -183,7 +183,8 @@ void main() {
         'auth.display_name': 'Jane Doe',
       },
       overrides: [
-        recentUploadsProvider.overrideWith((ref) async => [fakeRecentDocument]),
+        appShellTabProvider.overrideWith((ref) => 1),
+        recentUploadsProvider.overrideWith((ref) async => const []),
         reviewDocumentsProvider.overrideWith((ref) async => [fakeTodoDocument]),
         documentsPageProvider.overrideWith((ref) async => fakeDocumentsPage),
         tagOptionsProvider.overrideWith((ref) async => fakeFilterOptions),

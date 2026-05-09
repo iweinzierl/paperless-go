@@ -473,8 +473,14 @@ abstract class AppLocalizations {
   /// No description provided for @themeModeSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Choose whether the app uses the light or dark color palette.'**
+  /// **'Choose whether the app follows the system appearance or always uses the light or dark color palette.'**
   String get themeModeSubtitle;
+
+  /// No description provided for @themeModeSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'System default'**
+  String get themeModeSystem;
 
   /// No description provided for @themeModeLight.
   ///

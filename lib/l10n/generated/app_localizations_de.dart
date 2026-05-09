@@ -211,7 +211,10 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get themeModeSubtitle =>
-      'Wähle, ob die App das helle oder dunkle Farbschema verwendet.';
+      'Wähle, ob die App dem Systemdesign folgt oder immer das helle oder dunkle Farbschema verwendet.';
+
+  @override
+  String get themeModeSystem => 'Systemstandard';
 
   @override
   String get themeModeLight => 'Hell';

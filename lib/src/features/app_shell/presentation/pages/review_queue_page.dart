@@ -109,17 +109,8 @@ class _ReviewQueuePageState extends ConsumerState<ReviewQueuePage> {
       });
     }
 
-    final bodyContent = DecoratedBox(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            theme.colorScheme.surface,
-            theme.colorScheme.surfaceContainerHigh,
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
+    final bodyContent = ColoredBox(
+      color: theme.colorScheme.surface,
       child: Column(
         children: [
           Padding(
@@ -235,26 +226,23 @@ class _ReviewQueuePageState extends ConsumerState<ReviewQueuePage> {
                                                 ),
                                           style: FilledButton.styleFrom(
                                             minimumSize: const Size.fromHeight(
-                                              58,
+                                              52,
                                             ),
                                             padding: const EdgeInsets.symmetric(
-                                              horizontal: 18,
-                                              vertical: 12,
+                                              horizontal: 16,
+                                              vertical: 10,
                                             ),
-                                            shape: const StadiumBorder(),
                                             textStyle: theme
                                                 .textTheme
                                                 .labelLarge
                                                 ?.copyWith(
-                                                  fontWeight: FontWeight.w800,
-                                                  letterSpacing: 1.2,
+                                                  fontWeight: FontWeight.w700,
                                                 ),
                                           ),
                                           child: Text(
                                             (openingIds.contains(document.id)
-                                                    ? l10n.openingAction
-                                                    : l10n.openAction)
-                                                .toUpperCase(),
+                                                ? l10n.openingAction
+                                                : l10n.openAction),
                                           ),
                                         ),
                                       ),
@@ -281,13 +269,10 @@ class _ReviewQueuePageState extends ConsumerState<ReviewQueuePage> {
                                               theme.colorScheme.primary,
                                           textStyle: theme.textTheme.labelLarge
                                               ?.copyWith(
-                                                fontWeight: FontWeight.w800,
-                                                letterSpacing: 1.2,
+                                                fontWeight: FontWeight.w700,
                                               ),
                                         ),
-                                        child: Text(
-                                          l10n.detailsAction.toUpperCase(),
-                                        ),
+                                        child: Text(l10n.detailsAction),
                                       ),
                                     ],
                                   ),
@@ -419,17 +404,8 @@ class _ReviewQueuePageState extends ConsumerState<ReviewQueuePage> {
           ? SafeArea(
               bottom: false,
               minimum: const EdgeInsets.only(top: 8),
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      theme.colorScheme.surface,
-                      theme.colorScheme.surfaceContainerHigh,
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                ),
+              child: ColoredBox(
+                color: theme.colorScheme.surface,
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -551,11 +527,12 @@ class _ReviewLoadingCard extends StatelessWidget {
 
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerLow,
-        borderRadius: const BorderRadius.all(Radius.circular(28)),
+        color: theme.colorScheme.surfaceContainer,
+        border: Border.all(color: theme.colorScheme.outlineVariant),
+        borderRadius: const BorderRadius.all(Radius.circular(12)),
       ),
       child: const Padding(
-        padding: EdgeInsets.all(28),
+        padding: EdgeInsets.all(20),
         child: Center(child: CircularProgressIndicator()),
       ),
     );
@@ -574,18 +551,19 @@ class _ReviewEmptyStateCard extends StatelessWidget {
 
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(28),
+        color: theme.colorScheme.surfaceContainer,
+        border: Border.all(color: theme.colorScheme.outlineVariant),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               title,
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
+              style: theme.textTheme.headlineMedium?.copyWith(
+                fontWeight: FontWeight.w600,
                 color: theme.colorScheme.onSurface,
               ),
             ),

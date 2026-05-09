@@ -340,22 +340,13 @@ class _DocumentDetailBodyState extends ConsumerState<_DocumentDetailBody> {
 
     return _ScreenshotPreviewStateMarker(
       state: _previewState,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              theme.colorScheme.surface,
-              theme.colorScheme.surfaceContainerHigh,
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
+      child: ColoredBox(
+        color: theme.colorScheme.surface,
         child: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 800),
+            constraints: const BoxConstraints(maxWidth: 1080),
             child: ListView(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
               children: [
                 if (widget.embedded) ...[
                   _EmbeddedDocumentActionBar(
@@ -375,19 +366,16 @@ class _DocumentDetailBodyState extends ConsumerState<_DocumentDetailBody> {
                       ? null
                       : () => _openDocument(context, ref, document),
                   style: FilledButton.styleFrom(
-                    minimumSize: const Size.fromHeight(56),
-                    shape: const StadiumBorder(),
+                    minimumSize: const Size.fromHeight(52),
                     textStyle: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 1.0,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                   icon: Icon(
                     isOpening ? Icons.hourglass_top : Icons.visibility_outlined,
                   ),
                   label: Text(
-                    (isOpening ? l10n.openingAction : l10n.openDocumentAction)
-                        .toUpperCase(),
+                    isOpening ? l10n.openingAction : l10n.openDocumentAction,
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -396,17 +384,15 @@ class _DocumentDetailBodyState extends ConsumerState<_DocumentDetailBody> {
                       ? () => _editMetadata(context, ref, document)
                       : null,
                   style: OutlinedButton.styleFrom(
-                    minimumSize: const Size.fromHeight(56),
-                    shape: const StadiumBorder(),
+                    minimumSize: const Size.fromHeight(52),
                     textStyle: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 1.0,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                   icon: const Icon(Icons.edit_outlined),
-                  label: Text(l10n.editMetadataAction.toUpperCase()),
+                  label: Text(l10n.editMetadataAction),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 16),
                 _PreviewCard(
                   title: l10n.thumbnailPreviewTitle,
                   document: document,
@@ -434,51 +420,119 @@ class _DocumentDetailBodyState extends ConsumerState<_DocumentDetailBody> {
                           initialPage: selectedPage,
                         ),
                 ),
-                const SizedBox(height: 20),
-                _MetadataCard(
-                  title: l10n.metadataTitle,
-                  children: [
-                    _MetadataInfoRow(
-                      label: l10n.fileNameLabel,
-                      value: document.preferredFileName,
-                    ),
-                    _MetadataInfoRow(
-                      label: l10n.mimeTypeLabel,
-                      value: document.mimeType,
-                    ),
-                    _MetadataInfoRow(
-                      label: l10n.createdLabel,
-                      value: _formatMetadataTimestamp(
-                        context,
-                        document.created,
+                const SizedBox(height: 16),
+                useWideLayout(context)
+                    ? Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            flex: 3,
+                            child: _MetadataCard(
+                              title: l10n.metadataTitle,
+                              children: [
+                                _MetadataInfoRow(
+                                  label: l10n.fileNameLabel,
+                                  value: document.preferredFileName,
+                                ),
+                                _MetadataInfoRow(
+                                  label: l10n.mimeTypeLabel,
+                                  value: document.mimeType,
+                                ),
+                                _MetadataInfoRow(
+                                  label: l10n.createdLabel,
+                                  value: _formatMetadataTimestamp(
+                                    context,
+                                    document.created,
+                                  ),
+                                ),
+                                _MetadataInfoRow(
+                                  label: l10n.pagesLabel,
+                                  value: document.pageCount?.toString(),
+                                ),
+                                _MetadataInfoRow(
+                                  label: l10n.archiveSerialNumberLabel,
+                                  value: document.archiveSerialNumber
+                                      ?.toString(),
+                                ),
+                                _ResolvedOptionRow(
+                                  label: l10n.correspondentLabel,
+                                  optionId: document.correspondentId,
+                                  options: correspondentOptions,
+                                  fallbackValue: document.correspondentId
+                                      ?.toString(),
+                                ),
+                                _ResolvedOptionRow(
+                                  label: l10n.documentTypeLabel,
+                                  optionId: document.documentTypeId,
+                                  options: documentTypeOptions,
+                                  fallbackValue: document.documentTypeId
+                                      ?.toString(),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            flex: 2,
+                            child: _MetadataCard(
+                              title: l10n.tagsLabel,
+                              children: [
+                                _ResolvedTagsRow(
+                                  document: document,
+                                  options: tagOptions,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      )
+                    : _MetadataCard(
+                        title: l10n.metadataTitle,
+                        children: [
+                          _MetadataInfoRow(
+                            label: l10n.fileNameLabel,
+                            value: document.preferredFileName,
+                          ),
+                          _MetadataInfoRow(
+                            label: l10n.mimeTypeLabel,
+                            value: document.mimeType,
+                          ),
+                          _MetadataInfoRow(
+                            label: l10n.createdLabel,
+                            value: _formatMetadataTimestamp(
+                              context,
+                              document.created,
+                            ),
+                          ),
+                          _MetadataInfoRow(
+                            label: l10n.pagesLabel,
+                            value: document.pageCount?.toString(),
+                          ),
+                          _MetadataInfoRow(
+                            label: l10n.archiveSerialNumberLabel,
+                            value: document.archiveSerialNumber?.toString(),
+                          ),
+                          _ResolvedOptionRow(
+                            label: l10n.correspondentLabel,
+                            optionId: document.correspondentId,
+                            options: correspondentOptions,
+                            fallbackValue: document.correspondentId?.toString(),
+                          ),
+                          _ResolvedOptionRow(
+                            label: l10n.documentTypeLabel,
+                            optionId: document.documentTypeId,
+                            options: documentTypeOptions,
+                            fallbackValue: document.documentTypeId?.toString(),
+                          ),
+                          _ResolvedTagsRow(
+                            document: document,
+                            options: tagOptions,
+                          ),
+                        ],
                       ),
-                    ),
-                    _MetadataInfoRow(
-                      label: l10n.pagesLabel,
-                      value: document.pageCount?.toString(),
-                    ),
-                    _MetadataInfoRow(
-                      label: l10n.archiveSerialNumberLabel,
-                      value: document.archiveSerialNumber?.toString(),
-                    ),
-                    _ResolvedOptionRow(
-                      label: l10n.correspondentLabel,
-                      optionId: document.correspondentId,
-                      options: correspondentOptions,
-                      fallbackValue: document.correspondentId?.toString(),
-                    ),
-                    _ResolvedOptionRow(
-                      label: l10n.documentTypeLabel,
-                      optionId: document.documentTypeId,
-                      options: documentTypeOptions,
-                      fallbackValue: document.documentTypeId?.toString(),
-                    ),
-                    _ResolvedTagsRow(document: document, options: tagOptions),
-                  ],
-                ),
                 if (document.content != null &&
                     document.content!.trim().isNotEmpty) ...[
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 16),
                   _DetailSection(
                     title: l10n.contentPreviewTitle,
                     children: [
@@ -760,7 +814,7 @@ class _EditDocumentMetadataPageState
       );
     final heroBadges = <String>[
       if (widget.document.mimeType?.trim().isNotEmpty == true)
-        widget.document.mimeType!.toUpperCase(),
+        widget.document.mimeType!,
     ];
 
     return Scaffold(
@@ -785,17 +839,8 @@ class _EditDocumentMetadataPageState
         child: Stack(
           fit: StackFit.expand,
           children: [
-            DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    theme.colorScheme.surfaceContainerLowest,
-                    theme.colorScheme.surface,
-                  ],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                ),
-              ),
+            ColoredBox(
+              color: theme.colorScheme.surface,
               child: isWideScreen
                   ? _buildWideMetadataEditor(
                       context,
@@ -857,24 +902,24 @@ class _EditDocumentMetadataPageState
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 600),
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
           children: [
             ..._buildBasicInfoFields(l10n),
-            const SizedBox(height: 18),
+            const SizedBox(height: 16),
             _buildCompactCorrespondentField(
               l10n,
               correspondents,
               selectedCorrespondentLabel,
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: 16),
             _buildCompactDocumentTypeField(
               l10n,
               documentTypes,
               selectedDocumentTypeLabel,
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: 16),
             _buildCompactTagsField(context, theme, l10n, tags, selectedTags),
-            const SizedBox(height: 30),
+            const SizedBox(height: 20),
             _EditMetadataHero(
               document: widget.document,
               repository: repository,
@@ -888,16 +933,16 @@ class _EditDocumentMetadataPageState
               },
               badges: heroBadges,
             ),
-            const SizedBox(height: 30),
+            const SizedBox(height: 20),
             Text(
-              'END OF ARCHIVE METADATA',
+              'End of archive metadata',
               textAlign: TextAlign.center,
               style: theme.textTheme.labelSmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant.withValues(
                   alpha: 0.7,
                 ),
                 fontWeight: FontWeight.w700,
-                letterSpacing: 3,
+                letterSpacing: 0.5,
               ),
             ),
           ],
@@ -943,7 +988,7 @@ class _EditDocumentMetadataPageState
                               children: _buildBasicInfoFields(l10n),
                             ),
                           ),
-                          const SizedBox(height: 20),
+                          const SizedBox(height: 16),
                           _EditSectionCard(
                             child: Column(
                               children: [
@@ -952,13 +997,13 @@ class _EditDocumentMetadataPageState
                                   correspondents,
                                   selectedCorrespondentLabel,
                                 ),
-                                const SizedBox(height: 18),
+                                const SizedBox(height: 16),
                                 _buildWideDocumentTypeField(
                                   l10n,
                                   documentTypes,
                                   selectedDocumentTypeLabel,
                                 ),
-                                const SizedBox(height: 18),
+                                const SizedBox(height: 16),
                                 _buildWideTagsField(
                                   context,
                                   theme,
@@ -982,11 +1027,11 @@ class _EditDocumentMetadataPageState
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          l10n.thumbnailPreviewTitle.toUpperCase(),
+                          l10n.thumbnailPreviewTitle,
                           style: theme.textTheme.labelMedium?.copyWith(
                             color: theme.colorScheme.onSurfaceVariant,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 2.2,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.5,
                           ),
                         ),
                         const SizedBox(height: 12),
@@ -1713,17 +1758,12 @@ class _EditMetadataHero extends StatelessWidget {
               children: [
                 DecoratedBox(
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(28),
-                    boxShadow: [
-                      BoxShadow(
-                        color: theme.colorScheme.shadow.withValues(alpha: 0.18),
-                        blurRadius: 30,
-                        offset: const Offset(0, 18),
-                      ),
-                    ],
+                    color: theme.colorScheme.surfaceContainerHigh,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: theme.colorScheme.outlineVariant),
                   ),
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(28),
+                    borderRadius: BorderRadius.circular(12),
                     child: AspectRatio(
                       aspectRatio: 0.74,
                       child: pdfDocument == null
@@ -1737,14 +1777,7 @@ class _EditMetadataHero extends StatelessWidget {
                                 ),
                                 DecoratedBox(
                                   decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      colors: [
-                                        Colors.black.withValues(alpha: 0.1),
-                                        Colors.black.withValues(alpha: 0.48),
-                                      ],
-                                      begin: Alignment.topLeft,
-                                      end: Alignment.bottomRight,
-                                    ),
+                                    color: Colors.black.withValues(alpha: 0.18),
                                   ),
                                 ),
                               ],
@@ -1819,17 +1852,12 @@ class _EditMetadataHero extends StatelessWidget {
             schedulePreviewState(_ScreenshotPreviewState.loading);
             return DecoratedBox(
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(28),
-                boxShadow: [
-                  BoxShadow(
-                    color: theme.colorScheme.shadow.withValues(alpha: 0.18),
-                    blurRadius: 30,
-                    offset: const Offset(0, 18),
-                  ),
-                ],
+                color: theme.colorScheme.surfaceContainerHigh,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: theme.colorScheme.outlineVariant),
               ),
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(28),
+                borderRadius: BorderRadius.circular(12),
                 child: const AspectRatio(
                   aspectRatio: 0.74,
                   child: ColoredBox(
@@ -1844,17 +1872,12 @@ class _EditMetadataHero extends StatelessWidget {
             schedulePreviewState(_ScreenshotPreviewState.ready);
             return DecoratedBox(
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(28),
-                boxShadow: [
-                  BoxShadow(
-                    color: theme.colorScheme.shadow.withValues(alpha: 0.18),
-                    blurRadius: 30,
-                    offset: const Offset(0, 18),
-                  ),
-                ],
+                color: theme.colorScheme.surfaceContainerHigh,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: theme.colorScheme.outlineVariant),
               ),
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(28),
+                borderRadius: BorderRadius.circular(12),
                 child: AspectRatio(
                   aspectRatio: 0.74,
                   child: Stack(
@@ -1868,14 +1891,7 @@ class _EditMetadataHero extends StatelessWidget {
                       ),
                       DecoratedBox(
                         decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              Colors.black.withValues(alpha: 0.1),
-                              Colors.black.withValues(alpha: 0.48),
-                            ],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
+                          color: Colors.black.withValues(alpha: 0.18),
                         ),
                       ),
                     ],
@@ -1927,8 +1943,8 @@ class _EditFieldSection extends StatelessWidget {
                 label.toUpperCase(),
                 style: theme.textTheme.labelMedium?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 2.2,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.7,
                 ),
               ),
             ),
@@ -1953,13 +1969,11 @@ class _EditSectionCard extends StatelessWidget {
 
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: theme.colorScheme.surface.withValues(alpha: 0.85),
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(
-          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.55),
-        ),
+        color: theme.colorScheme.surfaceContainer,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: theme.colorScheme.outlineVariant),
       ),
-      child: Padding(padding: const EdgeInsets.all(20), child: child),
+      child: Padding(padding: const EdgeInsets.all(16), child: child),
     );
   }
 }
@@ -1992,8 +2006,9 @@ class _EditMetadataTextField extends StatelessWidget {
       children: [
         DecoratedBox(
           decoration: BoxDecoration(
-            color: theme.colorScheme.surfaceContainerLow,
-            borderRadius: BorderRadius.circular(20),
+            color: theme.colorScheme.surfaceContainerLowest,
+            border: Border.all(color: theme.colorScheme.outlineVariant),
+            borderRadius: BorderRadius.circular(8),
           ),
           child: TextField(
             controller: controller,
@@ -2009,36 +2024,36 @@ class _EditMetadataTextField extends StatelessWidget {
               filled: true,
               fillColor: Colors.transparent,
               contentPadding: const EdgeInsets.symmetric(
-                horizontal: 18,
-                vertical: 18,
+                horizontal: 16,
+                vertical: 14,
               ),
               enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(20),
-                borderSide: BorderSide.none,
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: theme.colorScheme.outlineVariant),
               ),
               focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(8),
                 borderSide: BorderSide(
-                  color: theme.colorScheme.primary.withValues(alpha: 0.65),
-                  width: 1.5,
+                  color: theme.colorScheme.primaryContainer,
+                  width: 1.2,
                 ),
               ),
               errorBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(8),
                 borderSide: BorderSide(
                   color: theme.colorScheme.error.withValues(alpha: 0.8),
                 ),
               ),
               focusedErrorBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(8),
                 borderSide: BorderSide(
                   color: theme.colorScheme.error,
                   width: 1.5,
                 ),
               ),
               disabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(20),
-                borderSide: BorderSide.none,
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: theme.colorScheme.outlineVariant),
               ),
               errorStyle: const TextStyle(height: 0, fontSize: 0),
             ),
@@ -2081,13 +2096,16 @@ class _EditSelectionField extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Material(
-      color: theme.colorScheme.surfaceContainerLow,
-      borderRadius: BorderRadius.circular(20),
+      color: theme.colorScheme.surfaceContainerLowest,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: BorderSide(color: theme.colorScheme.outlineVariant),
+      ),
       child: InkWell(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(8),
         onTap: enabled ? onTap : null,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           child: Row(
             children: [
               Expanded(
@@ -2135,13 +2153,16 @@ class _EditSquareActionButton extends StatelessWidget {
     final theme = Theme.of(context);
 
     return SizedBox(
-      width: 56,
-      height: 56,
+      width: 52,
+      height: 52,
       child: Material(
         color: theme.colorScheme.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(18),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+          side: BorderSide(color: theme.colorScheme.outlineVariant),
+        ),
         child: InkWell(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(8),
           onTap: onTap,
           child: Center(
             child: isLoading
@@ -2179,8 +2200,8 @@ class _EditSelectionChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final backgroundColor = selected
-        ? theme.colorScheme.primary.withValues(alpha: 0.22)
-        : theme.colorScheme.surfaceContainerHighest;
+        ? theme.colorScheme.primaryContainer.withValues(alpha: 0.18)
+        : theme.colorScheme.surfaceContainerHigh;
     final foregroundColor = selected
         ? theme.colorScheme.primary
         : theme.colorScheme.onSurface;
@@ -2192,7 +2213,7 @@ class _EditSelectionChip extends StatelessWidget {
       onPressed: enabled ? onPressed : null,
       onDeleted: enabled ? onDeleted : null,
       deleteIcon: Icon(Icons.close_rounded, size: 16, color: foregroundColor),
-      side: BorderSide.none,
+      side: BorderSide(color: theme.colorScheme.outlineVariant),
       backgroundColor: backgroundColor,
       selectedColor: backgroundColor,
       labelStyle: theme.textTheme.labelLarge?.copyWith(
@@ -2201,7 +2222,7 @@ class _EditSelectionChip extends StatelessWidget {
       ),
       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
       visualDensity: VisualDensity.compact,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
     );
   }
 }
@@ -2218,14 +2239,15 @@ class _EditMetaBadge extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: theme.colorScheme.outlineVariant),
+        borderRadius: BorderRadius.circular(8),
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
         child: Text(
           label,
           style: theme.textTheme.labelMedium?.copyWith(
-            fontWeight: FontWeight.w800,
+            fontWeight: FontWeight.w700,
             color: theme.colorScheme.onSurface,
           ),
         ),
@@ -2257,7 +2279,12 @@ class _EditInlineStatusCard extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         color: color,
-        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: isError
+              ? theme.colorScheme.error.withValues(alpha: 0.45)
+              : theme.colorScheme.outlineVariant,
+        ),
+        borderRadius: BorderRadius.circular(8),
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -2294,8 +2321,9 @@ class _EditLoadingCard extends StatelessWidget {
 
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(20),
+        color: theme.colorScheme.surfaceContainer,
+        border: Border.all(color: theme.colorScheme.outlineVariant),
+        borderRadius: BorderRadius.circular(8),
       ),
       child: const Padding(
         padding: EdgeInsets.symmetric(horizontal: 16, vertical: 18),
@@ -2336,18 +2364,12 @@ class _DocumentSummaryCard extends StatelessWidget {
 
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(30),
-        boxShadow: [
-          BoxShadow(
-            color: theme.colorScheme.shadow.withValues(alpha: 0.08),
-            blurRadius: 26,
-            offset: const Offset(0, 14),
-          ),
-        ],
+        color: theme.colorScheme.surfaceContainer,
+        border: Border.all(color: theme.colorScheme.outlineVariant),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(22),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -2360,10 +2382,8 @@ class _DocumentSummaryCard extends StatelessWidget {
                   primaryLabel,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.4,
-                    height: 1.1,
+                  style: theme.textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
                 if (trailingLabel != null &&
@@ -2381,7 +2401,7 @@ class _DocumentSummaryCard extends StatelessWidget {
               ],
             ),
             if (badges.isNotEmpty) ...[
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
@@ -2409,39 +2429,26 @@ class _MetadataCard extends StatelessWidget {
 
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(28),
-        boxShadow: [
-          BoxShadow(
-            color: theme.colorScheme.shadow.withValues(alpha: 0.05),
-            blurRadius: 18,
-            offset: const Offset(0, 10),
-          ),
-        ],
+        color: theme.colorScheme.surfaceContainer,
+        border: Border.all(color: theme.colorScheme.outlineVariant),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                Icon(
-                  Icons.tune_outlined,
-                  size: 20,
-                  color: theme.colorScheme.primary,
-                ),
-                const SizedBox(width: 10),
                 Text(
                   title,
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.3,
+                  style: theme.textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             ...children,
           ],
         ),
@@ -2461,17 +2468,18 @@ class _MetadataInfoRow extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
             flex: 4,
             child: Text(
-              label,
-              style: theme.textTheme.bodyMedium?.copyWith(
+              label.toUpperCase(),
+              style: theme.textTheme.labelMedium?.copyWith(
                 fontWeight: FontWeight.w700,
                 color: theme.colorScheme.onSurfaceVariant,
+                letterSpacing: 0.5,
               ),
             ),
           ),
@@ -2480,8 +2488,8 @@ class _MetadataInfoRow extends StatelessWidget {
             flex: 6,
             child: Text(
               value?.trim().isNotEmpty == true ? value! : '-',
-              textAlign: TextAlign.right,
-              style: theme.textTheme.bodyLarge?.copyWith(
+              textAlign: TextAlign.left,
+              style: theme.textTheme.bodyMedium?.copyWith(
                 fontWeight: FontWeight.w600,
                 color: theme.colorScheme.onSurface,
               ),
@@ -2504,22 +2512,23 @@ class _MetadataTagsRow extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            label,
-            style: theme.textTheme.bodyMedium?.copyWith(
+            label.toUpperCase(),
+            style: theme.textTheme.labelMedium?.copyWith(
               fontWeight: FontWeight.w700,
               color: theme.colorScheme.onSurfaceVariant,
+              letterSpacing: 0.5,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           if (values.isEmpty)
             Text(
               '-',
-              style: theme.textTheme.bodyLarge?.copyWith(
+              style: theme.textTheme.bodyMedium?.copyWith(
                 fontWeight: FontWeight.w600,
               ),
             )
@@ -2531,14 +2540,16 @@ class _MetadataTagsRow extends StatelessWidget {
                   .map(
                     (value) => DecoratedBox(
                       decoration: BoxDecoration(
-                        color: theme.colorScheme.surfaceContainerHighest
-                            .withValues(alpha: 0.55),
-                        borderRadius: BorderRadius.circular(999),
+                        color: theme.colorScheme.surfaceContainerHigh,
+                        border: Border.all(
+                          color: theme.colorScheme.outlineVariant,
+                        ),
+                        borderRadius: BorderRadius.circular(8),
                       ),
                       child: Padding(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 8,
+                          horizontal: 10,
+                          vertical: 6,
                         ),
                         child: Text(
                           value,
@@ -2602,29 +2613,22 @@ class _PreviewCard extends StatelessWidget {
 
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(28),
-        boxShadow: [
-          BoxShadow(
-            color: theme.colorScheme.shadow.withValues(alpha: 0.06),
-            blurRadius: 22,
-            offset: const Offset(0, 12),
-          ),
-        ],
+        color: theme.colorScheme.surfaceContainer,
+        border: Border.all(color: theme.colorScheme.outlineVariant),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(18),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               title,
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w800,
-                letterSpacing: -0.4,
+              style: theme.textTheme.headlineMedium?.copyWith(
+                fontWeight: FontWeight.w600,
               ),
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 12),
             PdfDocumentViewBuilder.uri(
               previewUri,
               headers: headers,
@@ -2669,11 +2673,10 @@ class _PreviewCard extends StatelessWidget {
                     const SizedBox(height: 12),
                     Center(
                       child: Text(
-                        'PAGE $effectiveSelectedPage OF $effectivePageCount',
+                        'Page $effectiveSelectedPage of $effectivePageCount',
                         style: theme.textTheme.labelLarge?.copyWith(
-                          fontWeight: FontWeight.w800,
+                          fontWeight: FontWeight.w700,
                           color: theme.colorScheme.onSurfaceVariant,
-                          letterSpacing: 0.8,
                         ),
                       ),
                     ),
@@ -3431,21 +3434,24 @@ class _DetailSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Card(
-      margin: EdgeInsets.zero,
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainer,
+        border: Border.all(color: theme.colorScheme.outlineVariant),
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(22),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               title,
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w800,
-                letterSpacing: -0.4,
+              style: theme.textTheme.headlineMedium?.copyWith(
+                fontWeight: FontWeight.w600,
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             ...children,
           ],
         ),
@@ -3464,11 +3470,12 @@ class _StatBadge extends StatelessWidget {
     final theme = Theme.of(context);
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(12),
+        color: theme.colorScheme.surfaceContainerHigh,
+        border: Border.all(color: theme.colorScheme.outlineVariant),
+        borderRadius: BorderRadius.circular(8),
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
         child: Text(
           label,
           style: theme.textTheme.labelMedium?.copyWith(
@@ -3501,7 +3508,7 @@ class _PreviewPanel extends StatelessWidget {
       child: Stack(
         children: [
           ClipRRect(
-            borderRadius: BorderRadius.circular(22),
+            borderRadius: BorderRadius.circular(12),
             child: AspectRatio(
               aspectRatio: aspectRatio,
               child: ColoredBox(
@@ -3523,16 +3530,16 @@ class _PreviewPanel extends StatelessWidget {
           Positioned(
             right: 12,
             bottom: 12,
-            child: FilledButton.tonalIcon(
+            child: FilledButton.icon(
               onPressed: onPreview,
               style: FilledButton.styleFrom(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
+                  horizontal: 12,
                   vertical: 10,
                 ),
               ),
               icon: const Icon(Icons.fullscreen_rounded),
-              label: Text(context.l10n.openAction.toUpperCase()),
+              label: Text(context.l10n.openAction),
             ),
           ),
         ],
@@ -3604,18 +3611,21 @@ class _PagePreviewTile extends StatelessWidget {
             child: Material(
               color: Colors.transparent,
               child: InkWell(
-                borderRadius: BorderRadius.circular(18),
+                borderRadius: BorderRadius.circular(12),
                 onTap: onTap,
                 child: DecoratedBox(
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(18),
-                    border: selected
-                        ? Border.all(color: theme.colorScheme.primary, width: 2)
-                        : null,
+                    color: theme.colorScheme.surfaceContainerHigh,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: selected
+                          ? theme.colorScheme.primaryContainer
+                          : theme.colorScheme.outlineVariant,
+                      width: selected ? 1.5 : 1,
+                    ),
                   ),
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(10),
                     child: ColoredBox(
                       color: Colors.white,
                       child: Padding(
@@ -3669,7 +3679,7 @@ class _PreviewLoadingState extends StatelessWidget {
       child: Stack(
         children: [
           ClipRRect(
-            borderRadius: BorderRadius.circular(22),
+            borderRadius: BorderRadius.circular(12),
             child: AspectRatio(
               aspectRatio: aspectRatio,
               child: const ColoredBox(
@@ -3681,16 +3691,16 @@ class _PreviewLoadingState extends StatelessWidget {
           Positioned(
             right: 12,
             bottom: 12,
-            child: FilledButton.tonalIcon(
+            child: FilledButton.icon(
               onPressed: onPreview,
               style: FilledButton.styleFrom(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
+                  horizontal: 12,
                   vertical: 10,
                 ),
               ),
               icon: const Icon(Icons.fullscreen_rounded),
-              label: Text(context.l10n.openAction.toUpperCase()),
+              label: Text(context.l10n.openAction),
             ),
           ),
         ],
@@ -3773,7 +3783,7 @@ class _ThumbnailFallbackPanel extends StatelessWidget {
       child: Stack(
         children: [
           ClipRRect(
-            borderRadius: BorderRadius.circular(22),
+            borderRadius: BorderRadius.circular(12),
             child: AspectRatio(
               aspectRatio: aspectRatio,
               child:
@@ -3791,16 +3801,16 @@ class _ThumbnailFallbackPanel extends StatelessWidget {
           Positioned(
             right: 12,
             bottom: 12,
-            child: FilledButton.tonalIcon(
+            child: FilledButton.icon(
               onPressed: onPreview,
               style: FilledButton.styleFrom(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
+                  horizontal: 12,
                   vertical: 10,
                 ),
               ),
               icon: const Icon(Icons.fullscreen_rounded),
-              label: Text(context.l10n.openAction.toUpperCase()),
+              label: Text(context.l10n.openAction),
             ),
           ),
         ],
@@ -3984,10 +3994,16 @@ class _DocumentDetailError extends StatelessWidget {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
-        child: Card(
-          margin: EdgeInsets.zero,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surfaceContainer,
+            border: Border.all(
+              color: Theme.of(context).colorScheme.outlineVariant,
+            ),
+            borderRadius: BorderRadius.circular(12),
+          ),
           child: Padding(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(20),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [

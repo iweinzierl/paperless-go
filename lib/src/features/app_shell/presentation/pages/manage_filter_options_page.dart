@@ -35,6 +35,7 @@ class _ManageFilterOptionsPageState
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final options = _optionsForType();
     final selectedOptionId = _selectedOptionId(
       ref.watch(documentsFilterStateProvider),
@@ -83,32 +84,47 @@ class _ManageFilterOptionsPageState
                   minExtent: 84,
                   maxExtent: 84,
                   child: ColoredBox(
-                    color: Theme.of(context).scaffoldBackgroundColor,
+                    color: theme.colorScheme.surface,
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
-                      child: TextField(
-                        controller: _searchController,
-                        decoration: InputDecoration(
-                          hintText: context.l10n.managementSearchHint,
-                          prefixIcon: const Icon(Icons.search),
-                          suffixIcon: _searchQuery.trim().isEmpty
-                              ? null
-                              : IconButton(
-                                  tooltip: context.l10n.clearSearchTooltip,
-                                  onPressed: () {
-                                    _searchController.clear();
-                                    setState(() {
-                                      _searchQuery = '';
-                                    });
-                                  },
-                                  icon: const Icon(Icons.close),
-                                ),
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.surfaceContainer,
+                          border: Border.all(
+                            color: theme.colorScheme.outlineVariant,
+                          ),
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        onChanged: (value) {
-                          setState(() {
-                            _searchQuery = value;
-                          });
-                        },
+                        child: Padding(
+                          padding: const EdgeInsets.all(4),
+                          child: TextField(
+                            controller: _searchController,
+                            decoration: InputDecoration(
+                              hintText: context.l10n.managementSearchHint,
+                              prefixIcon: const Icon(Icons.search),
+                              suffixIcon: _searchQuery.trim().isEmpty
+                                  ? null
+                                  : IconButton(
+                                      tooltip: context.l10n.clearSearchTooltip,
+                                      onPressed: () {
+                                        _searchController.clear();
+                                        setState(() {
+                                          _searchQuery = '';
+                                        });
+                                      },
+                                      icon: const Icon(Icons.close),
+                                    ),
+                              border: InputBorder.none,
+                              enabledBorder: InputBorder.none,
+                              focusedBorder: InputBorder.none,
+                            ),
+                            onChanged: (value) {
+                              setState(() {
+                                _searchQuery = value;
+                              });
+                            },
+                          ),
+                        ),
                       ),
                     ),
                   ),
@@ -120,9 +136,24 @@ class _ManageFilterOptionsPageState
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(24, 24, 24, 48),
                     child: Center(
-                      child: Text(
-                        context.l10n.noManagementOptionsMatchSearch,
-                        textAlign: TextAlign.center,
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.surfaceContainer,
+                          border: Border.all(
+                            color: theme.colorScheme.outlineVariant,
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(20),
+                          child: Text(
+                            context.l10n.noManagementOptionsMatchSearch,
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                   ),
@@ -134,39 +165,57 @@ class _ManageFilterOptionsPageState
                     itemCount: filteredItems.length,
                     itemBuilder: (context, index) {
                       final item = filteredItems[index];
-                      return ListTile(
-                        selected: selectedOptionId == item.id,
-                        tileColor: Theme.of(
-                          context,
-                        ).colorScheme.surfaceContainerLow,
-                        selectedTileColor: Theme.of(
-                          context,
-                        ).colorScheme.surfaceContainerHighest,
+                      final isSelected = selectedOptionId == item.id;
+                      return Material(
+                        color: isSelected
+                            ? theme.colorScheme.surfaceContainerHigh
+                            : theme.colorScheme.surfaceContainer,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(12),
+                          side: BorderSide(
+                            color: isSelected
+                                ? theme.colorScheme.primaryContainer
+                                : theme.colorScheme.outlineVariant,
+                          ),
                         ),
-                        title: Text(item.name),
-                        trailing: PopupMenuButton<_OptionMenuAction>(
-                          enabled: !_isSubmitting,
-                          onSelected: (action) =>
-                              _handleOptionMenuAction(item, action),
-                          itemBuilder: (context) => [
-                            PopupMenuItem<_OptionMenuAction>(
-                              value: _OptionMenuAction.rename,
-                              child: Text(context.l10n.renameAction),
-                            ),
-                            PopupMenuItem<_OptionMenuAction>(
-                              value: _OptionMenuAction.delete,
-                              child: Text(
-                                context.l10n.deleteAction,
-                                style: TextStyle(
-                                  color: Theme.of(context).colorScheme.error,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(12),
+                          onTap: () => _applyFilterSelection(item),
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 14, 10, 14),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    item.name,
+                                    style: theme.textTheme.titleMedium
+                                        ?.copyWith(fontWeight: FontWeight.w600),
+                                  ),
                                 ),
-                              ),
+                                PopupMenuButton<_OptionMenuAction>(
+                                  enabled: !_isSubmitting,
+                                  onSelected: (action) =>
+                                      _handleOptionMenuAction(item, action),
+                                  itemBuilder: (context) => [
+                                    PopupMenuItem<_OptionMenuAction>(
+                                      value: _OptionMenuAction.rename,
+                                      child: Text(context.l10n.renameAction),
+                                    ),
+                                    PopupMenuItem<_OptionMenuAction>(
+                                      value: _OptionMenuAction.delete,
+                                      child: Text(
+                                        context.l10n.deleteAction,
+                                        style: TextStyle(
+                                          color: theme.colorScheme.error,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ),
-                          ],
+                          ),
                         ),
-                        onTap: () => _applyFilterSelection(item),
                       );
                     },
                     separatorBuilder: (_, _) => const SizedBox(height: 8),
@@ -178,25 +227,55 @@ class _ManageFilterOptionsPageState
         error: (error, stackTrace) => Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  context.l10n.couldNotLoadStatus,
-                  style: Theme.of(context).textTheme.titleMedium,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surfaceContainer,
+                border: Border.all(color: theme.colorScheme.outlineVariant),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      context.l10n.couldNotLoadStatus,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      error.toString(),
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    FilledButton(
+                      onPressed: _refreshOptions,
+                      child: Text(context.l10n.retryAction),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 8),
-                Text(error.toString(), textAlign: TextAlign.center),
-                const SizedBox(height: 16),
-                FilledButton(
-                  onPressed: _refreshOptions,
-                  child: Text(context.l10n.retryAction),
-                ),
-              ],
+              ),
             ),
           ),
         ),
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => Center(
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surfaceContainer,
+              border: Border.all(color: theme.colorScheme.outlineVariant),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Padding(
+              padding: EdgeInsets.all(20),
+              child: CircularProgressIndicator(),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -587,25 +666,45 @@ class _EmptyOptionsState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.inbox_outlined,
-              size: 40,
-              color: Theme.of(context).colorScheme.primary,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surfaceContainer,
+            border: Border.all(color: theme.colorScheme.outlineVariant),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.inbox_outlined,
+                  size: 40,
+                  color: theme.colorScheme.primary,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  title,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  context.l10n.managementOptionsEmpty,
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 12),
-            Text(title, style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 8),
-            Text(
-              context.l10n.managementOptionsEmpty,
-              textAlign: TextAlign.center,
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -675,39 +774,50 @@ class _FilterOptionSheetState extends State<_FilterOptionSheet> {
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
+    final theme = Theme.of(context);
 
     return SafeArea(
       child: Padding(
         padding: EdgeInsets.fromLTRB(24, 12, 24, bottomInset + 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(widget.title, style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _controller,
-              autofocus: true,
-              textInputAction: TextInputAction.done,
-              decoration: InputDecoration(labelText: widget.fieldLabel),
-              onSubmitted: (_) => _submit(),
-            ),
-            const SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surfaceContainer,
+            border: Border.all(color: theme.colorScheme.outlineVariant),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: Text(context.l10n.cancelAction),
+                Text(widget.title, style: theme.textTheme.titleLarge),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: _controller,
+                  autofocus: true,
+                  textInputAction: TextInputAction.done,
+                  decoration: InputDecoration(labelText: widget.fieldLabel),
+                  onSubmitted: (_) => _submit(),
                 ),
-                const SizedBox(width: 12),
-                FilledButton(
-                  onPressed: _submit,
-                  child: Text(widget.submitLabel),
+                const SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: Text(context.l10n.cancelAction),
+                    ),
+                    const SizedBox(width: 12),
+                    FilledButton(
+                      onPressed: _submit,
+                      child: Text(widget.submitLabel),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
+          ),
         ),
       ),
     );

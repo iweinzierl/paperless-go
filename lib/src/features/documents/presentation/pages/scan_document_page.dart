@@ -52,6 +52,7 @@ class _ScanDocumentPageState extends ConsumerState<ScanDocumentPage> {
     final state = ref.watch(documentScanControllerProvider);
     final controller = ref.read(documentScanControllerProvider.notifier);
     final l10n = context.l10n;
+    final theme = Theme.of(context);
 
     if (_titleController.text != state.title) {
       _titleController.value = TextEditingValue(
@@ -63,155 +64,200 @@ class _ScanDocumentPageState extends ConsumerState<ScanDocumentPage> {
     return Scaffold(
       appBar: AppBar(title: Text(l10n.scanDocumentTitle)),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(l10n.scanDocumentDescription),
-              const SizedBox(height: 16),
-              if (state.isBusy) const LinearProgressIndicator(),
-              if (state.isBusy) const SizedBox(height: 16),
-              if (state.hasContent) ...[
-                TextField(
-                  enabled: !state.isBusy,
-                  controller: _titleController,
-                  onChanged: controller.updateTitle,
-                  decoration: InputDecoration(
-                    border: const OutlineInputBorder(),
-                    labelText: l10n.scanDocumentTitleFieldLabel,
-                    hintText: l10n.scanDocumentTitleFieldHint,
+        child: ColoredBox(
+          color: theme.colorScheme.surface,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surfaceContainer,
+                    border: Border.all(color: theme.colorScheme.outlineVariant),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          l10n.scanDocumentDescription,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                        if (state.isBusy) ...[
+                          const SizedBox(height: 12),
+                          const LinearProgressIndicator(),
+                        ],
+                      ],
+                    ),
                   ),
                 ),
                 const SizedBox(height: 16),
-                if (state.hasImportedDocument)
-                  Expanded(
-                    child: ListView(
-                      children: [
-                        _ImportedPdfCard(
-                          path: state.importedDocumentPath!,
-                          onRemove: state.isBusy
-                              ? null
-                              : controller.removeImportedDocument,
-                        ),
-                      ],
-                    ),
-                  )
-                else ...[
-                  Text(
-                    l10n.scanDocumentPages(state.pagePaths.length),
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 12),
-                  Expanded(
-                    child: ListView.separated(
-                      itemCount: state.pagePaths.length,
-                      separatorBuilder: (context, index) =>
-                          const SizedBox(height: 12),
-                      itemBuilder: (context, index) {
-                        return _ScannedPageCard(
-                          index: index,
-                          path: state.pagePaths[index],
-                          onRemove: state.isBusy
-                              ? null
-                              : () => controller.removePageAt(index),
-                        );
-                      },
+                if (state.hasContent) ...[
+                  _SectionLabel(label: l10n.scanDocumentTitleFieldLabel),
+                  const SizedBox(height: 8),
+                  TextField(
+                    enabled: !state.isBusy,
+                    controller: _titleController,
+                    onChanged: controller.updateTitle,
+                    decoration: InputDecoration(
+                      border: const OutlineInputBorder(),
+                      labelText: l10n.scanDocumentTitleFieldLabel,
+                      hintText: l10n.scanDocumentTitleFieldHint,
                     ),
                   ),
-                ],
-              ] else ...[
-                Expanded(
-                  child: Center(
-                    child: Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(20),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(
-                              Icons.document_scanner_outlined,
-                              size: 48,
-                            ),
+                  const SizedBox(height: 16),
+                  if (state.hasImportedDocument)
+                    Expanded(
+                      child: ListView(
+                        children: [
+                          _ImportedPdfCard(
+                            path: state.importedDocumentPath!,
+                            onRemove: state.isBusy
+                                ? null
+                                : controller.removeImportedDocument,
+                          ),
+                        ],
+                      ),
+                    )
+                  else ...[
+                    _SectionLabel(
+                      label: l10n.scanDocumentPages(state.pagePaths.length),
+                    ),
+                    const SizedBox(height: 8),
+                    Expanded(
+                      child: ListView.separated(
+                        itemCount: state.pagePaths.length,
+                        separatorBuilder: (context, index) =>
                             const SizedBox(height: 12),
-                            Text(
-                              l10n.scanDocumentEmptyTitle,
-                              style: Theme.of(context).textTheme.titleLarge,
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              l10n.scanDocumentEmptyDescription,
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
+                        itemBuilder: (context, index) {
+                          return _ScannedPageCard(
+                            index: index,
+                            path: state.pagePaths[index],
+                            onRemove: state.isBusy
+                                ? null
+                                : () => controller.removePageAt(index),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ] else ...[
+                  Expanded(
+                    child: Center(
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.surfaceContainer,
+                          border: Border.all(
+                            color: theme.colorScheme.outlineVariant,
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(20),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.document_scanner_outlined,
+                                size: 48,
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                l10n.scanDocumentEmptyTitle,
+                                style: theme.textTheme.headlineMedium?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                l10n.scanDocumentEmptyDescription,
+                                textAlign: TextAlign.center,
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
-              ],
-              const SizedBox(height: 16),
-              if (!state.hasImportedDocument) ...[
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    onPressed: state.isBusy
-                        ? null
-                        : () =>
-                              _scanPages(context, ref, replaceExisting: false),
-                    icon: const Icon(Icons.document_scanner_outlined),
-                    label: Text(
-                      state.hasPages
-                          ? l10n.scanDocumentAddPagesAction
-                          : l10n.scanDocumentAction,
-                    ),
-                  ),
-                ),
-                if (state.hasPages) ...[
-                  const SizedBox(height: 12),
+                ],
+                const SizedBox(height: 16),
+                if (!state.hasImportedDocument) ...[
                   SizedBox(
                     width: double.infinity,
                     child: OutlinedButton.icon(
                       onPressed: state.isBusy
                           ? null
-                          : () =>
-                                _scanPages(context, ref, replaceExisting: true),
-                      icon: const Icon(Icons.restart_alt),
-                      label: Text(l10n.scanDocumentReplacePagesAction),
+                          : () => _scanPages(
+                              context,
+                              ref,
+                              replaceExisting: false,
+                            ),
+                      icon: const Icon(Icons.document_scanner_outlined),
+                      label: Text(
+                        state.hasPages
+                            ? l10n.scanDocumentAddPagesAction
+                            : l10n.scanDocumentAction,
+                      ),
+                    ),
+                  ),
+                  if (state.hasPages) ...[
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: state.isBusy
+                            ? null
+                            : () => _scanPages(
+                                context,
+                                ref,
+                                replaceExisting: true,
+                              ),
+                        icon: const Icon(Icons.restart_alt),
+                        label: Text(l10n.scanDocumentReplacePagesAction),
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 12),
+                ],
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: state.isBusy
+                        ? null
+                        : () => _pickDocument(context, ref),
+                    icon: const Icon(Icons.upload_file_outlined),
+                    label: Text(l10n.scanDocumentImportAction),
+                  ),
+                ),
+                if (state.hasContent) ...[
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.icon(
+                      onPressed: state.isBusy
+                          ? null
+                          : () => _upload(context, ref),
+                      icon: const Icon(Icons.cloud_upload_outlined),
+                      label: Text(
+                        state.isUploading
+                            ? l10n.scanDocumentUploadingAction
+                            : l10n.scanDocumentUploadAction,
+                      ),
                     ),
                   ),
                 ],
-                const SizedBox(height: 12),
               ],
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: state.isBusy
-                      ? null
-                      : () => _pickDocument(context, ref),
-                  icon: const Icon(Icons.upload_file_outlined),
-                  label: Text(l10n.scanDocumentImportAction),
-                ),
-              ),
-              if (state.hasContent) ...[
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton.icon(
-                    onPressed: state.isBusy
-                        ? null
-                        : () => _upload(context, ref),
-                    icon: const Icon(Icons.cloud_upload_outlined),
-                    label: Text(
-                      state.isUploading
-                          ? l10n.scanDocumentUploadingAction
-                          : l10n.scanDocumentUploadAction,
-                    ),
-                  ),
-                ),
-              ],
-            ],
+            ),
           ),
         ),
       ),
@@ -282,6 +328,26 @@ class _ScanDocumentPageState extends ConsumerState<ScanDocumentPage> {
   }
 }
 
+class _SectionLabel extends StatelessWidget {
+  const _SectionLabel({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Text(
+      label,
+      style: theme.textTheme.labelMedium?.copyWith(
+        color: theme.colorScheme.onSurfaceVariant,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 0.5,
+      ),
+    );
+  }
+}
+
 class _ImportedPdfCard extends StatelessWidget {
   const _ImportedPdfCard({required this.path, required this.onRemove});
 
@@ -290,20 +356,62 @@ class _ImportedPdfCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final fileName = Uri.file(path).pathSegments.last;
     final extension = fileName.contains('.')
         ? fileName.split('.').last.toUpperCase()
         : context.l10n.documentDetailsTitle;
 
-    return Card(
-      child: ListTile(
-        leading: Icon(_leadingIconForPath(path), size: 32),
-        title: Text(fileName, maxLines: 1, overflow: TextOverflow.ellipsis),
-        subtitle: Text(extension),
-        trailing: IconButton(
-          tooltip: context.l10n.deleteAction,
-          onPressed: onRemove,
-          icon: const Icon(Icons.delete_outline),
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainer,
+        border: Border.all(color: theme.colorScheme.outlineVariant),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            DecoratedBox(
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surfaceContainerHigh,
+                border: Border.all(color: theme.colorScheme.outlineVariant),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Icon(_leadingIconForPath(path), size: 28),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    fileName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    extension,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            IconButton(
+              tooltip: context.l10n.deleteAction,
+              onPressed: onRemove,
+              icon: const Icon(Icons.delete_outline),
+            ),
+          ],
         ),
       ),
     );
@@ -343,41 +451,74 @@ class _ScannedPageCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final theme = Theme.of(context);
 
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          AspectRatio(
-            aspectRatio: 3 / 4,
-            child: Image.file(
-              File(path),
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return const ColoredBox(
-                  color: Color(0x11000000),
-                  child: Center(
-                    child: Icon(Icons.broken_image_outlined, size: 48),
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainer,
+        border: Border.all(color: theme.colorScheme.outlineVariant),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            AspectRatio(
+              aspectRatio: 3 / 4,
+              child: Image.file(
+                File(path),
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return ColoredBox(
+                    color: theme.colorScheme.surfaceContainerHigh,
+                    child: Center(
+                      child: Icon(
+                        Icons.broken_image_outlined,
+                        size: 48,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          l10n.scannedPageLabel(index + 1),
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          Uri.file(path).pathSegments.last,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                );
-              },
+                  IconButton(
+                    tooltip: l10n.removeScannedPageTooltip,
+                    onPressed: onRemove,
+                    icon: const Icon(Icons.delete_outline),
+                  ),
+                ],
+              ),
             ),
-          ),
-          ListTile(
-            title: Text(l10n.scannedPageLabel(index + 1)),
-            subtitle: Text(
-              Uri.file(path).pathSegments.last,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            trailing: IconButton(
-              tooltip: l10n.removeScannedPageTooltip,
-              onPressed: onRemove,
-              icon: const Icon(Icons.delete_outline),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

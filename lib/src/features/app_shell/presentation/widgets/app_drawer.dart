@@ -106,9 +106,9 @@ class AppDrawer extends ConsumerWidget {
                     child: Text(
                       l10n.appTitle,
                       style: theme.textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w700,
                         color: theme.colorScheme.primary,
-                        letterSpacing: -0.8,
+                        letterSpacing: -0.24,
                       ),
                     ),
                   ),
@@ -255,8 +255,8 @@ class _DrawerSectionLabel extends StatelessWidget {
       label.toUpperCase(),
       style: theme.textTheme.labelLarge?.copyWith(
         color: theme.colorScheme.onSurfaceVariant,
-        fontWeight: FontWeight.w800,
-        letterSpacing: 1.3,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 0.8,
       ),
     );
   }
@@ -279,45 +279,52 @@ class _DrawerActionTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final backgroundColor = highlighted
-        ? theme.colorScheme.primary
+        ? theme.colorScheme.primaryContainer
         : Colors.transparent;
     final foregroundColor = highlighted
-        ? theme.colorScheme.onPrimary
-        : theme.colorScheme.onSurface.withValues(alpha: 0.85);
+        ? theme.colorScheme.onPrimaryContainer
+        : theme.colorScheme.onSurface.withValues(alpha: 0.9);
 
-    final tile = Material(
-      color: backgroundColor,
-      borderRadius: BorderRadius.circular(999),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(999),
-        onTap: action.onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
-          child: Row(
-            mainAxisAlignment: isMinimized
-                ? MainAxisAlignment.center
-                : MainAxisAlignment.start,
-            children: [
-              Badge.count(
-                isLabelVisible: badgeCount > 0,
-                count: badgeCount,
-                child: Icon(action.icon, color: foregroundColor, size: 22),
-              ),
-              if (!isMinimized) ...[
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Text(
-                    action.title,
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      color: foregroundColor,
-                      fontWeight: highlighted
-                          ? FontWeight.w800
-                          : FontWeight.w600,
+    final tile = AnimatedContainer(
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeOutCubic,
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(8),
+          onTap: action.onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+            child: Row(
+              mainAxisAlignment: isMinimized
+                  ? MainAxisAlignment.center
+                  : MainAxisAlignment.start,
+              children: [
+                Badge.count(
+                  isLabelVisible: badgeCount > 0,
+                  count: badgeCount,
+                  child: Icon(action.icon, color: foregroundColor, size: 22),
+                ),
+                if (!isMinimized) ...[
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Text(
+                      action.title,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: foregroundColor,
+                        fontWeight: highlighted
+                            ? FontWeight.w700
+                            : FontWeight.w600,
+                      ),
                     ),
                   ),
-                ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),
@@ -422,29 +429,32 @@ class _ManagementDestination extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final tile = InkWell(
-      borderRadius: BorderRadius.circular(22),
+      borderRadius: BorderRadius.circular(8),
       onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-        child: Row(
-          mainAxisAlignment: isMinimized
-              ? MainAxisAlignment.center
-              : MainAxisAlignment.start,
-          children: [
-            Icon(icon, color: theme.colorScheme.onSurfaceVariant, size: 21),
-            if (!isMinimized) ...[
-              const SizedBox(width: 14),
-              Expanded(
-                child: Text(
-                  title,
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    fontWeight: FontWeight.w600,
+      child: DecoratedBox(
+        decoration: BoxDecoration(borderRadius: BorderRadius.circular(8)),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          child: Row(
+            mainAxisAlignment: isMinimized
+                ? MainAxisAlignment.center
+                : MainAxisAlignment.start,
+            children: [
+              Icon(icon, color: theme.colorScheme.onSurfaceVariant, size: 21),
+              if (!isMinimized) ...[
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
-              ),
-              _CountPill(label: count?.toString() ?? '...'),
+                _CountPill(label: count?.toString() ?? '...'),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );
@@ -472,16 +482,17 @@ class _CountPill extends StatelessWidget {
 
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: theme.colorScheme.secondaryContainer,
-        borderRadius: BorderRadius.circular(10),
+        color: theme.colorScheme.surfaceContainerHigh,
+        border: Border.all(color: theme.colorScheme.outlineVariant),
+        borderRadius: BorderRadius.circular(999),
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         child: Text(
           label,
           style: theme.textTheme.labelMedium?.copyWith(
-            color: theme.colorScheme.onSecondaryContainer,
-            fontWeight: FontWeight.w800,
+            color: theme.colorScheme.onSurfaceVariant,
+            fontWeight: FontWeight.w700,
           ),
         ),
       ),
@@ -512,9 +523,16 @@ class _DrawerUserCard extends StatelessWidget {
       color: isMinimized
           ? Colors.transparent
           : theme.colorScheme.surfaceContainer,
-      borderRadius: BorderRadius.circular(isMinimized ? 999 : 20),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(isMinimized ? 999 : 12),
+        side: BorderSide(
+          color: isMinimized
+              ? Colors.transparent
+              : theme.colorScheme.outlineVariant,
+        ),
+      ),
       child: InkWell(
-        borderRadius: BorderRadius.circular(isMinimized ? 999 : 20),
+        borderRadius: BorderRadius.circular(isMinimized ? 999 : 12),
         onTap: onTap,
         child: Padding(
           padding: isMinimized
@@ -530,13 +548,13 @@ class _DrawerUserCard extends StatelessWidget {
                 children: [
                   CircleAvatar(
                     radius: 22,
-                    backgroundColor: theme.colorScheme.primary,
-                    foregroundColor: theme.colorScheme.onPrimary,
+                    backgroundColor: theme.colorScheme.primaryContainer,
+                    foregroundColor: theme.colorScheme.onPrimaryContainer,
                     child: Text(
                       initials,
                       style: theme.textTheme.bodyLarge?.copyWith(
-                        fontWeight: FontWeight.w800,
-                        color: theme.colorScheme.onPrimary,
+                        fontWeight: FontWeight.w700,
+                        color: theme.colorScheme.onPrimaryContainer,
                       ),
                     ),
                   ),
@@ -568,7 +586,7 @@ class _DrawerUserCard extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: theme.textTheme.bodyLarge?.copyWith(
-                          fontWeight: FontWeight.w800,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                       const SizedBox(height: 2),
