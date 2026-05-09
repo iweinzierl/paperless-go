@@ -17,6 +17,13 @@ for ruby_bin_dir in /opt/homebrew/opt/ruby/bin /usr/local/opt/ruby/bin; do
   fi
 done
 
+if command -v ruby >/dev/null 2>&1; then
+  user_gem_bin="$(ruby -e 'print Gem.bindir(Gem.user_dir)' 2>/dev/null || true)"
+  if [[ -n "$user_gem_bin" && -d "$user_gem_bin" ]]; then
+    export PATH="$user_gem_bin:$PATH"
+  fi
+fi
+
 if [[ -z "${JAVA_HOME:-}" ]]; then
   for candidate in \
     "/Applications/Android Studio.app/Contents/jbr/Contents/Home" \

@@ -192,10 +192,15 @@ class _DocumentsPageState extends ConsumerState<DocumentsPage> {
                             ),
                           ),
                         ),
-                        RefreshStatusText(
-                          lastUpdatedAt: _lastUpdatedAt,
-                          isRefreshing: documentsPage.isRefreshing,
-                          lastRefreshFailedAt: _lastRefreshFailedAt,
+                        Flexible(
+                          child: Align(
+                            alignment: Alignment.centerRight,
+                            child: RefreshStatusText(
+                              lastUpdatedAt: _lastUpdatedAt,
+                              isRefreshing: documentsPage.isRefreshing,
+                              lastRefreshFailedAt: _lastRefreshFailedAt,
+                            ),
+                          ),
                         ),
                       ],
                     ),

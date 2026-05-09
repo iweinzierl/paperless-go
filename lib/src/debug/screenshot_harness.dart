@@ -30,10 +30,15 @@ import 'package:paperless_ngx_app/src/features/documents/presentation/providers/
 import 'package:paperless_ngx_app/src/features/documents/presentation/providers/selected_document_provider.dart';
 import 'package:paperless_ngx_app/src/features/documents/data/repositories/documents_repository.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/models/documents_filter_state.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 const screenshotScenarioPreferenceKey = 'debug.screenshot_scenario';
 const screenshotDataSourcePreferenceKey = 'debug.screenshot_data_source';
 const screenshotStatePreferenceKey = 'debug.screenshot_state';
+const screenshotServerUrlPreferenceKey = 'debug.screenshot_server_url';
+const screenshotUsernamePreferenceKey = 'debug.screenshot_username';
+const screenshotPasswordPreferenceKey = 'debug.screenshot_password';
+const screenshotDisplayNamePreferenceKey = 'debug.screenshot_display_name';
 
 enum ScreenshotRuntimeState { loading, ready, error }
 
@@ -65,6 +70,20 @@ const SettingsFormState _redactedScreenshotSettingsState = SettingsFormState(
   saveStatus: AsyncData<void>(null),
   connectedDisplayName: 'Demo',
 );
+
+PaperlessAuthSession _redactedScreenshotDisplaySession(
+  PaperlessAuthSession session,
+) {
+  final displayName = session.displayName?.trim();
+  return session.copyWith(
+    serverUrl: '',
+    username: '',
+    password: '',
+    displayName: displayName != null && displayName.isNotEmpty
+        ? displayName
+        : 'Demo',
+  );
+}
 
 ScreenshotScenario? maybeParseScreenshotScenario(String? value) {
   return switch (value?.trim()) {
@@ -207,7 +226,10 @@ class _LiveScreenshotBootstrapState
       return;
     }
 
-    final launchSession = _resolveLiveScreenshotLaunchSession(existingSession);
+    final launchSession = _resolveLiveScreenshotLaunchSession(
+      ref.read(sharedPreferencesProvider),
+      existingSession,
+    );
     final serverUrl = launchSession.serverUrl.trim();
     final username = launchSession.username.trim();
     final password = launchSession.password;
@@ -251,25 +273,38 @@ class _LiveScreenshotBootstrapState
 }
 
 PaperlessAuthSession _resolveLiveScreenshotLaunchSession(
+  SharedPreferences sharedPreferences,
   PaperlessAuthSession session,
 ) {
   String readEnvironmentValue(String key) {
     return Platform.environment[key]?.trim() ?? '';
   }
 
+  String readSharedPreferenceValue(String key) {
+    return sharedPreferences.getString(key)?.trim() ?? '';
+  }
+
   final serverUrl = session.serverUrl.trim().isNotEmpty
       ? session.serverUrl
+      : readSharedPreferenceValue(screenshotServerUrlPreferenceKey).isNotEmpty
+      ? readSharedPreferenceValue(screenshotServerUrlPreferenceKey)
       : readEnvironmentValue('PAPERLESS_SCREENSHOT_SERVER_URL');
   final username = session.username.trim().isNotEmpty
       ? session.username
+      : readSharedPreferenceValue(screenshotUsernamePreferenceKey).isNotEmpty
+      ? readSharedPreferenceValue(screenshotUsernamePreferenceKey)
       : readEnvironmentValue('PAPERLESS_SCREENSHOT_USERNAME');
   final password = session.password.isNotEmpty
       ? session.password
+      : readSharedPreferenceValue(screenshotPasswordPreferenceKey).isNotEmpty
+      ? readSharedPreferenceValue(screenshotPasswordPreferenceKey)
       : readEnvironmentValue('PAPERLESS_SCREENSHOT_PASSWORD');
   final existingDisplayName = session.displayName?.trim();
   final displayName =
       existingDisplayName != null && existingDisplayName.isNotEmpty
       ? existingDisplayName
+      : readSharedPreferenceValue(screenshotDisplayNamePreferenceKey).isNotEmpty
+      ? readSharedPreferenceValue(screenshotDisplayNamePreferenceKey)
       : readEnvironmentValue('PAPERLESS_SCREENSHOT_DISPLAY_NAME');
 
   return session.copyWith(
@@ -489,9 +524,9 @@ class _LiveScreenshotScenarioPage extends ConsumerWidget {
     return switch (scenario) {
       ScreenshotScenario.documents ||
       ScreenshotScenario.documentsList ||
-      ScreenshotScenario.documentsDrawer ||
+      ScreenshotScenario.documentsDrawer => const Duration(seconds: 3),
       ScreenshotScenario.documentDetail ||
-      ScreenshotScenario.documentMetadataEdit => const Duration(seconds: 3),
+      ScreenshotScenario.documentMetadataEdit => const Duration(seconds: 8),
       ScreenshotScenario.login ||
       ScreenshotScenario.documentsFilters ||
       ScreenshotScenario.settings => Duration.zero,
@@ -517,7 +552,10 @@ class _LiveScreenshotScenarioPage extends ConsumerWidget {
           repository.buildDocumentThumbnailUri(documentId).toString(),
           headers: repository.buildAuthenticatedHeaders(),
         );
-        await precacheImage(imageProvider, buildContext);
+        await precacheImage(
+          imageProvider,
+          buildContext,
+        ).timeout(const Duration(seconds: 5));
       },
       ScreenshotScenario.login ||
       ScreenshotScenario.documentsFilters ||
@@ -555,6 +593,10 @@ class _LiveScreenshotScenarioContext {
 
   List<Override> get providerOverrides {
     return [
+      authDisplaySessionProvider.overrideWith(
+        (ref) =>
+            _redactedScreenshotDisplaySession(ref.watch(authSessionProvider)),
+      ),
       documentsSearchQueryProvider.overrideWith((ref) => searchQuery),
       documentsCurrentPageProvider.overrideWith((ref) => currentPage),
       documentsOrderingProvider.overrideWith((ref) => ordering),
@@ -673,7 +715,11 @@ class _ScreenshotStateSyncState extends ConsumerState<_ScreenshotStateSync> {
     final requestId = ++_persistRequestId;
     if (widget.state == ScreenshotRuntimeState.ready &&
         widget.beforeReady != null) {
-      await widget.beforeReady!(context, ref);
+      try {
+        await widget.beforeReady!(context, ref);
+      } catch (_) {
+        // Keep the harness progressing even if best-effort screenshot warmup fails.
+      }
       if (!mounted || requestId != _persistRequestId) {
         return;
       }

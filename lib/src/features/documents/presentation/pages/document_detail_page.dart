@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pdfrx/pdfrx.dart';
 import 'package:paperless_ngx_app/l10n/generated/app_localizations.dart';
+import 'package:paperless_ngx_app/src/core/providers/shared_preferences_provider.dart';
 import 'package:paperless_ngx_app/src/core/presentation/layout/adaptive_layout.dart';
 import 'package:paperless_ngx_app/src/features/auth/presentation/providers/current_user_capabilities_provider.dart';
 import 'package:paperless_ngx_app/src/core/presentation/localization/app_localizations_x.dart';
 import 'package:paperless_ngx_app/src/core/presentation/formatters/timestamp_text.dart';
+import 'package:paperless_ngx_app/src/debug/screenshot_harness.dart';
 import 'package:paperless_ngx_app/src/features/app_shell/presentation/providers/app_shell_providers.dart';
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_document.dart';
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_filter_option.dart';
@@ -227,6 +229,7 @@ class _DocumentDetailBodyState extends ConsumerState<_DocumentDetailBody> {
   int _selectedPage = 1;
   late final ScrollController _pageStripScrollController;
   bool _didAutoOpenMetadataEditor = false;
+  _ScreenshotPreviewState _previewState = _ScreenshotPreviewState.loading;
 
   @override
   void initState() {
@@ -246,6 +249,7 @@ class _DocumentDetailBodyState extends ConsumerState<_DocumentDetailBody> {
 
     if (oldWidget.document.id != widget.document.id) {
       _selectedPage = 1;
+      _previewState = _ScreenshotPreviewState.loading;
       if (_pageStripScrollController.hasClients) {
         _pageStripScrollController.jumpTo(0);
       }
@@ -279,6 +283,16 @@ class _DocumentDetailBodyState extends ConsumerState<_DocumentDetailBody> {
     });
   }
 
+  void _updatePreviewState(_ScreenshotPreviewState state) {
+    if (!mounted || _previewState == state) {
+      return;
+    }
+
+    setState(() {
+      _previewState = state;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final document = widget.document;
@@ -290,6 +304,11 @@ class _DocumentDetailBodyState extends ConsumerState<_DocumentDetailBody> {
     final theme = Theme.of(context);
     final l10n = context.l10n;
     final repository = ref.watch(documentsRepositoryProvider);
+    final isScreenshotScenario =
+        ref
+            .read(sharedPreferencesProvider)
+            .getString(screenshotScenarioPreferenceKey) !=
+        null;
     final thumbnailWidget = repository.buildDocumentThumbnailWidget(document);
     final thumbnailImageProvider = repository
         .buildDocumentThumbnailImageProvider(document.id);
@@ -319,151 +338,161 @@ class _DocumentDetailBodyState extends ConsumerState<_DocumentDetailBody> {
       ...tagNames,
     ];
 
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            theme.colorScheme.surface,
-            theme.colorScheme.surfaceContainerHigh,
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+    return _ScreenshotPreviewStateMarker(
+      state: _previewState,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              theme.colorScheme.surface,
+              theme.colorScheme.surfaceContainerHigh,
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
         ),
-      ),
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 800),
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-            children: [
-              if (widget.embedded) ...[
-                _EmbeddedDocumentActionBar(
-                  title: document.title,
-                  actionWidgets: widget.actionWidgets,
-                ),
-                const SizedBox(height: 16),
-              ],
-              _DocumentSummaryCard(
-                primaryLabel: summaryLeadingLabel,
-                trailingLabel: summaryTrailingLabel,
-                badges: summaryBadges,
-              ),
-              const SizedBox(height: 18),
-              FilledButton.icon(
-                onPressed: isOpening
-                    ? null
-                    : () => _openDocument(context, ref, document),
-                style: FilledButton.styleFrom(
-                  minimumSize: const Size.fromHeight(56),
-                  shape: const StadiumBorder(),
-                  textStyle: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 1.0,
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 800),
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+              children: [
+                if (widget.embedded) ...[
+                  _EmbeddedDocumentActionBar(
+                    title: document.title,
+                    actionWidgets: widget.actionWidgets,
                   ),
-                ),
-                icon: Icon(
-                  isOpening ? Icons.hourglass_top : Icons.visibility_outlined,
-                ),
-                label: Text(
-                  (isOpening ? l10n.openingAction : l10n.openDocumentAction)
-                      .toUpperCase(),
-                ),
-              ),
-              const SizedBox(height: 12),
-              OutlinedButton.icon(
-                onPressed: canEditMetadata
-                    ? () => _editMetadata(context, ref, document)
-                    : null,
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size.fromHeight(56),
-                  shape: const StadiumBorder(),
-                  textStyle: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 1.0,
-                  ),
-                ),
-                icon: const Icon(Icons.edit_outlined),
-                label: Text(l10n.editMetadataAction.toUpperCase()),
-              ),
-              const SizedBox(height: 20),
-              _PreviewCard(
-                title: l10n.thumbnailPreviewTitle,
-                document: document,
-                pageCount: effectivePageCount,
-                selectedPage: selectedPage,
-                pageStripScrollController: _pageStripScrollController,
-                thumbnailWidget: thumbnailWidget,
-                thumbnailImageProvider: thumbnailImageProvider,
-                repository: repository,
-                onSelectPage: (pageNumber) {
-                  if (pageNumber == _selectedPage) {
-                    return;
-                  }
-                  setState(() {
-                    _selectedPage = pageNumber;
-                  });
-                },
-                onPreview: isOpening
-                    ? null
-                    : () => _openFullscreenPreview(
-                        context,
-                        document,
-                        initialPage: selectedPage,
-                      ),
-              ),
-              const SizedBox(height: 20),
-              _MetadataCard(
-                title: l10n.metadataTitle,
-                children: [
-                  _MetadataInfoRow(
-                    label: l10n.fileNameLabel,
-                    value: document.preferredFileName,
-                  ),
-                  _MetadataInfoRow(
-                    label: l10n.mimeTypeLabel,
-                    value: document.mimeType,
-                  ),
-                  _MetadataInfoRow(
-                    label: l10n.createdLabel,
-                    value: _formatMetadataTimestamp(context, document.created),
-                  ),
-                  _MetadataInfoRow(
-                    label: l10n.pagesLabel,
-                    value: document.pageCount?.toString(),
-                  ),
-                  _MetadataInfoRow(
-                    label: l10n.archiveSerialNumberLabel,
-                    value: document.archiveSerialNumber?.toString(),
-                  ),
-                  _ResolvedOptionRow(
-                    label: l10n.correspondentLabel,
-                    optionId: document.correspondentId,
-                    options: correspondentOptions,
-                    fallbackValue: document.correspondentId?.toString(),
-                  ),
-                  _ResolvedOptionRow(
-                    label: l10n.documentTypeLabel,
-                    optionId: document.documentTypeId,
-                    options: documentTypeOptions,
-                    fallbackValue: document.documentTypeId?.toString(),
-                  ),
-                  _ResolvedTagsRow(document: document, options: tagOptions),
+                  const SizedBox(height: 16),
                 ],
-              ),
-              if (document.content != null &&
-                  document.content!.trim().isNotEmpty) ...[
-                const SizedBox(height: 20),
-                _DetailSection(
-                  title: l10n.contentPreviewTitle,
-                  children: [
-                    Text(
-                      document.content!.trim(),
-                      style: theme.textTheme.bodyMedium?.copyWith(height: 1.55),
+                _DocumentSummaryCard(
+                  primaryLabel: summaryLeadingLabel,
+                  trailingLabel: summaryTrailingLabel,
+                  badges: summaryBadges,
+                ),
+                const SizedBox(height: 18),
+                FilledButton.icon(
+                  onPressed: isOpening
+                      ? null
+                      : () => _openDocument(context, ref, document),
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size.fromHeight(56),
+                    shape: const StadiumBorder(),
+                    textStyle: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1.0,
                     ),
+                  ),
+                  icon: Icon(
+                    isOpening ? Icons.hourglass_top : Icons.visibility_outlined,
+                  ),
+                  label: Text(
+                    (isOpening ? l10n.openingAction : l10n.openDocumentAction)
+                        .toUpperCase(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                OutlinedButton.icon(
+                  onPressed: canEditMetadata
+                      ? () => _editMetadata(context, ref, document)
+                      : null,
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size.fromHeight(56),
+                    shape: const StadiumBorder(),
+                    textStyle: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1.0,
+                    ),
+                  ),
+                  icon: const Icon(Icons.edit_outlined),
+                  label: Text(l10n.editMetadataAction.toUpperCase()),
+                ),
+                const SizedBox(height: 20),
+                _PreviewCard(
+                  title: l10n.thumbnailPreviewTitle,
+                  document: document,
+                  pageCount: effectivePageCount,
+                  selectedPage: selectedPage,
+                  preferFallbackWhileLoading: isScreenshotScenario,
+                  pageStripScrollController: _pageStripScrollController,
+                  thumbnailWidget: thumbnailWidget,
+                  thumbnailImageProvider: thumbnailImageProvider,
+                  repository: repository,
+                  onPreviewStateChanged: _updatePreviewState,
+                  onSelectPage: (pageNumber) {
+                    if (pageNumber == _selectedPage) {
+                      return;
+                    }
+                    setState(() {
+                      _selectedPage = pageNumber;
+                    });
+                  },
+                  onPreview: isOpening
+                      ? null
+                      : () => _openFullscreenPreview(
+                          context,
+                          document,
+                          initialPage: selectedPage,
+                        ),
+                ),
+                const SizedBox(height: 20),
+                _MetadataCard(
+                  title: l10n.metadataTitle,
+                  children: [
+                    _MetadataInfoRow(
+                      label: l10n.fileNameLabel,
+                      value: document.preferredFileName,
+                    ),
+                    _MetadataInfoRow(
+                      label: l10n.mimeTypeLabel,
+                      value: document.mimeType,
+                    ),
+                    _MetadataInfoRow(
+                      label: l10n.createdLabel,
+                      value: _formatMetadataTimestamp(
+                        context,
+                        document.created,
+                      ),
+                    ),
+                    _MetadataInfoRow(
+                      label: l10n.pagesLabel,
+                      value: document.pageCount?.toString(),
+                    ),
+                    _MetadataInfoRow(
+                      label: l10n.archiveSerialNumberLabel,
+                      value: document.archiveSerialNumber?.toString(),
+                    ),
+                    _ResolvedOptionRow(
+                      label: l10n.correspondentLabel,
+                      optionId: document.correspondentId,
+                      options: correspondentOptions,
+                      fallbackValue: document.correspondentId?.toString(),
+                    ),
+                    _ResolvedOptionRow(
+                      label: l10n.documentTypeLabel,
+                      optionId: document.documentTypeId,
+                      options: documentTypeOptions,
+                      fallbackValue: document.documentTypeId?.toString(),
+                    ),
+                    _ResolvedTagsRow(document: document, options: tagOptions),
                   ],
                 ),
+                if (document.content != null &&
+                    document.content!.trim().isNotEmpty) ...[
+                  const SizedBox(height: 20),
+                  _DetailSection(
+                    title: l10n.contentPreviewTitle,
+                    children: [
+                      Text(
+                        document.content!.trim(),
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          height: 1.55,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),
@@ -624,6 +653,7 @@ class _EditDocumentMetadataPageState
   late int? _selectedDocumentTypeId;
   late Set<int> _selectedTagIds;
   int _selectedPreviewPage = 1;
+  _ScreenshotPreviewState _previewState = _ScreenshotPreviewState.loading;
   bool _hasSubmitted = false;
   bool _isSaving = false;
   bool _isCreatingCorrespondent = false;
@@ -750,44 +780,62 @@ class _EditDocumentMetadataPageState
           ),
         ],
       ),
-      body: DecoratedBox(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              theme.colorScheme.surfaceContainerLowest,
-              theme.colorScheme.surface,
-            ],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: isWideScreen
-            ? _buildWideMetadataEditor(
-                context,
-                theme,
-                l10n,
-                repository,
-                correspondents,
-                documentTypes,
-                tags,
-                selectedCorrespondentLabel,
-                selectedDocumentTypeLabel,
-                selectedTags,
-                heroBadges,
-              )
-            : _buildCompactMetadataEditor(
-                context,
-                theme,
-                l10n,
-                repository,
-                correspondents,
-                documentTypes,
-                tags,
-                selectedCorrespondentLabel,
-                selectedDocumentTypeLabel,
-                selectedTags,
-                heroBadges,
+      body: _ScreenshotPreviewStateMarker(
+        state: _previewState,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    theme.colorScheme.surfaceContainerLowest,
+                    theme.colorScheme.surface,
+                  ],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
               ),
+              child: isWideScreen
+                  ? _buildWideMetadataEditor(
+                      context,
+                      theme,
+                      l10n,
+                      repository,
+                      correspondents,
+                      documentTypes,
+                      tags,
+                      selectedCorrespondentLabel,
+                      selectedDocumentTypeLabel,
+                      selectedTags,
+                      heroBadges,
+                    )
+                  : _buildCompactMetadataEditor(
+                      context,
+                      theme,
+                      l10n,
+                      repository,
+                      correspondents,
+                      documentTypes,
+                      tags,
+                      selectedCorrespondentLabel,
+                      selectedDocumentTypeLabel,
+                      selectedTags,
+                      heroBadges,
+                    ),
+            ),
+            const IgnorePointer(
+              child: Opacity(
+                opacity: 0,
+                alwaysIncludeSemantics: true,
+                child: Align(
+                  alignment: Alignment.topLeft,
+                  child: Text('paperless-screenshot-state-ready'),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -831,6 +879,7 @@ class _EditDocumentMetadataPageState
               document: widget.document,
               repository: repository,
               selectedPage: _selectedPreviewPage,
+              onPreviewStateChanged: _updatePreviewState,
               onSelectPage: (pageNumber) {
                 final pageCount = widget.document.pageCount ?? 1;
                 setState(() {
@@ -945,6 +994,7 @@ class _EditDocumentMetadataPageState
                           document: widget.document,
                           repository: repository,
                           selectedPage: _selectedPreviewPage,
+                          onPreviewStateChanged: _updatePreviewState,
                           onSelectPage: (pageNumber) {
                             final pageCount = widget.document.pageCount ?? 1;
                             setState(() {
@@ -1531,6 +1581,16 @@ class _EditDocumentMetadataPageState
       ..showSnackBar(SnackBar(content: Text(message)));
   }
 
+  void _updatePreviewState(_ScreenshotPreviewState state) {
+    if (!mounted || _previewState == state) {
+      return;
+    }
+
+    setState(() {
+      _previewState = state;
+    });
+  }
+
   Future<void> _save() async {
     setState(() {
       _hasSubmitted = true;
@@ -1607,6 +1667,7 @@ class _EditMetadataHero extends StatelessWidget {
     required this.document,
     required this.repository,
     required this.selectedPage,
+    required this.onPreviewStateChanged,
     required this.onSelectPage,
     required this.badges,
   });
@@ -1614,6 +1675,7 @@ class _EditMetadataHero extends StatelessWidget {
   final PaperlessDocument document;
   final DocumentsRepository repository;
   final int selectedPage;
+  final ValueChanged<_ScreenshotPreviewState> onPreviewStateChanged;
   final ValueChanged<int> onSelectPage;
   final List<String> badges;
 
@@ -1626,6 +1688,12 @@ class _EditMetadataHero extends StatelessWidget {
     );
     final headers = repository.buildAuthenticatedHeaders();
 
+    void schedulePreviewState(_ScreenshotPreviewState state) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        onPreviewStateChanged(state);
+      });
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1637,6 +1705,8 @@ class _EditMetadataHero extends StatelessWidget {
             final effectiveSelectedPage = effectivePageCount > 0
                 ? selectedPage.clamp(1, effectivePageCount)
                 : 1;
+
+            schedulePreviewState(_ScreenshotPreviewState.ready);
 
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1745,69 +1815,75 @@ class _EditMetadataHero extends StatelessWidget {
               ],
             );
           },
-          loadingBuilder: (context) => DecoratedBox(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(28),
-              boxShadow: [
-                BoxShadow(
-                  color: theme.colorScheme.shadow.withValues(alpha: 0.18),
-                  blurRadius: 30,
-                  offset: const Offset(0, 18),
-                ),
-              ],
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(28),
-              child: const AspectRatio(
-                aspectRatio: 0.74,
-                child: ColoredBox(
-                  color: Colors.white,
-                  child: Center(child: CircularProgressIndicator()),
+          loadingBuilder: (context) {
+            schedulePreviewState(_ScreenshotPreviewState.loading);
+            return DecoratedBox(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(28),
+                boxShadow: [
+                  BoxShadow(
+                    color: theme.colorScheme.shadow.withValues(alpha: 0.18),
+                    blurRadius: 30,
+                    offset: const Offset(0, 18),
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(28),
+                child: const AspectRatio(
+                  aspectRatio: 0.74,
+                  child: ColoredBox(
+                    color: Colors.white,
+                    child: Center(child: CircularProgressIndicator()),
+                  ),
                 ),
               ),
-            ),
-          ),
-          errorBuilder: (context, error, stackTrace) => DecoratedBox(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(28),
-              boxShadow: [
-                BoxShadow(
-                  color: theme.colorScheme.shadow.withValues(alpha: 0.18),
-                  blurRadius: 30,
-                  offset: const Offset(0, 18),
-                ),
-              ],
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(28),
-              child: AspectRatio(
-                aspectRatio: 0.74,
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    _DocumentThumbnailImage(
-                      imageUri: repository.buildDocumentThumbnailUri(
-                        document.id,
+            );
+          },
+          errorBuilder: (context, error, stackTrace) {
+            schedulePreviewState(_ScreenshotPreviewState.ready);
+            return DecoratedBox(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(28),
+                boxShadow: [
+                  BoxShadow(
+                    color: theme.colorScheme.shadow.withValues(alpha: 0.18),
+                    blurRadius: 30,
+                    offset: const Offset(0, 18),
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(28),
+                child: AspectRatio(
+                  aspectRatio: 0.74,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      _DocumentThumbnailImage(
+                        imageUri: repository.buildDocumentThumbnailUri(
+                          document.id,
+                        ),
+                        headers: headers,
                       ),
-                      headers: headers,
-                    ),
-                    DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            Colors.black.withValues(alpha: 0.1),
-                            Colors.black.withValues(alpha: 0.48),
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
+                      DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              Colors.black.withValues(alpha: 0.1),
+                              Colors.black.withValues(alpha: 0.48),
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ),
+            );
+          },
         ),
         const SizedBox(height: 18),
         if (badges.isNotEmpty) ...[
@@ -2487,10 +2563,12 @@ class _PreviewCard extends StatelessWidget {
     required this.document,
     required this.pageCount,
     required this.selectedPage,
+    required this.preferFallbackWhileLoading,
     required this.pageStripScrollController,
     required this.thumbnailWidget,
     required this.thumbnailImageProvider,
     required this.repository,
+    required this.onPreviewStateChanged,
     required this.onSelectPage,
     required this.onPreview,
   });
@@ -2499,10 +2577,12 @@ class _PreviewCard extends StatelessWidget {
   final PaperlessDocument document;
   final int pageCount;
   final int selectedPage;
+  final bool preferFallbackWhileLoading;
   final ScrollController pageStripScrollController;
   final Widget? thumbnailWidget;
   final ImageProvider<Object>? thumbnailImageProvider;
   final DocumentsRepository repository;
+  final ValueChanged<_ScreenshotPreviewState> onPreviewStateChanged;
   final ValueChanged<int> onSelectPage;
   final VoidCallback? onPreview;
 
@@ -2513,6 +2593,12 @@ class _PreviewCard extends StatelessWidget {
       documentId: document.id,
     );
     final headers = repository.buildAuthenticatedHeaders();
+
+    void schedulePreviewState(_ScreenshotPreviewState state) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        onPreviewStateChanged(state);
+      });
+    }
 
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -2544,6 +2630,7 @@ class _PreviewCard extends StatelessWidget {
               headers: headers,
               builder: (context, pdfDocument) {
                 if (pdfDocument == null) {
+                  schedulePreviewState(_ScreenshotPreviewState.ready);
                   return _PreviewFallback(
                     document: document,
                     thumbnailWidget: thumbnailWidget,
@@ -2559,6 +2646,8 @@ class _PreviewCard extends StatelessWidget {
                   1,
                   effectivePageCount,
                 );
+
+                schedulePreviewState(_ScreenshotPreviewState.ready);
 
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -2591,16 +2680,36 @@ class _PreviewCard extends StatelessWidget {
                   ],
                 );
               },
-              loadingBuilder: (context) =>
-                  _PreviewLoadingState(onPreview: onPreview, aspectRatio: 0.84),
-              errorBuilder: (context, error, stackTrace) => _PreviewFallback(
-                document: document,
-                thumbnailWidget: thumbnailWidget,
-                thumbnailImageProvider: thumbnailImageProvider,
-                repository: repository,
-                onPreview: onPreview,
-                aspectRatio: 0.84,
-              ),
+              loadingBuilder: (context) {
+                if (preferFallbackWhileLoading) {
+                  schedulePreviewState(_ScreenshotPreviewState.ready);
+                  return _PreviewFallback(
+                    document: document,
+                    thumbnailWidget: thumbnailWidget,
+                    thumbnailImageProvider: thumbnailImageProvider,
+                    repository: repository,
+                    onPreview: onPreview,
+                    aspectRatio: 0.84,
+                  );
+                }
+
+                schedulePreviewState(_ScreenshotPreviewState.loading);
+                return _PreviewLoadingState(
+                  onPreview: onPreview,
+                  aspectRatio: 0.84,
+                );
+              },
+              errorBuilder: (context, error, stackTrace) {
+                schedulePreviewState(_ScreenshotPreviewState.ready);
+                return _PreviewFallback(
+                  document: document,
+                  thumbnailWidget: thumbnailWidget,
+                  thumbnailImageProvider: thumbnailImageProvider,
+                  repository: repository,
+                  onPreview: onPreview,
+                  aspectRatio: 0.84,
+                );
+              },
             ),
           ],
         ),
@@ -3387,41 +3496,47 @@ class _PreviewPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(22),
-          child: AspectRatio(
-            aspectRatio: aspectRatio,
-            child: ColoredBox(
-              color: Colors.white,
-              child: Padding(
-                padding: const EdgeInsets.all(10),
-                child: PdfPageView(
-                  key: ValueKey<int>(selectedPage),
-                  document: pdfDocument,
-                  pageNumber: selectedPage,
-                  alignment: Alignment.topCenter,
-                  decoration: const BoxDecoration(color: Colors.white),
-                  backgroundColor: Colors.white,
+    return _ScreenshotPreviewStateMarker(
+      state: _ScreenshotPreviewState.ready,
+      child: Stack(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(22),
+            child: AspectRatio(
+              aspectRatio: aspectRatio,
+              child: ColoredBox(
+                color: Colors.white,
+                child: Padding(
+                  padding: const EdgeInsets.all(10),
+                  child: PdfPageView(
+                    key: ValueKey<int>(selectedPage),
+                    document: pdfDocument,
+                    pageNumber: selectedPage,
+                    alignment: Alignment.topCenter,
+                    decoration: const BoxDecoration(color: Colors.white),
+                    backgroundColor: Colors.white,
+                  ),
                 ),
               ),
             ),
           ),
-        ),
-        Positioned(
-          right: 12,
-          bottom: 12,
-          child: FilledButton.tonalIcon(
-            onPressed: onPreview,
-            style: FilledButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          Positioned(
+            right: 12,
+            bottom: 12,
+            child: FilledButton.tonalIcon(
+              onPressed: onPreview,
+              style: FilledButton.styleFrom(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
+              ),
+              icon: const Icon(Icons.fullscreen_rounded),
+              label: Text(context.l10n.openAction.toUpperCase()),
             ),
-            icon: const Icon(Icons.fullscreen_rounded),
-            label: Text(context.l10n.openAction.toUpperCase()),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -3549,31 +3664,37 @@ class _PreviewLoadingState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(22),
-          child: AspectRatio(
-            aspectRatio: aspectRatio,
-            child: const ColoredBox(
-              color: Colors.white,
-              child: Center(child: CircularProgressIndicator()),
+    return _ScreenshotPreviewStateMarker(
+      state: _ScreenshotPreviewState.loading,
+      child: Stack(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(22),
+            child: AspectRatio(
+              aspectRatio: aspectRatio,
+              child: const ColoredBox(
+                color: Colors.white,
+                child: Center(child: CircularProgressIndicator()),
+              ),
             ),
           ),
-        ),
-        Positioned(
-          right: 12,
-          bottom: 12,
-          child: FilledButton.tonalIcon(
-            onPressed: onPreview,
-            style: FilledButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          Positioned(
+            right: 12,
+            bottom: 12,
+            child: FilledButton.tonalIcon(
+              onPressed: onPreview,
+              style: FilledButton.styleFrom(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
+              ),
+              icon: const Icon(Icons.fullscreen_rounded),
+              label: Text(context.l10n.openAction.toUpperCase()),
             ),
-            icon: const Icon(Icons.fullscreen_rounded),
-            label: Text(context.l10n.openAction.toUpperCase()),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -3647,34 +3768,77 @@ class _ThumbnailFallbackPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(22),
-          child: AspectRatio(
-            aspectRatio: aspectRatio,
-            child:
-                thumbnailWidget ??
-                (thumbnailImageProvider != null
-                    ? Image(image: thumbnailImageProvider!, fit: BoxFit.cover)
-                    : _DocumentThumbnailImage(
-                        imageUri: repository.buildDocumentThumbnailUri(
-                          document.id,
-                        ),
-                        headers: repository.buildAuthenticatedHeaders(),
-                      )),
-          ),
-        ),
-        Positioned(
-          right: 12,
-          bottom: 12,
-          child: FilledButton.tonalIcon(
-            onPressed: onPreview,
-            style: FilledButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+    return _ScreenshotPreviewStateMarker(
+      state: _ScreenshotPreviewState.ready,
+      child: Stack(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(22),
+            child: AspectRatio(
+              aspectRatio: aspectRatio,
+              child:
+                  thumbnailWidget ??
+                  (thumbnailImageProvider != null
+                      ? Image(image: thumbnailImageProvider!, fit: BoxFit.cover)
+                      : _DocumentThumbnailImage(
+                          imageUri: repository.buildDocumentThumbnailUri(
+                            document.id,
+                          ),
+                          headers: repository.buildAuthenticatedHeaders(),
+                        )),
             ),
-            icon: const Icon(Icons.fullscreen_rounded),
-            label: Text(context.l10n.openAction.toUpperCase()),
+          ),
+          Positioned(
+            right: 12,
+            bottom: 12,
+            child: FilledButton.tonalIcon(
+              onPressed: onPreview,
+              style: FilledButton.styleFrom(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
+              ),
+              icon: const Icon(Icons.fullscreen_rounded),
+              label: Text(context.l10n.openAction.toUpperCase()),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+enum _ScreenshotPreviewState { loading, ready }
+
+class _ScreenshotPreviewStateMarker extends StatelessWidget {
+  const _ScreenshotPreviewStateMarker({
+    required this.state,
+    required this.child,
+  });
+
+  final _ScreenshotPreviewState state;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      fit: StackFit.passthrough,
+      children: [
+        child,
+        IgnorePointer(
+          child: Opacity(
+            opacity: 0,
+            alwaysIncludeSemantics: true,
+            child: Align(
+              alignment: Alignment.topLeft,
+              child: Text(switch (state) {
+                _ScreenshotPreviewState.loading =>
+                  'paperless-screenshot-document-preview-loading',
+                _ScreenshotPreviewState.ready =>
+                  'paperless-screenshot-document-preview-ready',
+              }),
+            ),
           ),
         ),
       ],

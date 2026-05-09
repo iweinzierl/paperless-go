@@ -52,17 +52,18 @@ class _DocumentsFiltersPageState extends ConsumerState<DocumentsFiltersPage> {
     final tagOptions = ref.watch(tagOptionsProvider);
     final correspondentOptions = ref.watch(correspondentOptionsProvider);
     final documentTypeOptions = ref.watch(documentTypeOptionsProvider);
+    final hasActiveFilters = _filterState.hasActiveFilters;
     final hasActiveSelections =
-        _filterState.hasActiveFilters ||
-        _ordering != documentsSortOptions.first.ordering;
+        hasActiveFilters || _ordering != documentsSortOptions.first.ordering;
 
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
       appBar: AppBar(
+        backgroundColor: theme.colorScheme.surface,
         automaticallyImplyLeading: false,
         leading: IconButton(
           onPressed: () => Navigator.of(context).maybePop(),
-          icon: const Icon(Icons.close),
+          icon: const Icon(Icons.arrow_back_rounded),
         ),
         title: Text(
           '${l10n.filtersTitle} & ${l10n.sortByLabel}',
@@ -71,12 +72,26 @@ class _DocumentsFiltersPageState extends ConsumerState<DocumentsFiltersPage> {
             letterSpacing: -0.3,
           ),
         ),
+        actions: [
+          if (hasActiveSelections)
+            TextButton(
+              onPressed: _reset,
+              child: Text(
+                l10n.resetAction,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: theme.colorScheme.primary,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+        ],
       ),
       body: isWideScreen
           ? _buildWideLayout(
               context,
               theme,
               l10n,
+              hasActiveFilters,
               hasActiveSelections,
               tagOptions,
               correspondentOptions,
@@ -86,6 +101,7 @@ class _DocumentsFiltersPageState extends ConsumerState<DocumentsFiltersPage> {
               context,
               theme,
               l10n,
+              hasActiveFilters,
               hasActiveSelections,
               tagOptions,
               correspondentOptions,
@@ -105,6 +121,7 @@ class _DocumentsFiltersPageState extends ConsumerState<DocumentsFiltersPage> {
     BuildContext context,
     ThemeData theme,
     AppLocalizations l10n,
+    bool hasActiveFilters,
     bool hasActiveSelections,
     AsyncValue<List<PaperlessFilterOption>> tagOptions,
     AsyncValue<List<PaperlessFilterOption>> correspondentOptions,
@@ -129,13 +146,14 @@ class _DocumentsFiltersPageState extends ConsumerState<DocumentsFiltersPage> {
 
           return ListView(
             padding: EdgeInsets.fromLTRB(
-              18 + horizontalInset,
-              14,
-              18 + horizontalInset,
-              156,
+              24 + horizontalInset,
+              20,
+              24 + horizontalInset,
+              148,
             ),
             children: _buildCompactSections(
               l10n,
+              hasActiveFilters,
               hasActiveSelections,
               tagOptions,
               correspondentOptions,
@@ -151,6 +169,7 @@ class _DocumentsFiltersPageState extends ConsumerState<DocumentsFiltersPage> {
     BuildContext context,
     ThemeData theme,
     AppLocalizations l10n,
+    bool hasActiveFilters,
     bool hasActiveSelections,
     AsyncValue<List<PaperlessFilterOption>> tagOptions,
     AsyncValue<List<PaperlessFilterOption>> correspondentOptions,
@@ -179,25 +198,39 @@ class _DocumentsFiltersPageState extends ConsumerState<DocumentsFiltersPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (hasActiveSelections) ...[
+                    if (hasActiveFilters) ...[
                       _SectionTitle(title: l10n.filtersTitle),
                       const SizedBox(height: 14),
                       _ActiveFiltersWrap(
                         filterState: _filterState,
-                        ordering: _ordering,
                         tagOptions: tagOptions,
                         correspondentOptions: correspondentOptions,
                         documentTypeOptions: documentTypeOptions,
                         onRemoveTag: _removeTag,
                         onClearCorrespondent: _clearCorrespondent,
                         onClearDocumentType: _clearDocumentType,
-                        onResetOrdering: _resetOrdering,
                       ),
+                      const SizedBox(height: 28),
                     ],
-                    const SizedBox(height: 28),
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _SectionTitle(title: l10n.filtersTitle),
+                              const SizedBox(height: 14),
+                              ..._buildFilterCards(
+                                l10n,
+                                tagOptions,
+                                correspondentOptions,
+                                documentTypeOptions,
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 28),
                         SizedBox(
                           width: 360,
                           child: Column(
@@ -205,59 +238,14 @@ class _DocumentsFiltersPageState extends ConsumerState<DocumentsFiltersPage> {
                             children: [
                               _SectionTitle(title: l10n.sortByLabel),
                               const SizedBox(height: 14),
-                              _SortOptionsGrid(
-                                selectedOrdering: _ordering,
-                                compact: true,
+                              _SortSectionCard(
+                                ordering: _ordering,
                                 onChanged: (value) {
                                   setState(() {
                                     _ordering = value;
                                   });
                                 },
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 28),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              _SectionTitle(title: l10n.filtersTitle),
-                              const SizedBox(height: 14),
-                              _SingleFilterCategoryCard(
-                                title: l10n.filterCorrespondentLabel,
-                                icon: Icons.business_outlined,
-                                iconBackgroundColor: const Color(0xFFD6EAF9),
-                                options: correspondentOptions,
-                                selectedId: _filterState.correspondentId,
-                                searchHint: l10n.searchCorrespondentsHint,
-                                dialogTitle:
-                                    l10n.selectCorrespondentDialogTitle,
-                                noResultsMessage:
-                                    l10n.noCorrespondentsMatchSearch,
-                                onChanged: _setCorrespondent,
-                              ),
-                              const SizedBox(height: 16),
-                              _SingleFilterCategoryCard(
-                                title: l10n.filterDocumentTypeLabel,
-                                icon: Icons.description_outlined,
-                                iconBackgroundColor: const Color(0xFFFFDDD3),
-                                options: documentTypeOptions,
-                                selectedId: _filterState.documentTypeId,
-                                searchHint: l10n.searchDocumentTypesHint,
-                                dialogTitle: l10n.selectDocumentTypeDialogTitle,
-                                noResultsMessage:
-                                    l10n.noDocumentTypesMatchSearch,
-                                onChanged: _setDocumentType,
-                              ),
-                              const SizedBox(height: 16),
-                              _TagCategoryCard(
-                                options: tagOptions,
-                                selectedIds: _filterState.tagIds,
-                                searchHint: l10n.searchTagsHint,
-                                dialogTitle: l10n.selectTagsDialogTitle,
-                                noResultsMessage: l10n.noTagsMatchSearch,
-                                onChanged: _setTags,
+                                compact: true,
                               ),
                             ],
                           ),
@@ -276,72 +264,90 @@ class _DocumentsFiltersPageState extends ConsumerState<DocumentsFiltersPage> {
 
   List<Widget> _buildCompactSections(
     AppLocalizations l10n,
+    bool hasActiveFilters,
     bool hasActiveSelections,
     AsyncValue<List<PaperlessFilterOption>> tagOptions,
     AsyncValue<List<PaperlessFilterOption>> correspondentOptions,
     AsyncValue<List<PaperlessFilterOption>> documentTypeOptions,
   ) {
     return [
-      if (hasActiveSelections) ...[
+      if (hasActiveFilters) ...[
         _SectionTitle(title: l10n.filtersTitle),
         const SizedBox(height: 14),
         _ActiveFiltersWrap(
           filterState: _filterState,
-          ordering: _ordering,
           tagOptions: tagOptions,
           correspondentOptions: correspondentOptions,
           documentTypeOptions: documentTypeOptions,
           onRemoveTag: _removeTag,
           onClearCorrespondent: _clearCorrespondent,
           onClearDocumentType: _clearDocumentType,
-          onResetOrdering: _resetOrdering,
         ),
         const SizedBox(height: 28),
       ],
+      _SectionTitle(title: l10n.filtersTitle),
+      const SizedBox(height: 14),
+      ..._buildFilterCards(
+        l10n,
+        tagOptions,
+        correspondentOptions,
+        documentTypeOptions,
+      ),
+      const SizedBox(height: 32),
       _SectionTitle(title: l10n.sortByLabel),
       const SizedBox(height: 14),
-      _SortOptionsGrid(
-        selectedOrdering: _ordering,
+      _SortSectionCard(
+        ordering: _ordering,
         onChanged: (value) {
           setState(() {
             _ordering = value;
           });
         },
       ),
-      const SizedBox(height: 28),
-      _SectionTitle(title: l10n.filtersTitle),
-      const SizedBox(height: 14),
-      _SingleFilterCategoryCard(
-        title: l10n.filterCorrespondentLabel,
-        icon: Icons.business_outlined,
-        iconBackgroundColor: const Color(0xFFD6EAF9),
-        options: correspondentOptions,
-        selectedId: _filterState.correspondentId,
-        searchHint: l10n.searchCorrespondentsHint,
-        dialogTitle: l10n.selectCorrespondentDialogTitle,
-        noResultsMessage: l10n.noCorrespondentsMatchSearch,
-        onChanged: _setCorrespondent,
-      ),
-      const SizedBox(height: 16),
-      _SingleFilterCategoryCard(
-        title: l10n.filterDocumentTypeLabel,
-        icon: Icons.description_outlined,
-        iconBackgroundColor: const Color(0xFFFFDDD3),
-        options: documentTypeOptions,
-        selectedId: _filterState.documentTypeId,
-        searchHint: l10n.searchDocumentTypesHint,
-        dialogTitle: l10n.selectDocumentTypeDialogTitle,
-        noResultsMessage: l10n.noDocumentTypesMatchSearch,
-        onChanged: _setDocumentType,
-      ),
-      const SizedBox(height: 16),
-      _TagCategoryCard(
-        options: tagOptions,
-        selectedIds: _filterState.tagIds,
-        searchHint: l10n.searchTagsHint,
-        dialogTitle: l10n.selectTagsDialogTitle,
-        noResultsMessage: l10n.noTagsMatchSearch,
-        onChanged: _setTags,
+      if (hasActiveSelections) const SizedBox(height: 8),
+    ];
+  }
+
+  List<Widget> _buildFilterCards(
+    AppLocalizations l10n,
+    AsyncValue<List<PaperlessFilterOption>> tagOptions,
+    AsyncValue<List<PaperlessFilterOption>> correspondentOptions,
+    AsyncValue<List<PaperlessFilterOption>> documentTypeOptions,
+  ) {
+    return [
+      _FilterOptionsSection(
+        children: [
+          _TagCategoryCard(
+            options: tagOptions,
+            selectedIds: _filterState.tagIds,
+            searchHint: l10n.searchTagsHint,
+            dialogTitle: l10n.selectTagsDialogTitle,
+            noResultsMessage: l10n.noTagsMatchSearch,
+            onChanged: _setTags,
+          ),
+          _SingleFilterCategoryCard(
+            title: l10n.filterCorrespondentLabel,
+            icon: Icons.business_outlined,
+            iconBackgroundColor: const Color(0xFFDDF6EE),
+            options: correspondentOptions,
+            selectedId: _filterState.correspondentId,
+            searchHint: l10n.searchCorrespondentsHint,
+            dialogTitle: l10n.selectCorrespondentDialogTitle,
+            noResultsMessage: l10n.noCorrespondentsMatchSearch,
+            onChanged: _setCorrespondent,
+          ),
+          _SingleFilterCategoryCard(
+            title: l10n.filterDocumentTypeLabel,
+            icon: Icons.description_outlined,
+            iconBackgroundColor: const Color(0xFFF5E8FF),
+            options: documentTypeOptions,
+            selectedId: _filterState.documentTypeId,
+            searchHint: l10n.searchDocumentTypesHint,
+            dialogTitle: l10n.selectDocumentTypeDialogTitle,
+            noResultsMessage: l10n.noDocumentTypesMatchSearch,
+            onChanged: _setDocumentType,
+          ),
+        ],
       ),
     ];
   }
@@ -390,23 +396,6 @@ class _DocumentsFiltersPageState extends ConsumerState<DocumentsFiltersPage> {
                       mainAxisAlignment: MainAxisAlignment.end,
                       mainAxisSize: MainAxisSize.max,
                       children: [
-                        if (hasActiveSelections) ...[
-                          TextButton.icon(
-                            onPressed: _reset,
-                            icon: const Icon(Icons.restart_alt_rounded),
-                            label: Text(l10n.resetAction),
-                            style: TextButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 14,
-                              ),
-                              textStyle: theme.textTheme.labelLarge?.copyWith(
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                        ],
                         ConstrainedBox(
                           constraints: const BoxConstraints(maxWidth: 520),
                           child: _ActionButtonsRow(
@@ -420,26 +409,10 @@ class _DocumentsFiltersPageState extends ConsumerState<DocumentsFiltersPage> {
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        if (hasActiveSelections) ...[
-                          TextButton.icon(
-                            onPressed: _reset,
-                            icon: const Icon(Icons.restart_alt_rounded),
-                            label: Text(l10n.resetAction),
-                            style: TextButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 6,
-                                vertical: 10,
-                              ),
-                              textStyle: theme.textTheme.labelLarge?.copyWith(
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                        ],
-                        _ActionButtonsRow(
-                          onCancel: () => Navigator.of(context).maybePop(),
+                        _CompactApplyButton(
                           onApply: _apply,
+                          label: Text(l10n.applyFiltersAction),
+                          icon: const Icon(Icons.arrow_forward_rounded),
                         ),
                       ],
                     ),
@@ -471,12 +444,6 @@ class _DocumentsFiltersPageState extends ConsumerState<DocumentsFiltersPage> {
         tagIds: nextTagIds,
         clearTag: nextTagIds.isEmpty,
       );
-    });
-  }
-
-  void _resetOrdering() {
-    setState(() {
-      _ordering = documentsSortOptions.first.ordering;
     });
   }
 
@@ -552,7 +519,7 @@ class _ActionButtonsRow extends StatelessWidget {
                 const SizedBox(width: 10),
                 Flexible(
                   child: Text(
-                    l10n.cancelAction.toUpperCase(),
+                    l10n.cancelAction,
                     maxLines: 1,
                     overflow: TextOverflow.fade,
                     softWrap: false,
@@ -582,7 +549,7 @@ class _ActionButtonsRow extends StatelessWidget {
                 const SizedBox(width: 10),
                 Flexible(
                   child: Text(
-                    l10n.applyFiltersAction.toUpperCase(),
+                    l10n.applyFiltersAction,
                     maxLines: 1,
                     overflow: TextOverflow.fade,
                     softWrap: false,
@@ -593,6 +560,42 @@ class _ActionButtonsRow extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _CompactApplyButton extends StatelessWidget {
+  const _CompactApplyButton({
+    required this.onApply,
+    required this.label,
+    required this.icon,
+  });
+
+  final VoidCallback onApply;
+  final Widget label;
+  final Widget icon;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return SizedBox(
+      width: double.infinity,
+      child: FilledButton.icon(
+        onPressed: onApply,
+        style: FilledButton.styleFrom(
+          minimumSize: const Size.fromHeight(64),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(22),
+          ),
+          textStyle: theme.textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.w800,
+            letterSpacing: 0.2,
+          ),
+        ),
+        icon: icon,
+        label: label,
+      ),
     );
   }
 }
@@ -610,7 +613,7 @@ class _SectionTitle extends StatelessWidget {
       style: theme.textTheme.labelMedium?.copyWith(
         color: theme.colorScheme.onSurfaceVariant,
         fontWeight: FontWeight.w800,
-        letterSpacing: 1.7,
+        letterSpacing: 1.25,
       ),
     );
   }
@@ -619,47 +622,32 @@ class _SectionTitle extends StatelessWidget {
 class _ActiveFiltersWrap extends StatelessWidget {
   const _ActiveFiltersWrap({
     required this.filterState,
-    required this.ordering,
     required this.tagOptions,
     required this.correspondentOptions,
     required this.documentTypeOptions,
     required this.onRemoveTag,
     required this.onClearCorrespondent,
     required this.onClearDocumentType,
-    required this.onResetOrdering,
   });
 
   final DocumentsFilterState filterState;
-  final String ordering;
   final AsyncValue<List<PaperlessFilterOption>> tagOptions;
   final AsyncValue<List<PaperlessFilterOption>> correspondentOptions;
   final AsyncValue<List<PaperlessFilterOption>> documentTypeOptions;
   final void Function(int tagId) onRemoveTag;
   final VoidCallback onClearCorrespondent;
   final VoidCallback onClearDocumentType;
-  final VoidCallback onResetOrdering;
 
   @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
     final chips = <Widget>[];
-
-    if (ordering != documentsSortOptions.first.ordering) {
-      chips.add(
-        _FilterChip(
-          label: documentSortOptionLabel(l10n, ordering),
-          tint: const Color(0xFFE3EFFC),
-          onRemoved: onResetOrdering,
-        ),
-      );
-    }
 
     for (final tagId in filterState.tagIds) {
       chips.add(
         _FilterChip(
-          label:
-              '${l10n.filterTagLabel}: ${_resolveOptionLabel(tagOptions, tagId) ?? '#$tagId'}',
-          tint: const Color(0xFFE1F7F2),
+          label: _resolveOptionLabel(tagOptions, tagId) ?? '#$tagId',
+          tint: const Color(0xFFE0E8FF),
+          icon: Icons.local_offer_outlined,
           onRemoved: () => onRemoveTag(tagId),
         ),
       );
@@ -669,8 +657,13 @@ class _ActiveFiltersWrap extends StatelessWidget {
       chips.add(
         _FilterChip(
           label:
-              '${l10n.filterCorrespondentLabel}: ${_resolveOptionLabel(correspondentOptions, filterState.correspondentId!) ?? '#${filterState.correspondentId}'}',
-          tint: const Color(0xFFE3EFFC),
+              _resolveOptionLabel(
+                correspondentOptions,
+                filterState.correspondentId!,
+              ) ??
+              '#${filterState.correspondentId}',
+          tint: const Color(0xFFF0F3F7),
+          icon: Icons.business_outlined,
           onRemoved: onClearCorrespondent,
         ),
       );
@@ -680,8 +673,13 @@ class _ActiveFiltersWrap extends StatelessWidget {
       chips.add(
         _FilterChip(
           label:
-              '${l10n.filterDocumentTypeLabel}: ${_resolveOptionLabel(documentTypeOptions, filterState.documentTypeId!) ?? '#${filterState.documentTypeId}'}',
-          tint: const Color(0xFFFFE7DF),
+              _resolveOptionLabel(
+                documentTypeOptions,
+                filterState.documentTypeId!,
+              ) ??
+              '#${filterState.documentTypeId}',
+          tint: const Color(0xFFF6ECFF),
+          icon: Icons.description_outlined,
           onRemoved: onClearDocumentType,
         ),
       );
@@ -695,11 +693,13 @@ class _FilterChip extends StatelessWidget {
   const _FilterChip({
     required this.label,
     required this.tint,
+    required this.icon,
     required this.onRemoved,
   });
 
   final String label;
   final Color tint;
+  final IconData icon;
   final VoidCallback onRemoved;
 
   @override
@@ -709,13 +709,18 @@ class _FilterChip extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         color: tint,
-        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+        ),
+        borderRadius: BorderRadius.circular(999),
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.fromLTRB(14, 10, 10, 10),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
+            Icon(icon, size: 18, color: theme.colorScheme.primary),
+            const SizedBox(width: 8),
             Flexible(
               child: Text(
                 label,
@@ -741,79 +746,237 @@ class _FilterChip extends StatelessWidget {
   }
 }
 
-class _SortOptionsGrid extends StatelessWidget {
-  const _SortOptionsGrid({
-    required this.selectedOrdering,
+class _SortSectionCard extends StatelessWidget {
+  const _SortSectionCard({
+    required this.ordering,
     required this.onChanged,
     this.compact = false,
   });
 
-  final String selectedOrdering;
+  final String ordering;
   final ValueChanged<String> onChanged;
   final bool compact;
 
   @override
   Widget build(BuildContext context) {
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: documentsSortOptions.length,
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        mainAxisSpacing: compact ? 12 : 14,
-        crossAxisSpacing: compact ? 12 : 14,
-        childAspectRatio: compact ? 2.9 : 2.45,
-      ),
-      itemBuilder: (context, index) {
-        final option = documentsSortOptions[index];
-        final isSelected = option.ordering == selectedOrdering;
+    final theme = Theme.of(context);
+    final field = _sortFieldForOrdering(ordering);
+    final descending = _isDescendingOrdering(ordering);
 
-        return _SortOptionButton(
-          label: _compactSortLabel(context, option.ordering),
-          selected: isSelected,
-          onTap: () => onChanged(option.ordering),
-        );
-      },
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: compact ? 0 : 2),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            context.l10n.sortByLabel,
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w500,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 14),
+          DropdownButtonFormField<String>(
+            value: field,
+            decoration: InputDecoration(
+              filled: true,
+              fillColor: theme.colorScheme.surfaceContainerLow,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(20),
+                borderSide: BorderSide.none,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(20),
+                borderSide: BorderSide.none,
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 18,
+                vertical: 18,
+              ),
+            ),
+            icon: const Icon(Icons.unfold_more_rounded),
+            items: [
+              for (final candidate in const ['created', 'added', 'title'])
+                DropdownMenuItem<String>(
+                  value: candidate,
+                  child: Text(_sortFieldLabel(context, candidate)),
+                ),
+            ],
+            onChanged: (value) {
+              if (value == null) {
+                return;
+              }
+              onChanged(_orderingFor(value, descending));
+            },
+          ),
+          const SizedBox(height: 18),
+          _SortDirectionToggle(
+            field: field,
+            descending: descending,
+            onChanged: (value) => onChanged(_orderingFor(field, value)),
+          ),
+        ],
+      ),
     );
   }
 }
 
-class _SortOptionButton extends StatelessWidget {
-  const _SortOptionButton({
-    required this.label,
+class _FilterOptionsSection extends StatelessWidget {
+  const _FilterOptionsSection({required this.children});
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        border: Border(
+          top: BorderSide(
+            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.42),
+          ),
+          bottom: BorderSide(
+            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.42),
+          ),
+        ),
+      ),
+      child: Column(
+        children: [
+          for (var index = 0; index < children.length; index++) ...[
+            children[index],
+            if (index != children.length - 1)
+              Divider(
+                height: 1,
+                thickness: 1,
+                color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
+              ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _SortDirectionToggle extends StatelessWidget {
+  const _SortDirectionToggle({
+    required this.field,
+    required this.descending,
+    required this.onChanged,
+  });
+
+  final String field;
+  final bool descending;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final activeColor = theme.colorScheme.surface;
+    final inactiveColor = theme.colorScheme.surfaceContainerLow;
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: inactiveColor,
+        borderRadius: BorderRadius.circular(22),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(4),
+        child: Row(
+          children: [
+            Expanded(
+              child: _SortDirectionButton(
+                selected: descending,
+                backgroundColor: activeColor,
+                label: _sortDirectionLabel(context, _orderingFor(field, true)),
+                tooltip: documentSortOptionLabel(
+                  context.l10n,
+                  _orderingFor(field, true),
+                ),
+                icon: field == 'title'
+                    ? Icons.sort_by_alpha_rounded
+                    : Icons.south_rounded,
+                onTap: () => onChanged(true),
+              ),
+            ),
+            Expanded(
+              child: _SortDirectionButton(
+                selected: !descending,
+                backgroundColor: activeColor,
+                label: _sortDirectionLabel(context, _orderingFor(field, false)),
+                tooltip: documentSortOptionLabel(
+                  context.l10n,
+                  _orderingFor(field, false),
+                ),
+                icon: field == 'title'
+                    ? Icons.sort_by_alpha_rounded
+                    : Icons.north_rounded,
+                onTap: () => onChanged(false),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SortDirectionButton extends StatelessWidget {
+  const _SortDirectionButton({
     required this.selected,
+    required this.backgroundColor,
+    required this.label,
+    required this.tooltip,
+    required this.icon,
     required this.onTap,
   });
 
-  final String label;
   final bool selected;
+  final Color backgroundColor;
+  final String label;
+  final String tooltip;
+  final IconData icon;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Material(
-      color: selected
-          ? theme.colorScheme.primary
-          : theme.colorScheme.surfaceContainerLowest,
-      borderRadius: BorderRadius.circular(18),
-      child: InkWell(
+    return Tooltip(
+      message: tooltip,
+      child: Material(
+        color: selected ? backgroundColor : Colors.transparent,
         borderRadius: BorderRadius.circular(18),
-        onTap: onTap,
-        child: Center(
+        child: InkWell(
+          borderRadius: BorderRadius.circular(18),
+          onTap: onTap,
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Text(
-              label,
-              textAlign: TextAlign.center,
-              style: theme.textTheme.titleSmall?.copyWith(
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
-                color: selected
-                    ? theme.colorScheme.onPrimary
-                    : theme.colorScheme.onSurface,
-              ),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  icon,
+                  size: 18,
+                  color: selected
+                      ? theme.colorScheme.onSurface
+                      : theme.colorScheme.onSurfaceVariant,
+                ),
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: selected
+                          ? theme.colorScheme.onSurface
+                          : theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ),
@@ -850,14 +1013,11 @@ class _TagCategoryCard extends StatelessWidget {
 
         return _CategoryCard(
           icon: Icons.local_offer_outlined,
-          iconBackgroundColor: const Color(0xFFA9F0E4),
+          iconBackgroundColor: const Color(0xFFE8F0FF),
           title: context.l10n.filterTagLabel,
           subtitle: selectedNames.isEmpty
-              ? searchHint
+              ? context.l10n.anyOption
               : _selectedSummary(selectedNames),
-          badgeLabel: selectedIds.isEmpty
-              ? context.l10n.anyOption.toUpperCase()
-              : '${selectedIds.length}',
           onTap: () async {
             final result = await showModalBottomSheet<List<int>>(
               context: context,
@@ -882,13 +1042,13 @@ class _TagCategoryCard extends StatelessWidget {
       },
       error: (error, stackTrace) => _CategoryCard.loading(
         icon: Icons.local_offer_outlined,
-        iconBackgroundColor: const Color(0xFFA9F0E4),
+        iconBackgroundColor: const Color(0xFFE8F0FF),
         title: context.l10n.filterTagLabel,
         subtitle: context.l10n.couldNotLoadStatus,
       ),
       loading: () => _CategoryCard.loading(
         icon: Icons.local_offer_outlined,
-        iconBackgroundColor: const Color(0xFFA9F0E4),
+        iconBackgroundColor: const Color(0xFFE8F0FF),
         title: context.l10n.filterTagLabel,
         subtitle: context.l10n.loadingStatus,
       ),
@@ -932,10 +1092,7 @@ class _SingleFilterCategoryCard extends StatelessWidget {
           icon: icon,
           iconBackgroundColor: iconBackgroundColor,
           title: title,
-          subtitle: selectedName ?? searchHint,
-          badgeLabel: selectedName == null
-              ? context.l10n.anyOption.toUpperCase()
-              : '1',
+          subtitle: selectedName ?? context.l10n.anyOption,
           onTap: () async {
             final result = await showModalBottomSheet<int?>(
               context: context,
@@ -981,7 +1138,6 @@ class _CategoryCard extends StatelessWidget {
     required this.iconBackgroundColor,
     required this.title,
     required this.subtitle,
-    required this.badgeLabel,
     required this.onTap,
   }) : loading = false;
 
@@ -990,15 +1146,13 @@ class _CategoryCard extends StatelessWidget {
     required this.iconBackgroundColor,
     required this.title,
     required this.subtitle,
-  }) : badgeLabel = null,
-       onTap = null,
+  }) : onTap = null,
        loading = true;
 
   final IconData icon;
   final Color iconBackgroundColor;
   final String title;
   final String subtitle;
-  final String? badgeLabel;
   final VoidCallback? onTap;
   final bool loading;
 
@@ -1007,24 +1161,21 @@ class _CategoryCard extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Material(
-      color: theme.colorScheme.surfaceContainerLowest,
-      borderRadius: BorderRadius.circular(28),
-      elevation: 0,
+      color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(28),
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
+          padding: const EdgeInsets.fromLTRB(0, 18, 0, 18),
           child: Row(
             children: [
               Container(
-                width: 62,
-                height: 62,
+                width: 56,
+                height: 56,
                 decoration: BoxDecoration(
                   color: iconBackgroundColor,
-                  borderRadius: BorderRadius.circular(18),
+                  borderRadius: BorderRadius.circular(16),
                 ),
-                child: Icon(icon, size: 28, color: theme.colorScheme.primary),
+                child: Icon(icon, size: 26, color: theme.colorScheme.primary),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -1035,7 +1186,7 @@ class _CategoryCard extends StatelessWidget {
                       title,
                       style: theme.textTheme.titleLarge?.copyWith(
                         fontSize: 16,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -1058,27 +1209,6 @@ class _CategoryCard extends StatelessWidget {
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
               else ...[
-                if (badgeLabel != null)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.primary,
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    child: Text(
-                      badgeLabel!,
-                      style: theme.textTheme.labelMedium?.copyWith(
-                        fontSize: 13,
-                        color: theme.colorScheme.onPrimary,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.7,
-                      ),
-                    ),
-                  ),
-                const SizedBox(width: 10),
                 Icon(
                   Icons.chevron_right_rounded,
                   color: theme.colorScheme.onSurfaceVariant,
@@ -1093,8 +1223,44 @@ class _CategoryCard extends StatelessWidget {
   }
 }
 
-String _compactSortLabel(BuildContext context, String ordering) {
-  return documentSortOptionLabel(context.l10n, ordering);
+String _sortFieldForOrdering(String ordering) {
+  return ordering.startsWith('-') ? ordering.substring(1) : ordering;
+}
+
+bool _isDescendingOrdering(String ordering) {
+  return ordering.startsWith('-');
+}
+
+String _orderingFor(String field, bool descending) {
+  return descending ? '-$field' : field;
+}
+
+String _sortFieldLabel(BuildContext context, String field) {
+  final l10n = context.l10n;
+  return switch (field) {
+    'created' => l10n.createdDateLabel,
+    'added' => _sortFieldSegment(documentSortOptionLabel(l10n, '-added')),
+    'title' => _sortFieldSegment(documentSortOptionLabel(l10n, 'title')),
+    _ => field,
+  };
+}
+
+String _sortFieldSegment(String label) {
+  final separatorIndex = label.indexOf(' (');
+  if (separatorIndex <= 0) {
+    return label;
+  }
+  return label.substring(0, separatorIndex);
+}
+
+String _sortDirectionLabel(BuildContext context, String ordering) {
+  final label = documentSortOptionLabel(context.l10n, ordering);
+  final start = label.indexOf('(');
+  final end = label.lastIndexOf(')');
+  if (start == -1 || end == -1 || end <= start + 1) {
+    return label;
+  }
+  return label.substring(start + 1, end);
 }
 
 String? _resolveOptionLabel(

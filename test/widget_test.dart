@@ -908,13 +908,14 @@ void main() {
     await tester.tap(find.byTooltip('Filters'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Filters'), findsOneWidget);
+    expect(find.text('Filters & Sort by'), findsOneWidget);
     expect(find.text('Sort by'), findsWidgets);
     expect(find.text('Tag'), findsOneWidget);
     expect(find.text('Correspondent'), findsOneWidget);
     expect(find.text('Document type'), findsOneWidget);
     expect(find.text('Apply filters'), findsOneWidget);
-    expect(find.text('Created date (newest first)'), findsOneWidget);
+    expect(find.text('Created date'), findsOneWidget);
+    expect(find.text('newest first'), findsOneWidget);
   });
 
   testWidgets('hides delete action without delete capability', (
