@@ -1707,7 +1707,7 @@ class _EditDocumentMetadataPageState
   }
 }
 
-class _EditMetadataHero extends StatelessWidget {
+class _EditMetadataHero extends StatefulWidget {
   const _EditMetadataHero({
     required this.document,
     required this.repository,
@@ -1725,33 +1725,78 @@ class _EditMetadataHero extends StatelessWidget {
   final List<String> badges;
 
   @override
+  State<_EditMetadataHero> createState() => _EditMetadataHeroState();
+}
+
+class _EditMetadataHeroState extends State<_EditMetadataHero> {
+  _ScreenshotPreviewState? _lastReportedPreviewState;
+  late Map<String, String> _headers;
+  late PdfDocumentRefUri _previewDocumentRef;
+
+  @override
+  void initState() {
+    super.initState();
+    _refreshPreviewSource();
+  }
+
+  @override
+  void didUpdateWidget(covariant _EditMetadataHero oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.document.id != widget.document.id ||
+        oldWidget.repository != widget.repository) {
+      _refreshPreviewSource();
+      _lastReportedPreviewState = null;
+    }
+  }
+
+  void _refreshPreviewSource() {
+    final previewUri = widget.repository.buildDocumentPreviewUri(
+      documentId: widget.document.id,
+    );
+    _headers = Map<String, String>.unmodifiable(
+      widget.repository.buildAuthenticatedHeaders(),
+    );
+    _previewDocumentRef = PdfDocumentRefUri(
+      previewUri,
+      headers: _headers,
+      key: PdfDocumentRefKey(previewUri.toString(), [
+        _headers['Authorization'],
+      ]),
+    );
+  }
+
+  void _schedulePreviewState(_ScreenshotPreviewState state) {
+    if (_lastReportedPreviewState == state) {
+      return;
+    }
+
+    _lastReportedPreviewState = state;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+
+      widget.onPreviewStateChanged(state);
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = context.l10n;
-    final previewUri = repository.buildDocumentPreviewUri(
-      documentId: document.id,
-    );
-    final headers = repository.buildAuthenticatedHeaders();
-
-    void schedulePreviewState(_ScreenshotPreviewState state) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        onPreviewStateChanged(state);
-      });
-    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        PdfDocumentViewBuilder.uri(
-          previewUri,
-          headers: headers,
+        PdfDocumentViewBuilder(
+          documentRef: _previewDocumentRef,
           builder: (context, pdfDocument) {
             final effectivePageCount = pdfDocument?.pages.length ?? 0;
             final effectiveSelectedPage = effectivePageCount > 0
-                ? selectedPage.clamp(1, effectivePageCount)
+                ? widget.selectedPage.clamp(1, effectivePageCount)
                 : 1;
 
-            schedulePreviewState(_ScreenshotPreviewState.ready);
+            _schedulePreviewState(_ScreenshotPreviewState.ready);
 
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1771,9 +1816,11 @@ class _EditMetadataHero extends StatelessWidget {
                               fit: StackFit.expand,
                               children: [
                                 _DocumentThumbnailImage(
-                                  imageUri: repository
-                                      .buildDocumentThumbnailUri(document.id),
-                                  headers: headers,
+                                  imageUri: widget.repository
+                                      .buildDocumentThumbnailUri(
+                                        widget.document.id,
+                                      ),
+                                  headers: _headers,
                                 ),
                                 DecoratedBox(
                                   decoration: BoxDecoration(
@@ -1807,7 +1854,8 @@ class _EditMetadataHero extends StatelessWidget {
                     children: [
                       IconButton.filledTonal(
                         onPressed: effectiveSelectedPage > 1
-                            ? () => onSelectPage(effectiveSelectedPage - 1)
+                            ? () =>
+                                  widget.onSelectPage(effectiveSelectedPage - 1)
                             : null,
                         tooltip: l10n.previousAction,
                         icon: const Icon(Icons.chevron_left_rounded),
@@ -1837,7 +1885,8 @@ class _EditMetadataHero extends StatelessWidget {
                       const SizedBox(width: 12),
                       IconButton.filledTonal(
                         onPressed: effectiveSelectedPage < effectivePageCount
-                            ? () => onSelectPage(effectiveSelectedPage + 1)
+                            ? () =>
+                                  widget.onSelectPage(effectiveSelectedPage + 1)
                             : null,
                         tooltip: l10n.nextAction,
                         icon: const Icon(Icons.chevron_right_rounded),
@@ -1849,7 +1898,7 @@ class _EditMetadataHero extends StatelessWidget {
             );
           },
           loadingBuilder: (context) {
-            schedulePreviewState(_ScreenshotPreviewState.loading);
+            _schedulePreviewState(_ScreenshotPreviewState.loading);
             return DecoratedBox(
               decoration: BoxDecoration(
                 color: theme.colorScheme.surfaceContainerHigh,
@@ -1869,7 +1918,7 @@ class _EditMetadataHero extends StatelessWidget {
             );
           },
           errorBuilder: (context, error, stackTrace) {
-            schedulePreviewState(_ScreenshotPreviewState.ready);
+            _schedulePreviewState(_ScreenshotPreviewState.ready);
             return DecoratedBox(
               decoration: BoxDecoration(
                 color: theme.colorScheme.surfaceContainerHigh,
@@ -1884,10 +1933,10 @@ class _EditMetadataHero extends StatelessWidget {
                     fit: StackFit.expand,
                     children: [
                       _DocumentThumbnailImage(
-                        imageUri: repository.buildDocumentThumbnailUri(
-                          document.id,
+                        imageUri: widget.repository.buildDocumentThumbnailUri(
+                          widget.document.id,
                         ),
-                        headers: headers,
+                        headers: _headers,
                       ),
                       DecoratedBox(
                         decoration: BoxDecoration(
@@ -1902,12 +1951,12 @@ class _EditMetadataHero extends StatelessWidget {
           },
         ),
         const SizedBox(height: 18),
-        if (badges.isNotEmpty) ...[
+        if (widget.badges.isNotEmpty) ...[
           const SizedBox(height: 14),
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: badges
+            children: widget.badges
                 .map((badge) => _EditMetaBadge(label: badge))
                 .toList(growable: false),
           ),
@@ -2529,7 +2578,7 @@ class _MetadataTagsRow extends StatelessWidget {
             Text(
               '-',
               style: theme.textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w600,
+                color: theme.colorScheme.onSurfaceVariant,
               ),
             )
           else
@@ -2568,7 +2617,7 @@ class _MetadataTagsRow extends StatelessWidget {
   }
 }
 
-class _PreviewCard extends StatelessWidget {
+class _PreviewCard extends StatefulWidget {
   const _PreviewCard({
     required this.title,
     required this.document,
@@ -2598,18 +2647,69 @@ class _PreviewCard extends StatelessWidget {
   final VoidCallback? onPreview;
 
   @override
+  State<_PreviewCard> createState() => _PreviewCardState();
+}
+
+class _PreviewCardState extends State<_PreviewCard> {
+  _ScreenshotPreviewState? _lastReportedPreviewState;
+  late PdfDocumentRefUri _previewDocumentRef;
+  late Map<String, String> _headers;
+
+  @override
+  void initState() {
+    super.initState();
+    _refreshPreviewSource();
+  }
+
+  @override
+  void didUpdateWidget(covariant _PreviewCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.document.id != widget.document.id ||
+        oldWidget.repository != widget.repository) {
+      _refreshPreviewSource();
+    }
+
+    if (oldWidget.document.id != widget.document.id ||
+        oldWidget.preferFallbackWhileLoading !=
+            widget.preferFallbackWhileLoading) {
+      _lastReportedPreviewState = null;
+    }
+  }
+
+  void _refreshPreviewSource() {
+    final previewUri = widget.repository.buildDocumentPreviewUri(
+      documentId: widget.document.id,
+    );
+    _headers = Map<String, String>.unmodifiable(
+      widget.repository.buildAuthenticatedHeaders(),
+    );
+    _previewDocumentRef = PdfDocumentRefUri(
+      previewUri,
+      headers: _headers,
+      key: PdfDocumentRefKey(previewUri.toString(), [
+        _headers['Authorization'],
+      ]),
+    );
+  }
+
+  void _schedulePreviewState(_ScreenshotPreviewState state) {
+    if (_lastReportedPreviewState == state) {
+      return;
+    }
+
+    _lastReportedPreviewState = state;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+
+      widget.onPreviewStateChanged(state);
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final previewUri = repository.buildDocumentPreviewUri(
-      documentId: document.id,
-    );
-    final headers = repository.buildAuthenticatedHeaders();
-
-    void schedulePreviewState(_ScreenshotPreviewState state) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        onPreviewStateChanged(state);
-      });
-    }
 
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -2623,35 +2723,34 @@ class _PreviewCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              title,
+              widget.title,
               style: theme.textTheme.headlineMedium?.copyWith(
                 fontWeight: FontWeight.w600,
               ),
             ),
             const SizedBox(height: 12),
-            PdfDocumentViewBuilder.uri(
-              previewUri,
-              headers: headers,
+            PdfDocumentViewBuilder(
+              documentRef: _previewDocumentRef,
               builder: (context, pdfDocument) {
                 if (pdfDocument == null) {
-                  schedulePreviewState(_ScreenshotPreviewState.ready);
+                  _schedulePreviewState(_ScreenshotPreviewState.ready);
                   return _PreviewFallback(
-                    document: document,
-                    thumbnailWidget: thumbnailWidget,
-                    thumbnailImageProvider: thumbnailImageProvider,
-                    repository: repository,
-                    onPreview: onPreview,
+                    document: widget.document,
+                    thumbnailWidget: widget.thumbnailWidget,
+                    thumbnailImageProvider: widget.thumbnailImageProvider,
+                    repository: widget.repository,
+                    onPreview: widget.onPreview,
                     aspectRatio: 0.84,
                   );
                 }
 
                 final effectivePageCount = pdfDocument.pages.length;
-                final effectiveSelectedPage = selectedPage.clamp(
+                final effectiveSelectedPage = widget.selectedPage.clamp(
                   1,
                   effectivePageCount,
                 );
 
-                schedulePreviewState(_ScreenshotPreviewState.ready);
+                _schedulePreviewState(_ScreenshotPreviewState.ready);
 
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -2659,7 +2758,7 @@ class _PreviewCard extends StatelessWidget {
                     _PreviewPanel(
                       pdfDocument: pdfDocument,
                       selectedPage: effectiveSelectedPage,
-                      onPreview: onPreview,
+                      onPreview: widget.onPreview,
                       aspectRatio: 0.84,
                     ),
                     const SizedBox(height: 12),
@@ -2667,8 +2766,8 @@ class _PreviewCard extends StatelessWidget {
                       pageCount: effectivePageCount,
                       selectedPage: effectiveSelectedPage,
                       pdfDocument: pdfDocument,
-                      scrollController: pageStripScrollController,
-                      onPageSelected: onSelectPage,
+                      scrollController: widget.pageStripScrollController,
+                      onPageSelected: widget.onSelectPage,
                     ),
                     const SizedBox(height: 12),
                     Center(
@@ -2684,32 +2783,32 @@ class _PreviewCard extends StatelessWidget {
                 );
               },
               loadingBuilder: (context) {
-                if (preferFallbackWhileLoading) {
-                  schedulePreviewState(_ScreenshotPreviewState.ready);
+                if (widget.preferFallbackWhileLoading) {
+                  _schedulePreviewState(_ScreenshotPreviewState.ready);
                   return _PreviewFallback(
-                    document: document,
-                    thumbnailWidget: thumbnailWidget,
-                    thumbnailImageProvider: thumbnailImageProvider,
-                    repository: repository,
-                    onPreview: onPreview,
+                    document: widget.document,
+                    thumbnailWidget: widget.thumbnailWidget,
+                    thumbnailImageProvider: widget.thumbnailImageProvider,
+                    repository: widget.repository,
+                    onPreview: widget.onPreview,
                     aspectRatio: 0.84,
                   );
                 }
 
-                schedulePreviewState(_ScreenshotPreviewState.loading);
+                _schedulePreviewState(_ScreenshotPreviewState.loading);
                 return _PreviewLoadingState(
-                  onPreview: onPreview,
+                  onPreview: widget.onPreview,
                   aspectRatio: 0.84,
                 );
               },
               errorBuilder: (context, error, stackTrace) {
-                schedulePreviewState(_ScreenshotPreviewState.ready);
+                _schedulePreviewState(_ScreenshotPreviewState.ready);
                 return _PreviewFallback(
-                  document: document,
-                  thumbnailWidget: thumbnailWidget,
-                  thumbnailImageProvider: thumbnailImageProvider,
-                  repository: repository,
-                  onPreview: onPreview,
+                  document: widget.document,
+                  thumbnailWidget: widget.thumbnailWidget,
+                  thumbnailImageProvider: widget.thumbnailImageProvider,
+                  repository: widget.repository,
+                  onPreview: widget.onPreview,
                   aspectRatio: 0.84,
                 );
               },
@@ -3873,15 +3972,24 @@ class _DocumentFullscreenPreviewPage extends StatefulWidget {
 class _DocumentFullscreenPreviewPageState
     extends State<_DocumentFullscreenPreviewPage> {
   int _currentPage = 1;
+  late PdfDocumentRefUri _previewDocumentRef;
 
   @override
   void initState() {
     super.initState();
     _currentPage = widget.initialPage;
+    _refreshPreviewSource();
   }
 
   @override
-  Widget build(BuildContext context) {
+  void didUpdateWidget(covariant _DocumentFullscreenPreviewPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.document.id != widget.document.id) {
+      _refreshPreviewSource();
+    }
+  }
+
+  void _refreshPreviewSource() {
     final repository = ProviderScope.containerOf(
       context,
       listen: false,
@@ -3889,7 +3997,18 @@ class _DocumentFullscreenPreviewPageState
     final previewUri = repository.buildDocumentPreviewUri(
       documentId: widget.document.id,
     );
-    final headers = repository.buildAuthenticatedHeaders();
+    final headers = Map<String, String>.unmodifiable(
+      repository.buildAuthenticatedHeaders(),
+    );
+    _previewDocumentRef = PdfDocumentRefUri(
+      previewUri,
+      headers: headers,
+      key: PdfDocumentRefKey(previewUri.toString(), [headers['Authorization']]),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final totalPages = widget.document.pageCount;
 
     return Scaffold(
@@ -3918,9 +4037,8 @@ class _DocumentFullscreenPreviewPageState
             ),
         ],
       ),
-      body: PdfViewer.uri(
-        previewUri,
-        headers: headers,
+      body: PdfViewer(
+        _previewDocumentRef,
         initialPageNumber: widget.initialPage,
         params: PdfViewerParams(
           backgroundColor: Colors.black,
