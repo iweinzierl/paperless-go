@@ -511,6 +511,20 @@ ensure
   end
 end
 
+def with_unbundled_ios_shell_environment
+  if defined?(Bundler)
+    Bundler.with_unbundled_env do
+      with_clean_ios_shell_environment do
+        yield
+      end
+    end
+  else
+    with_clean_ios_shell_environment do
+      yield
+    end
+  end
+end
+
 def verify_cocoapods_available
   sh("command -v pod")
   sh("pod --version")
@@ -1446,7 +1460,7 @@ platform :ios do
       "--build-number=#{build_number}",
     ]
 
-    with_clean_ios_shell_environment do
+    with_unbundled_ios_shell_environment do
       verify_cocoapods_available
       Dir.chdir(PROJECT_ROOT) do
         sh(build_args.shelljoin)
