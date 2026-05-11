@@ -878,6 +878,12 @@ abstract class AppLocalizations {
   /// **'Categories'**
   String get drawerCategories;
 
+  /// No description provided for @drawerSavedViews.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved views'**
+  String get drawerSavedViews;
+
   /// No description provided for @drawerRecentlyOpened.
   ///
   /// In en, this message translates to:
@@ -1207,6 +1213,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count, plural, one {1 document} other {{count} documents}}'**
   String documentCount(int count);
+
+  /// No description provided for @documentsActiveSavedView.
+  ///
+  /// In en, this message translates to:
+  /// **'View: {name}'**
+  String documentsActiveSavedView(Object name);
 
   /// No description provided for @noDocumentsMatchSearch.
   ///

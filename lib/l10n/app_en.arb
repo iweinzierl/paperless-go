@@ -148,6 +148,7 @@
   "couldNotLoadReviewQueueDescription": "The app could not load inbox documents requiring manual review right now.",
   "drawerMainMenu": "Main menu",
   "drawerCategories": "Categories",
+  "drawerSavedViews": "Saved views",
   "drawerRecentlyOpened": "Recently opened",
   "drawerSettings": "Settings",
   "drawerHelpFeedback": "Help & Feedback",
@@ -249,6 +250,12 @@
       "count": {
         "type": "int"
       }
+    }
+  },
+  "documentsActiveSavedView": "View: {name}",
+  "@documentsActiveSavedView": {
+    "placeholders": {
+      "name": {}
     }
   },
   "noDocumentsMatchSearch": "No documents match the current search.",

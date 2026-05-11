@@ -7,9 +7,11 @@ import 'package:path_provider/path_provider.dart';
 import 'package:paperless_ngx_app/src/core/network/dio_provider.dart';
 import 'package:paperless_ngx_app/src/features/auth/domain/models/paperless_auth_session.dart';
 import 'package:paperless_ngx_app/src/features/auth/presentation/controllers/auth_session_controller.dart';
+import 'package:paperless_ngx_app/src/features/documents/data/query/paperless_saved_view_query_parameters.dart';
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_document.dart';
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_document_page.dart';
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_filter_option.dart';
+import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_saved_view.dart';
 
 final documentsRepositoryProvider = Provider<DocumentsRepository>((ref) {
   final session = ref.watch(authSessionProvider);
@@ -142,6 +144,58 @@ class DocumentsRepository {
     int? correspondentId,
     int? documentTypeId,
   }) async {
+    return _fetchDocumentsWithQueryParameters(
+      page: page,
+      pageSize: pageSize,
+      ordering: ordering,
+      additionalQueryParameters: <String, String>{
+        if (titleFilter.trim().isNotEmpty)
+          'title__icontains': titleFilter.trim(),
+        if (tagIds.isNotEmpty) 'tags__id__all': tagIds.join(','),
+        if (isInInbox != null) 'is_in_inbox': isInInbox.toString(),
+        if (correspondentId != null)
+          'correspondent__id': correspondentId.toString(),
+        if (documentTypeId != null)
+          'document_type__id': documentTypeId.toString(),
+      },
+    );
+  }
+
+  Future<PaperlessDocumentPage> fetchDocumentsForSavedView({
+    required PaperlessSavedView savedView,
+    int page = 1,
+    int pageSize = 20,
+  }) {
+    final ordering = savedView.sortReverse
+        ? '-${savedView.sortField}'
+        : savedView.sortField;
+
+    return _fetchDocumentsWithQueryParameters(
+      page: page,
+      pageSize: pageSize,
+      ordering: ordering,
+      additionalQueryParameters: queryParametersFromSavedViewFilterRules(
+        savedView.filterRules,
+      ),
+    );
+  }
+
+  Future<int> fetchSavedViewDocumentCount({
+    required PaperlessSavedView savedView,
+  }) async {
+    final page = await fetchDocumentsForSavedView(
+      savedView: savedView,
+      pageSize: 1,
+    );
+    return page.count;
+  }
+
+  Future<PaperlessDocumentPage> _fetchDocumentsWithQueryParameters({
+    required int page,
+    required int pageSize,
+    required String ordering,
+    Map<String, String> additionalQueryParameters = const <String, String>{},
+  }) async {
     final token = _session.authToken;
     if (token == null || token.isEmpty) {
       throw const DocumentsFailure('No authenticated session found.');
@@ -155,14 +209,7 @@ class DocumentsRepository {
           'page_size': pageSize.toString(),
           'ordering': ordering,
           'truncate_content': 'true',
-          if (titleFilter.trim().isNotEmpty)
-            'title__icontains': titleFilter.trim(),
-          if (tagIds.isNotEmpty) 'tags__id__all': tagIds.join(','),
-          if (isInInbox != null) 'is_in_inbox': isInInbox.toString(),
-          if (correspondentId != null)
-            'correspondent__id': correspondentId.toString(),
-          if (documentTypeId != null)
-            'document_type__id': documentTypeId.toString(),
+          ...additionalQueryParameters,
         },
       ),
       options: Options(
@@ -216,6 +263,34 @@ class DocumentsRepository {
 
   Future<List<PaperlessFilterOption>> fetchDocumentTypeOptions() {
     return _fetchFilterOptions(endpoint: 'document_types/');
+  }
+
+  Future<List<PaperlessSavedView>> fetchSavedViews() async {
+    final token = _requireAuthToken();
+    final apiUri = Uri.parse(_session.serverUrl).resolve('api/saved_views/');
+    final response = await _dio.getUri(
+      apiUri.replace(
+        queryParameters: const <String, String>{
+          'page': '1',
+          'page_size': '1000',
+        },
+      ),
+      options: Options(
+        headers: <String, Object>{'Authorization': 'Token $token'},
+      ),
+    );
+
+    final payload = _asJsonMap(response.data);
+    final results = payload['results'] as List<dynamic>? ?? const <dynamic>[];
+
+    return results
+        .whereType<Map>()
+        .map(
+          (item) => PaperlessSavedView.fromJson(
+            item.map((key, value) => MapEntry(key.toString(), value)),
+          ),
+        )
+        .toList(growable: false);
   }
 
   Future<PaperlessFilterOption> createTag({required String name}) {

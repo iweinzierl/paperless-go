@@ -12,6 +12,7 @@ import 'package:paperless_ngx_app/src/features/auth/domain/models/paperless_auth
 import 'package:paperless_ngx_app/src/features/auth/presentation/controllers/auth_session_controller.dart';
 import 'package:paperless_ngx_app/src/features/auth/presentation/pages/login_page.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/pages/scan_document_page.dart';
+import 'package:paperless_ngx_app/src/features/documents/presentation/providers/documents_providers.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/providers/incoming_pdf_controller.dart';
 
 class PaperlessNgxApp extends ConsumerStatefulWidget {
@@ -49,10 +50,13 @@ class _PaperlessNgxAppState extends ConsumerState<PaperlessNgxApp>
         if (!next.isAuthenticated) {
           _backgroundedAt = null;
           _clearLockState();
+          ref.read(activeSavedViewIdProvider.notifier).state = null;
+          ref.invalidate(savedViewsProvider);
         } else if (previous?.isAuthenticated != true) {
           _scheduleBiometricPromptIfNeeded();
         }
 
+        _scheduleSavedViewsWarmup();
         _scheduleIncomingPdfHandling();
       },
     );
@@ -73,6 +77,7 @@ class _PaperlessNgxAppState extends ConsumerState<PaperlessNgxApp>
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _scheduleIncomingPdfHandling();
+      _scheduleSavedViewsWarmup();
       if (_isAppLocked) {
         unawaited(_unlockApp());
       }
@@ -126,6 +131,29 @@ class _PaperlessNgxAppState extends ConsumerState<PaperlessNgxApp>
 
       unawaited(_showBiometricPromptIfNeeded());
     });
+  }
+
+  void _scheduleSavedViewsWarmup() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+
+      unawaited(_warmSavedViewsIfPossible());
+    });
+  }
+
+  Future<void> _warmSavedViewsIfPossible() async {
+    final session = ref.read(authSessionProvider);
+    if (!session.isAuthenticated) {
+      return;
+    }
+
+    try {
+      await ref.read(savedViewsProvider.future);
+    } catch (_) {
+      // Best effort: the drawer can still retry through the provider.
+    }
   }
 
   Future<void> _handleIncomingPdfIfPossible() async {

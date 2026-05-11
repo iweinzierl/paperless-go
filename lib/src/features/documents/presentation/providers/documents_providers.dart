@@ -5,6 +5,7 @@ import 'package:paperless_ngx_app/src/features/documents/data/repositories/docum
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_document.dart';
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_document_page.dart';
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_filter_option.dart';
+import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_saved_view.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/models/documents_filter_state.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/models/documents_layout_mode.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/models/documents_sort_option.dart';
@@ -76,6 +77,48 @@ final documentTypeOptionsProvider = FutureProvider<List<PaperlessFilterOption>>(
   },
 );
 
+final savedViewsProvider = FutureProvider<List<PaperlessSavedView>>((
+  ref,
+) async {
+  final repository = ref.watch(documentsRepositoryProvider);
+  return repository.fetchSavedViews();
+});
+
+final savedViewCountsProvider = FutureProvider<Map<int, int>>((ref) async {
+  final repository = ref.watch(documentsRepositoryProvider);
+  final savedViews = await ref.watch(savedViewsProvider.future);
+  if (savedViews.isEmpty) {
+    return const <int, int>{};
+  }
+
+  final counts = await Future.wait(
+    savedViews.map((savedView) async {
+      try {
+        final count = await repository.fetchSavedViewDocumentCount(
+          savedView: savedView,
+        );
+        return MapEntry(savedView.id, count);
+      } catch (_) {
+        return null;
+      }
+    }),
+  );
+
+  return Map<int, int>.fromEntries(counts.whereType<MapEntry<int, int>>());
+});
+
+final activeSavedViewIdProvider = StateProvider<int?>((ref) => null);
+
+final activeSavedViewProvider = Provider<PaperlessSavedView?>((ref) {
+  final activeSavedViewId = ref.watch(activeSavedViewIdProvider);
+  final savedViews = ref.watch(savedViewsProvider).valueOrNull;
+  if (activeSavedViewId == null || savedViews == null) {
+    return null;
+  }
+
+  return savedViews.where((view) => view.id == activeSavedViewId).firstOrNull;
+});
+
 final documentsPageProvider = FutureProvider<PaperlessDocumentPage>((
   ref,
 ) async {
@@ -84,6 +127,14 @@ final documentsPageProvider = FutureProvider<PaperlessDocumentPage>((
   final page = ref.watch(documentsCurrentPageProvider);
   final ordering = ref.watch(documentsOrderingProvider);
   final filters = ref.watch(documentsFilterStateProvider);
+  final activeSavedView = ref.watch(activeSavedViewProvider);
+
+  if (activeSavedView != null) {
+    return repository.fetchDocumentsForSavedView(
+      savedView: activeSavedView,
+      page: page,
+    );
+  }
 
   return repository.fetchDocuments(
     page: page,

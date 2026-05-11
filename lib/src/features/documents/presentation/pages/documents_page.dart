@@ -12,6 +12,7 @@ import 'package:paperless_ngx_app/src/features/app_shell/presentation/widgets/ap
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_document.dart';
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_document_page.dart';
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_filter_option.dart';
+import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_saved_view.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/models/documents_filter_state.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/models/documents_layout_mode.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/models/documents_sort_option.dart';
@@ -109,12 +110,15 @@ class _DocumentsPageState extends ConsumerState<DocumentsPage> {
     final documentsPage = ref.watch(documentsPageProvider);
     final page = documentsPage.valueOrNull;
     final query = ref.watch(documentsSearchQueryProvider);
+    final activeSavedView = ref.watch(activeSavedViewProvider);
     final ordering = ref.watch(documentsOrderingProvider);
     final filterState = ref.watch(documentsFilterStateProvider);
     final layoutMode = ref.watch(documentsLayoutModeProvider);
-    final activeFilterCount = _activeFilterCount(filterState, ordering);
+    final activeFilterCount = activeSavedView == null
+        ? _activeFilterCount(filterState, ordering)
+        : 0;
 
-    _syncController(query);
+    _syncController(activeSavedView == null ? query : '');
 
     final isWideScreen = useWideLayout(context);
     final effectiveLayoutMode = isWideScreen
@@ -199,6 +203,13 @@ class _DocumentsPageState extends ConsumerState<DocumentsPage> {
                     ),
                   ],
                 ),
+                if (activeSavedView != null) ...[
+                  const SizedBox(height: 12),
+                  _ActiveSavedViewChip(
+                    savedView: activeSavedView,
+                    onClear: _clearActiveSavedViewSelection,
+                  ),
+                ],
                 if (activeFilterCount > 0) ...[
                   const SizedBox(height: 12),
                   _ActiveDocumentsControls(
@@ -378,12 +389,14 @@ class _DocumentsPageState extends ConsumerState<DocumentsPage> {
   }
 
   void _submitSearch(String value) {
+    _clearActiveSavedViewSelection();
     ref.read(documentsSearchQueryProvider.notifier).state = value.trim();
     ref.read(documentsCurrentPageProvider.notifier).state = 1;
   }
 
   void _clearSearch() {
     _searchController.clear();
+    _clearActiveSavedViewSelection();
     ref.read(documentsSearchQueryProvider.notifier).state = '';
     ref.read(documentsCurrentPageProvider.notifier).state = 1;
   }
@@ -393,6 +406,7 @@ class _DocumentsPageState extends ConsumerState<DocumentsPage> {
   }
 
   void _updateFilters(DocumentsFilterState nextState) {
+    _clearActiveSavedViewSelection();
     ref.read(documentsFilterStateProvider.notifier).state = nextState;
     ref.read(documentsCurrentPageProvider.notifier).state = 1;
   }
@@ -402,6 +416,7 @@ class _DocumentsPageState extends ConsumerState<DocumentsPage> {
       return;
     }
 
+    _clearActiveSavedViewSelection();
     ref.read(documentsOrderingProvider.notifier).state = ordering;
     ref.read(documentsCurrentPageProvider.notifier).state = 1;
   }
@@ -431,11 +446,16 @@ class _DocumentsPageState extends ConsumerState<DocumentsPage> {
   }
 
   Future<void> _openFilters(BuildContext context) async {
+    final activeSavedView = ref.read(activeSavedViewProvider);
     final result = await Navigator.of(context).push<DocumentsFiltersResult>(
       MaterialPageRoute<DocumentsFiltersResult>(
         builder: (context) => DocumentsFiltersPage(
-          initialFilterState: ref.read(documentsFilterStateProvider),
-          initialOrdering: ref.read(documentsOrderingProvider),
+          initialFilterState: activeSavedView == null
+              ? ref.read(documentsFilterStateProvider)
+              : const DocumentsFilterState(),
+          initialOrdering: activeSavedView == null
+              ? ref.read(documentsOrderingProvider)
+              : documentsSortOptions.first.ordering,
         ),
       ),
     );
@@ -444,8 +464,18 @@ class _DocumentsPageState extends ConsumerState<DocumentsPage> {
       return;
     }
 
+    _clearActiveSavedViewSelection();
     ref.read(documentsFilterStateProvider.notifier).state = result.filterState;
     ref.read(documentsOrderingProvider.notifier).state = result.ordering;
+    ref.read(documentsCurrentPageProvider.notifier).state = 1;
+  }
+
+  void _clearActiveSavedViewSelection() {
+    if (ref.read(activeSavedViewIdProvider) == null) {
+      return;
+    }
+
+    ref.read(activeSavedViewIdProvider.notifier).state = null;
     ref.read(documentsCurrentPageProvider.notifier).state = 1;
   }
 
@@ -465,6 +495,28 @@ class _DocumentsPageState extends ConsumerState<DocumentsPage> {
     }
 
     return count;
+  }
+}
+
+class _ActiveSavedViewChip extends StatelessWidget {
+  const _ActiveSavedViewChip({required this.savedView, required this.onClear});
+
+  final PaperlessSavedView savedView;
+  final VoidCallback onClear;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: InputChip(
+        avatar: const Icon(Icons.bookmarks_outlined, size: 18),
+        label: Text(l10n.documentsActiveSavedView(savedView.name)),
+        onDeleted: onClear,
+        deleteIcon: const Icon(Icons.close),
+      ),
+    );
   }
 }
 

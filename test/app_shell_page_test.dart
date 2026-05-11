@@ -9,6 +9,8 @@ import 'package:paperless_ngx_app/src/features/app_shell/presentation/providers/
 import 'package:paperless_ngx_app/src/features/app_shell/presentation/providers/help_feedback_providers.dart';
 import 'package:paperless_ngx_app/src/features/auth/domain/models/paperless_auth_session.dart';
 import 'package:paperless_ngx_app/src/features/auth/presentation/controllers/auth_session_controller.dart';
+import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_document_page.dart';
+import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_saved_view.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/providers/documents_providers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -73,4 +75,77 @@ void main() {
     expect(find.text('Start a new scan'), findsOneWidget);
     expect(find.text('Upload scan'), findsNothing);
   });
+
+  testWidgets('renders saved views in the permanent drawer and selects one', (
+    WidgetTester tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1400, 1200));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    SharedPreferences.setMockInitialValues(const <String, Object>{});
+    final sharedPreferences = await SharedPreferences.getInstance();
+    final container = ProviderContainer(
+      overrides: [
+        sharedPreferencesProvider.overrideWithValue(sharedPreferences),
+        appShellTabProvider.overrideWith((ref) => 1),
+        appDrawerMinimizedProvider.overrideWith((ref) => false),
+        appDrawerStatisticsProvider.overrideWith(
+          (ref) async => fakeDrawerStatistics,
+        ),
+        donationConfigurationProvider.overrideWith(
+          (ref) => const DonationConfiguration(
+            urlTemplate: '',
+            currencyCode: 'EUR',
+            suggestedAmount: 1,
+          ),
+        ),
+        authDisplaySessionProvider.overrideWith((ref) => fakeSession),
+        recentUploadsProvider.overrideWith((ref) async => const []),
+        reviewDocumentsProvider.overrideWith((ref) async => const []),
+        documentsPageProvider.overrideWith(
+          (ref) async => const _FakeDocumentsPage(),
+        ),
+        savedViewsProvider.overrideWith(
+          (ref) async => const [
+            PaperlessSavedView(
+              id: 42,
+              name: 'Inbox invoices',
+              sortField: 'created',
+              sortReverse: true,
+              filterRules: <PaperlessSavedViewFilterRule>[],
+            ),
+          ],
+        ),
+        savedViewCountsProvider.overrideWith(
+          (ref) async => const <int, int>{42: 71},
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: const AppShellPage(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Inbox invoices'), findsOneWidget);
+    expect(find.text('71'), findsOneWidget);
+
+    await tester.tap(find.text('Inbox invoices'));
+    await tester.pumpAndSettle();
+
+    expect(container.read(appShellTabProvider), 0);
+    expect(container.read(activeSavedViewIdProvider), 42);
+  });
+}
+
+class _FakeDocumentsPage extends PaperlessDocumentPage {
+  const _FakeDocumentsPage() : super(count: 0, results: const []);
 }

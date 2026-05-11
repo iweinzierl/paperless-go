@@ -449,6 +449,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get drawerCategories => 'Kategorien';
 
   @override
+  String get drawerSavedViews => 'Ansichten';
+
+  @override
   String get drawerRecentlyOpened => 'Zuletzt geöffnet';
 
   @override
@@ -651,6 +654,11 @@ class AppLocalizationsDe extends AppLocalizations {
       one: '1 Dokument',
     );
     return '$_temp0';
+  }
+
+  @override
+  String documentsActiveSavedView(Object name) {
+    return 'Ansicht: $name';
   }
 
   @override

@@ -10,6 +10,7 @@ import 'package:paperless_ngx_app/src/features/app_shell/presentation/pages/sett
 import 'package:paperless_ngx_app/src/features/app_shell/presentation/providers/app_shell_providers.dart';
 import 'package:paperless_ngx_app/src/features/app_shell/presentation/providers/help_feedback_providers.dart';
 import 'package:paperless_ngx_app/src/features/auth/presentation/controllers/auth_session_controller.dart';
+import 'package:paperless_ngx_app/src/features/documents/presentation/providers/documents_providers.dart';
 
 class AppDrawer extends ConsumerWidget {
   const AppDrawer({
@@ -37,6 +38,10 @@ class AppDrawer extends ConsumerWidget {
     final initials = _buildInitials(displayName);
     final reviewQueueCount = ref.watch(reviewQueueCountProvider);
     final selectedTab = ref.watch(appShellTabProvider);
+    final savedViews = ref.watch(savedViewsProvider).valueOrNull ?? const [];
+    final savedViewCounts =
+        ref.watch(savedViewCountsProvider).valueOrNull ?? const <int, int>{};
+    final activeSavedViewId = ref.watch(activeSavedViewIdProvider);
     final primaryDestinations = <_DrawerAction>[
       _DrawerAction(
         icon: Icons.history,
@@ -131,9 +136,9 @@ class AppDrawer extends ConsumerWidget {
                 action: _DrawerAction(
                   icon: Icons.folder_outlined,
                   title: l10n.navigationDocuments,
-                  onTap: () => ref.read(appShellTabProvider.notifier).state = 0,
+                  onTap: () => _openDocuments(ref, context),
                 ),
-                highlighted: selectedTab == 0,
+                highlighted: selectedTab == 0 && activeSavedViewId == null,
                 isMinimized: isMinimized,
               ),
               const SizedBox(height: 4),
@@ -180,6 +185,28 @@ class AppDrawer extends ConsumerWidget {
             const SizedBox(height: 14),
             Divider(color: theme.colorScheme.outline.withValues(alpha: 0.3)),
             const SizedBox(height: 14),
+            if (savedViews.isNotEmpty) ...[
+              if (!isMinimized) ...[
+                _DrawerSectionLabel(label: l10n.drawerSavedViews),
+                const SizedBox(height: 8),
+              ],
+              for (final savedView in savedViews) ...[
+                _DrawerActionTile(
+                  action: _DrawerAction(
+                    icon: Icons.bookmarks_outlined,
+                    title: savedView.name,
+                    onTap: () => _openSavedView(ref, context, savedView.id),
+                  ),
+                  trailingCountLabel: savedViewCounts[savedView.id]?.toString(),
+                  highlighted: activeSavedViewId == savedView.id,
+                  isMinimized: isMinimized,
+                ),
+                const SizedBox(height: 4),
+              ],
+              const SizedBox(height: 14),
+              Divider(color: theme.colorScheme.outline.withValues(alpha: 0.3)),
+              const SizedBox(height: 14),
+            ],
             if (!isMinimized) ...[
               _DrawerSectionLabel(label: l10n.drawerCategories),
               const SizedBox(height: 8),
@@ -229,6 +256,26 @@ class AppDrawer extends ConsumerWidget {
 
     await showDonateDialog(rootContext, launcher, donationConfiguration);
   }
+
+  void _openDocuments(WidgetRef ref, BuildContext context) {
+    ref.read(activeSavedViewIdProvider.notifier).state = null;
+    ref.read(appShellTabProvider.notifier).state = 0;
+    ref.read(documentsCurrentPageProvider.notifier).state = 1;
+
+    if (!isPermanent) {
+      Navigator.of(context).pop();
+    }
+  }
+
+  void _openSavedView(WidgetRef ref, BuildContext context, int savedViewId) {
+    ref.read(activeSavedViewIdProvider.notifier).state = savedViewId;
+    ref.read(appShellTabProvider.notifier).state = 0;
+    ref.read(documentsCurrentPageProvider.notifier).state = 1;
+
+    if (!isPermanent) {
+      Navigator.of(context).pop();
+    }
+  }
 }
 
 class _DrawerAction {
@@ -267,12 +314,14 @@ class _DrawerActionTile extends StatelessWidget {
     required this.action,
     required this.highlighted,
     this.badgeCount = 0,
+    this.trailingCountLabel,
     this.isMinimized = false,
   });
 
   final _DrawerAction action;
   final bool highlighted;
   final int badgeCount;
+  final String? trailingCountLabel;
   final bool isMinimized;
 
   @override
@@ -323,6 +372,8 @@ class _DrawerActionTile extends StatelessWidget {
                     ),
                   ),
                 ],
+                if (trailingCountLabel != null)
+                  _CountPill(label: trailingCountLabel!),
               ],
             ),
           ),
