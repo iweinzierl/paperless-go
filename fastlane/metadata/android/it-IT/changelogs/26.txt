@@ -1,0 +1,4 @@
+- aggiunto il supporto per le viste salvate
+- migliorato il design dell app nelle schermate principali
+- corretto un bug nel caricamento dell anteprima nella schermata di dettaglio del documento
+- rimosso un permesso Android non utilizzato per rispettare i requisiti del Play Store

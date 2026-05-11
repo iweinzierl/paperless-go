@@ -1,0 +1,4 @@
+- se anade compatibilidad con vistas guardadas
+- se mejora el diseno de la aplicacion en las pantallas principales
+- se corrige un error de carga de la vista previa en la pantalla de detalle del documento
+- se elimina un permiso de Android no utilizado para cumplir los requisitos de Play Store

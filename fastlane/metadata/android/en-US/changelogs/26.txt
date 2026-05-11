@@ -1,0 +1,4 @@
+- added support for saved views
+- improved the app design across the main screens
+- fixed preview loading in the document detail screen
+- removed an unused Android permission to satisfy Play Store requirements

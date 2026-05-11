@@ -1,0 +1,4 @@
+- ajout de la prise en charge des vues enregistrees
+- amelioration du design de l application sur les ecrans principaux
+- correction d un bug de chargement de l apercu dans l ecran de detail du document
+- suppression d une autorisation Android inutilisee pour respecter les exigences du Play Store

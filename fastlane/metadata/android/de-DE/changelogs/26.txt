@@ -1,0 +1,4 @@
+- Unterstützung für gespeicherte Ansichten hinzugefügt
+- App-Design auf den wichtigsten Seiten verbessert
+- Fehler beim Laden der Vorschau in der Dokumentdetailansicht behoben
+- ungenutzte Android-Berechtigung entfernt, um die Play-Store-Anforderungen zu erfüllen
