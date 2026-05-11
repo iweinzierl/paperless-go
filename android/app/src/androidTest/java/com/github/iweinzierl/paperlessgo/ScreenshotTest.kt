@@ -126,6 +126,11 @@ class ScreenshotTest {
             Thread.sleep(500)
 
             val outputFile = createScreenshotOutputFile(name)
+            if (outputFile.exists()) {
+                check(outputFile.delete()) {
+                    "Failed to replace screenshot: ${outputFile.absolutePath}"
+                }
+            }
             check(device.takeScreenshot(outputFile)) {
                 "Failed to capture screenshot: ${outputFile.absolutePath}"
             }
@@ -271,7 +276,7 @@ class ScreenshotTest {
 
         return File(
             screenshotDirectory,
-            "${name}_${System.currentTimeMillis()}.png",
+            "$name.png",
         )
     }
 }
