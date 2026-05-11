@@ -81,6 +81,12 @@ final class ScreenshotTests: XCTestCase {
     app.launch()
     configureDeviceOrientation()
     waitForScreenshotHarnessReady(in: app, scenario: scenario)
+    NSLog(
+      "paperless-screenshot capture name=%@ locale=%@ device=%@",
+      name,
+      currentScreenshotLocale(),
+      currentSimulatorName()
+    )
     snapshot(name, waitForLoadingIndicator: false)
     app.terminate()
   }
@@ -262,6 +268,26 @@ final class ScreenshotTests: XCTestCase {
     }
 
     return "en"
+  }
+
+  private func currentScreenshotLocale() -> String {
+    for identifier in [Snapshot.currentLocale, Snapshot.deviceLanguage] {
+      let normalizedIdentifier = identifier.trimmingCharacters(in: .whitespacesAndNewlines)
+      if !normalizedIdentifier.isEmpty {
+        return normalizedIdentifier
+      }
+    }
+
+    return "unknown-locale"
+  }
+
+  private func currentSimulatorName() -> String {
+    let deviceName = ProcessInfo.processInfo.environment["SIMULATOR_DEVICE_NAME"] ?? "unknown-device"
+    return deviceName.replacingOccurrences(
+      of: "Clone [0-9]+ of ",
+      with: "",
+      options: .regularExpression
+    )
   }
 
   private func configureDeviceOrientation() {

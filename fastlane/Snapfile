@@ -1,19 +1,5 @@
 workspace("./ios/Runner.xcworkspace")
 scheme("RunnerScreenshots")
-output_directory("./fastlane/.generated/ios/screenshots")
 clear_previous_screenshots(true)
 override_status_bar(false)
 localize_simulator(true)
-devices([
-  "iPhone 17 Pro",
-  "iPhone 17 Pro Max",
-  "iPad Air 13-inch (M4)",
-])
-languages([
-  "de-DE",
-  "en-GB",
-  "en-US",
-  "es-ES",
-  "fr-FR",
-  "it-IT",
-])

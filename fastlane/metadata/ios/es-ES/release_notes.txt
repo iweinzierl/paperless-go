@@ -1,3 +1,3 @@
-- se mejoro la pantalla de edicion de documentos con un diseno mas limpio
-- se actualizaron las pantallas de ayuda y filtros para una navegacion mas rapida y acciones mas claras
-- se elimino la entrada Donate del menu lateral en iOS
+- se anade compatibilidad con vistas guardadas
+- se mejora el diseno de la aplicacion en las pantallas principales
+- se corrige un error de carga de la vista previa en la pantalla de detalle del documento

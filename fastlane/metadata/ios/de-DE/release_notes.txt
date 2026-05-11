@@ -1,3 +1,3 @@
-- Bearbeitungsansicht fuer Dokumente mit klarerem und aufgeraumterem Layout verbessert
-- Hilfe- und Filterseiten fuer schnellere Navigation und klarere Aktionen ueberarbeitet
-- Donate-Eintrag im Drawer auf iOS entfernt
+- Unterstützung fuer gespeicherte Ansichten hinzugefuegt
+- App-Design auf den wichtigsten Seiten verbessert
+- Fehler beim Laden der Vorschau in der Dokumentdetailansicht behoben

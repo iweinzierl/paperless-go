@@ -19,11 +19,13 @@ IOS_APP_IDENTIFIER = ENV["IOS_APP_IDENTIFIER"] || "com.github.iweinzierl.paperle
 IOS_CHANGELOGS_DIRECTORY = File.expand_path("metadata/ios/changelogs", FASTLANE_DIR)
 IOS_METADATA_DIRECTORY = File.expand_path("metadata/ios", FASTLANE_DIR)
 IOS_SCREENSHOTS_DIRECTORY = File.expand_path("metadata/ios", FASTLANE_DIR)
-IOS_SNAPSHOT_RAW_DIRECTORY = File.expand_path(".generated/ios/screenshots", FASTLANE_DIR)
+IOS_SNAPSHOT_STAGING_ROOT = File.expand_path(".generated/ios/screenshots", FASTLANE_DIR)
 IOS_SNAPSHOT_BUILDLOG_DIRECTORY = File.expand_path("../build/fastlane/snapshot-logs", FASTLANE_DIR)
 IOS_METADATA_UPLOAD_DIRECTORY = File.expand_path("../build/fastlane/ios-metadata-upload", FASTLANE_DIR)
 IOS_SCREENSHOTS_UPLOAD_DIRECTORY = File.expand_path("../build/fastlane/ios-screenshots-upload", FASTLANE_DIR)
 IOS_PROJECT_FILE = File.expand_path("../ios/Runner.xcodeproj/project.pbxproj", FASTLANE_DIR)
+IOS_SCREENSHOT_LANGUAGES = ["de-DE", "en-GB", "en-US", "es-ES", "fr-FR", "it-IT"].freeze
+IOS_SCREENSHOT_SCENARIO_COUNT = 8
 ANDROID_SCREENSHOT_TARGETS = [
   {
     description: "phone",
@@ -617,6 +619,15 @@ def ios_default_screenshot_devices
   )
 end
 
+def ios_default_screenshot_languages
+  IOS_SCREENSHOT_LANGUAGES
+end
+
+def ios_snapshot_run_output_directory(base_root: IOS_SNAPSHOT_STAGING_ROOT)
+  timestamp = Time.now.utc.strftime("%Y%m%d-%H%M%S")
+  File.join(base_root, "run-#{timestamp}-#{$$}")
+end
+
 def ios_destination_runtime_version(workspace:, scheme:, device_names:)
   showdestinations_output = sh(
     "xcodebuild -showdestinations -workspace #{Shellwords.escape(workspace)} -scheme #{Shellwords.escape(scheme)}",
@@ -656,6 +667,11 @@ def clear_ios_structured_screenshots!(root_path)
 
   report_path = File.join(root_path, "screenshots.html")
   FileUtils.rm_f(report_path)
+end
+
+def clear_ios_snapshot_staging!(root_path)
+  FileUtils.rm_rf(root_path)
+  FileUtils.mkdir_p(root_path)
 end
 
 def ios_collect_structured_screenshots(root_path)
@@ -1046,12 +1062,17 @@ def sync_ios_screenshots_from_snapshot!(raw_root:, structured_root:, clear_previ
   end
 
   unless preserve_raw
-    Dir[File.join(raw_root, "*")].each do |path|
-      FileUtils.rm_rf(path)
-    end
+    FileUtils.rm_rf(raw_root)
   end
 
   generate_ios_screenshot_report!(structured_root)
+end
+
+def open_ios_screenshot_report!(root_path)
+  report_path = File.join(root_path, "screenshots.html")
+  return unless File.exist?(report_path)
+
+  sh("open #{Shellwords.escape(report_path)}")
 end
 
 def prepare_ios_screenshots_for_deliver(source_root)
@@ -1179,14 +1200,14 @@ platform :android do
     check_play_store_setup(require_signing: false)
 
     metadata_upload_options = {
-      version_code: options[:version_code] || current_version_code,
       skip_upload_aab: true,
       skip_upload_apk: true,
       skip_upload_metadata: false,
       skip_upload_images: false,
       skip_upload_screenshots: false,
-      skip_upload_changelogs: false,
+      skip_upload_changelogs: options[:version_code].nil?,
     }
+    metadata_upload_options[:version_code] = options[:version_code] if options[:version_code]
     metadata_upload_options[:track] = options[:track] if options[:track]
     metadata_upload_options[:release_status] = options[:release_status] if options[:release_status]
 
@@ -1349,24 +1370,47 @@ platform :ios do
     patch_snapshot_boot_wait!
     FileUtils.mkdir_p(IOS_SNAPSHOT_BUILDLOG_DIRECTORY)
 
-    raw_output_directory = File.expand_path(options[:output_directory] || IOS_SNAPSHOT_RAW_DIRECTORY, PROJECT_ROOT)
+    preserve_raw_output = options.key?(:preserve_raw_output) ? options[:preserve_raw_output] : false
+    raw_output_directory =
+      if options[:output_directory]
+        File.expand_path(options[:output_directory], PROJECT_ROOT)
+      else
+        ios_snapshot_run_output_directory
+      end
     snapshot_workspace = IOS_WORKSPACE
     snapshot_scheme = options[:scheme] || ENV["IOS_SNAPSHOT_SCHEME"] || "RunnerScreenshots"
+    snapshot_devices = options[:devices] ? Array(options[:devices]) : ios_default_screenshot_devices
+    snapshot_languages = options[:languages] ? Array(options[:languages]) : ios_default_screenshot_languages
+    expected_screenshot_count = snapshot_devices.length * snapshot_languages.length * IOS_SCREENSHOT_SCENARIO_COUNT
+    clear_previous_screenshots = options.key?(:clear_previous_screenshots) ? options[:clear_previous_screenshots] : true
+
+    if clear_previous_screenshots
+      clear_ios_snapshot_staging!(IOS_SNAPSHOT_STAGING_ROOT)
+      clear_ios_structured_screenshots!(IOS_SCREENSHOTS_DIRECTORY)
+      UI.message("Cleared previous iOS screenshot staging and structured output before starting a new capture run.")
+    end
+
+    FileUtils.mkdir_p(raw_output_directory)
+    UI.message(
+      "Preparing iOS screenshots for #{snapshot_languages.join(', ')} on #{snapshot_devices.join(', ')} (#{IOS_SCREENSHOT_SCENARIO_COUNT} scenarios each, #{expected_screenshot_count} total).",
+    )
+    UI.message("Staging raw snapshot output in #{raw_output_directory}.")
 
     snapshot_options = {
       workspace: snapshot_workspace,
       scheme: snapshot_scheme,
       output_directory: raw_output_directory,
-      clear_previous_screenshots: options.key?(:clear_previous_screenshots) ? options[:clear_previous_screenshots] : true,
+      clear_previous_screenshots: clear_previous_screenshots,
       reinstall_app: options.key?(:reinstall_app) ? options[:reinstall_app] : true,
       erase_simulator: options.key?(:erase_simulator) ? options[:erase_simulator] : true,
       stop_after_first_error: options.key?(:stop_after_first_error) ? options[:stop_after_first_error] : true,
       concurrent_simulators: options.key?(:concurrent_simulators) ? options[:concurrent_simulators] : false,
-      launch_arguments: options[:launch_arguments] ? Array(options[:launch_arguments]) : ios_snapshot_launch_arguments,
+      skip_open_summary: true,
+      launch_arguments: options[:launch_arguments] ? Array(options[:launch_arguments]) : [ios_snapshot_launch_arguments.shelljoin],
       buildlog_path: options[:buildlog_path] ? File.expand_path(options[:buildlog_path], PROJECT_ROOT) : IOS_SNAPSHOT_BUILDLOG_DIRECTORY,
     }
-    snapshot_options[:devices] = options[:devices] ? Array(options[:devices]) : ios_default_screenshot_devices
-    snapshot_options[:languages] = Array(options[:languages]) if options[:languages]
+    snapshot_options[:devices] = snapshot_devices
+    snapshot_options[:languages] = snapshot_languages
     snapshot_options[:ios_version] = options[:ios_version] || ios_destination_runtime_version(
       workspace: snapshot_workspace,
       scheme: snapshot_scheme,
@@ -1379,8 +1423,10 @@ platform :ios do
       raw_root: raw_output_directory,
       structured_root: IOS_SCREENSHOTS_DIRECTORY,
       clear_previous: snapshot_options[:clear_previous_screenshots],
-      preserve_raw: options.key?(:preserve_raw_output) ? options[:preserve_raw_output] : false,
+      preserve_raw: preserve_raw_output,
     )
+
+    open_ios_screenshot_report!(IOS_SCREENSHOTS_DIRECTORY) unless options[:skip_open_summary]
   end
 
   desc "Upload App Store metadata and screenshots without uploading a new binary"

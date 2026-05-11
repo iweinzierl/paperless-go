@@ -1,3 +1,3 @@
-- amelioration de l ecran d edition des documents avec une presentation plus propre
-- mise a jour des ecrans aide et filtres pour une navigation plus rapide et des actions plus claires
-- suppression de l entree Donate du tiroir sur iOS
+- ajout de la prise en charge des vues enregistrees
+- amelioration du design de l application sur les ecrans principaux
+- correction d un bug de chargement de l apercu dans l ecran de detail du document

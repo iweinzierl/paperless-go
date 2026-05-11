@@ -108,6 +108,9 @@ All commands are run from the project root.
 ./scripts/android/run_fastlane.sh metadata
 ```
 
+This lane updates the store listing, images, and screenshots without targeting a specific Play release.
+If you also want to upload release notes from `fastlane/metadata/android/<locale>/changelogs/<version-code>.txt`, pass an explicit version code for a release that already exists in Play, or use the binary/internal upload lane for that build.
+
 ### Upload only images and screenshots
 
 ```bash

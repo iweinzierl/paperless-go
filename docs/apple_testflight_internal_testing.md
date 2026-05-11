@@ -144,11 +144,11 @@ This lane uses `snapshot`, captures both the 6.3-inch and 6.5-inch iPhone App St
 ```
 
 This lane uploads App Store listing metadata and screenshots without uploading a new binary.
+It does not upload TestFlight changelogs. Those are only used by the `internal` lane when uploading a build to TestFlight.
 
-If a changelog file exists, the lane uses it automatically.
+The metadata lane targets the App Store listing and the editable App Store version in App Store Connect. A TestFlight build with build number `26` is separate from the App Store version metadata and does not by itself make `deliver` treat that version as editable listing state.
 
-- `fastlane/metadata/ios/changelogs/19.txt` for build `19`
-- otherwise `fastlane/metadata/ios/changelogs/default.txt`
+If the App Store version for the current `build_name` does not exist yet in App Store Connect, or is not editable, `metadata` uploads can fail even when the corresponding TestFlight build upload succeeded.
 
 ## Build And Upload Options
 
@@ -179,6 +179,7 @@ Useful optional Fastlane parameters:
 
 - The iOS lane uploads to TestFlight for internal testing. It does not submit the app for App Store review.
 - `fastlane ios metadata` uses `deliver` with `skip_binary_upload:true`, so it only updates listing content.
+- `fastlane ios internal` uses the changelog files in `fastlane/metadata/ios/changelogs/` when uploading a TestFlight build.
 - `fastlane ios screenshots` captures raw Snapshot output into a generated working directory and then copies the final screenshots into the metadata tree.
 - The build step uses `flutter build ipa --release --export-method app-store`.
 - Flutter version metadata comes from `pubspec.yaml` unless you override `build_name` or `build_number`.
