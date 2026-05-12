@@ -1,4 +1,4 @@
-Paperless Go porta il tuo archivio paperless-ngx sul telefono.
+Paperless Go e un client mobile per paperless-ngx per accedere ai documenti e gestirli dal telefono.
 
 Tieni sotto controllo i nuovi documenti, trova piu rapidamente quello che ti serve e sistema i metadati anche quando sei lontano dalla scrivania.
 

@@ -1,1 +1,1 @@
-Behalte dein selbst gehostetes paperless-ngx Archiv immer griffbereit und bearbeite Dokumente auch unterwegs.
+Mobiler Client für paperless-ngx, um auf deine Dokumente zuzugreifen und sie zu verwalten.

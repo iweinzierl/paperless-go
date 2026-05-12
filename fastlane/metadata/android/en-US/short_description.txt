@@ -1,1 +1,1 @@
-Scan, search, and manage your paperless-ngx documents on the go.
+Mobile client for paperless-ngx to search and manage documents.

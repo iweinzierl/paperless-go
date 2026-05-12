@@ -1,1 +1,1 @@
-paperless-ngx on the go
+Mobile paperless-ngx client

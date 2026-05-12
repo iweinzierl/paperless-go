@@ -1,1 +1,1 @@
-paperless-ngx in mobilita
+Client mobile paperless-ngx

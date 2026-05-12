@@ -1,1 +1,1 @@
-paperless,paperless-ngx,dokumente,scanner,pdf,archiv,metadaten,suche
+paperlessngx,self hosted,pdf,archiv,belegscanner,dokumentenmanager,dokumentsuche

@@ -1,1 +1,1 @@
-paperless-ngx partout
+Client mobile paperless-ngx

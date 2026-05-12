@@ -1,1 +1,1 @@
-Escanea, busca y gestiona tus documentos de paperless-ngx desde el movil.
+Cliente movil para paperless-ngx: busca y gestiona documentos.

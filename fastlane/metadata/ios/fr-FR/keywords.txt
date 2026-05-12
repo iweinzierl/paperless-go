@@ -1,1 +1,1 @@
-paperless,paperless-ngx,documents,scanner,pdf,archive,metadonnees,recherche
+paperlessngx,auto-heberge,archive pdf,scanner recus,gestion documents,recherche documents

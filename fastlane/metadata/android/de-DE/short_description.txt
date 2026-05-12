@@ -1,1 +1,1 @@
-Dokumente scannen, suchen und in paperless ngx mobil verwalten.
+Mobiler Client fur paperless-ngx zum Suchen und Verwalten von Dokumenten.

@@ -1,1 +1,1 @@
-paperless-ngx unterwegs
+Mobiler paperless-ngx Client

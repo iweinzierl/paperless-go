@@ -1,4 +1,4 @@
-Paperless Go met votre archive paperless-ngx dans votre poche.
+Paperless Go est un client mobile pour paperless-ngx afin d'acceder a vos documents et de les gerer sur mobile.
 
 Gardez un oeil sur les nouveaux documents, retrouvez plus vite les pieces importantes et organisez les metadonnees meme loin de votre bureau.
 

@@ -1,1 +1,1 @@
-paperless,paperless-ngx,documenti,scanner,pdf,archivio,metadati,ricerca
+paperlessngx,self hosted,archivio pdf,scanner ricevute,gestione documenti,ricerca documenti
