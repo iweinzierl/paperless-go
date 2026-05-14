@@ -308,16 +308,9 @@ class _DocumentsPageState extends ConsumerState<DocumentsPage> {
               title: Text(l10n.navigationDocuments),
               actions: [
                 IconButton(
-                  onPressed: () => _updateLayoutMode(
-                    layoutMode == DocumentsLayoutMode.card
-                        ? DocumentsLayoutMode.list
-                        : DocumentsLayoutMode.card,
-                  ),
-                  icon: Icon(
-                    layoutMode == DocumentsLayoutMode.card
-                        ? Icons.view_list_rounded
-                        : Icons.dashboard_customize_rounded,
-                  ),
+                  onPressed: () =>
+                      _updateLayoutMode(_nextLayoutMode(layoutMode)),
+                  icon: Icon(_layoutModeIcon(layoutMode)),
                 ),
                 PopupMenuButton<_DocumentsPageAction>(
                   tooltip: MaterialLocalizations.of(context).showMenuTooltip,
@@ -428,6 +421,22 @@ class _DocumentsPageState extends ConsumerState<DocumentsPage> {
 
     ref.read(documentsLayoutModeProvider.notifier).state = mode;
     unawaited(ref.read(documentsViewPreferencesProvider).saveLayoutMode(mode));
+  }
+
+  DocumentsLayoutMode _nextLayoutMode(DocumentsLayoutMode mode) {
+    return switch (mode) {
+      DocumentsLayoutMode.card => DocumentsLayoutMode.list,
+      DocumentsLayoutMode.list => DocumentsLayoutMode.compactList,
+      DocumentsLayoutMode.compactList => DocumentsLayoutMode.card,
+    };
+  }
+
+  IconData _layoutModeIcon(DocumentsLayoutMode mode) {
+    return switch (mode) {
+      DocumentsLayoutMode.card => Icons.view_list_rounded,
+      DocumentsLayoutMode.list => Icons.view_headline_rounded,
+      DocumentsLayoutMode.compactList => Icons.dashboard_customize_rounded,
+    };
   }
 
   void _syncController(String query) {
@@ -754,9 +763,8 @@ class _DocumentsList extends ConsumerWidget {
           else
             PaperlessDocumentListItem(
               document: document,
-              isOpening: openingIds.contains(document.id),
+              showPreview: layoutMode == DocumentsLayoutMode.list,
               onTap: () => _openDetails(context, ref, document),
-              onOpen: () => _openDocument(context, ref, document),
             ),
           SizedBox(height: layoutMode == DocumentsLayoutMode.card ? 12 : 10),
         ],

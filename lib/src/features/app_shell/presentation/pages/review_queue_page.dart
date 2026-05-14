@@ -280,6 +280,9 @@ class _ReviewQueuePageState extends ConsumerState<ReviewQueuePage> {
                               else
                                 PaperlessDocumentListItem(
                                   document: document,
+                                  showPreview:
+                                      effectiveLayoutMode ==
+                                      DocumentsLayoutMode.list,
                                   onTap: () {
                                     ref
                                         .read(
@@ -295,9 +298,6 @@ class _ReviewQueuePageState extends ConsumerState<ReviewQueuePage> {
                                       );
                                     }
                                   },
-                                  isOpening: openingIds.contains(document.id),
-                                  onOpen: () =>
-                                      _openDocument(context, ref, document),
                                 ),
                               SizedBox(
                                 height:
@@ -367,16 +367,9 @@ class _ReviewQueuePageState extends ConsumerState<ReviewQueuePage> {
               title: Text(l10n.navigationInbox),
               actions: [
                 IconButton(
-                  onPressed: () => _updateLayoutMode(
-                    layoutMode == DocumentsLayoutMode.card
-                        ? DocumentsLayoutMode.list
-                        : DocumentsLayoutMode.card,
-                  ),
-                  icon: Icon(
-                    layoutMode == DocumentsLayoutMode.card
-                        ? Icons.view_list_rounded
-                        : Icons.dashboard_customize_rounded,
-                  ),
+                  onPressed: () =>
+                      _updateLayoutMode(_nextLayoutMode(layoutMode)),
+                  icon: Icon(_layoutModeIcon(layoutMode)),
                 ),
                 PopupMenuButton<_ReviewQueuePageAction>(
                   tooltip: MaterialLocalizations.of(context).showMenuTooltip,
@@ -515,6 +508,22 @@ class _ReviewQueuePageState extends ConsumerState<ReviewQueuePage> {
 
     ref.read(documentsLayoutModeProvider.notifier).state = mode;
     unawaited(ref.read(documentsViewPreferencesProvider).saveLayoutMode(mode));
+  }
+
+  DocumentsLayoutMode _nextLayoutMode(DocumentsLayoutMode mode) {
+    return switch (mode) {
+      DocumentsLayoutMode.card => DocumentsLayoutMode.list,
+      DocumentsLayoutMode.list => DocumentsLayoutMode.compactList,
+      DocumentsLayoutMode.compactList => DocumentsLayoutMode.card,
+    };
+  }
+
+  IconData _layoutModeIcon(DocumentsLayoutMode mode) {
+    return switch (mode) {
+      DocumentsLayoutMode.card => Icons.view_list_rounded,
+      DocumentsLayoutMode.list => Icons.view_headline_rounded,
+      DocumentsLayoutMode.compactList => Icons.dashboard_customize_rounded,
+    };
   }
 }
 

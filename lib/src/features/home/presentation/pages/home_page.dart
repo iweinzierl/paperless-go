@@ -40,17 +40,9 @@ class HomePage extends ConsumerWidget {
               title: Text(l10n.navigationRecent),
               actions: [
                 IconButton(
-                  onPressed: () => _updateLayoutMode(
-                    ref,
-                    layoutMode == DocumentsLayoutMode.card
-                        ? DocumentsLayoutMode.list
-                        : DocumentsLayoutMode.card,
-                  ),
-                  icon: Icon(
-                    layoutMode == DocumentsLayoutMode.card
-                        ? Icons.view_list_rounded
-                        : Icons.dashboard_customize_rounded,
-                  ),
+                  onPressed: () =>
+                      _updateLayoutMode(ref, _nextLayoutMode(layoutMode)),
+                  icon: Icon(_layoutModeIcon(layoutMode)),
                 ),
                 PopupMenuButton<_HomePageAction>(
                   tooltip: MaterialLocalizations.of(context).showMenuTooltip,
@@ -131,6 +123,22 @@ class HomePage extends ConsumerWidget {
 
     ref.read(documentsLayoutModeProvider.notifier).state = mode;
     unawaited(ref.read(documentsViewPreferencesProvider).saveLayoutMode(mode));
+  }
+
+  DocumentsLayoutMode _nextLayoutMode(DocumentsLayoutMode mode) {
+    return switch (mode) {
+      DocumentsLayoutMode.card => DocumentsLayoutMode.list,
+      DocumentsLayoutMode.list => DocumentsLayoutMode.compactList,
+      DocumentsLayoutMode.compactList => DocumentsLayoutMode.card,
+    };
+  }
+
+  IconData _layoutModeIcon(DocumentsLayoutMode mode) {
+    return switch (mode) {
+      DocumentsLayoutMode.card => Icons.view_list_rounded,
+      DocumentsLayoutMode.list => Icons.view_headline_rounded,
+      DocumentsLayoutMode.compactList => Icons.dashboard_customize_rounded,
+    };
   }
 
   Future<void> _refreshHome(BuildContext context, WidgetRef ref) async {
@@ -414,6 +422,9 @@ class _RecentUploadsTabState extends ConsumerState<_RecentUploadsTab> {
                               else
                                 PaperlessDocumentListItem(
                                   document: document,
+                                  showPreview:
+                                      effectiveLayoutMode ==
+                                      DocumentsLayoutMode.list,
                                   onTap: () {
                                     ref
                                         .read(
@@ -429,9 +440,6 @@ class _RecentUploadsTabState extends ConsumerState<_RecentUploadsTab> {
                                       );
                                     }
                                   },
-                                  isOpening: openingIds.contains(document.id),
-                                  onOpen: () =>
-                                      _openDocument(context, ref, document),
                                 ),
                               SizedBox(
                                 height:

@@ -11,23 +11,20 @@ class PaperlessDocumentListItem extends ConsumerWidget {
   const PaperlessDocumentListItem({
     required this.document,
     this.onTap,
-    this.onOpen,
     this.trailingLabel,
-    this.isOpening = false,
+    this.showPreview = true,
     super.key,
   });
 
   final PaperlessDocument document;
   final VoidCallback? onTap;
-  final VoidCallback? onOpen;
   final String? trailingLabel;
-  final bool isOpening;
+  final bool showPreview;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final l10n = context.l10n;
     final repository = ref.watch(documentsRepositoryProvider);
     final thumbnailWidget = repository.buildDocumentThumbnailWidget(document);
     final thumbnailImageProvider = repository
@@ -40,19 +37,10 @@ class PaperlessDocumentListItem extends ConsumerWidget {
       ref.watch(documentTypeOptionsProvider),
       document.documentTypeId,
     );
-    final tagNames = _resolveTagNames(
-      ref.watch(tagOptionsProvider),
-      document.tags,
-    );
     final createdLabel = _formatTimestamp(context, document.created);
-    final detailParts = <String>[
-      if (createdLabel != null) createdLabel,
-      if (document.pageCount != null) l10n.documentPages(document.pageCount!),
-    ];
     final labelChips = <String>[
       if (correspondentName != null) correspondentName,
       if (documentTypeName != null) documentTypeName,
-      if (tagNames.isNotEmpty) tagNames.first,
     ];
 
     return Card(
@@ -68,49 +56,54 @@ class PaperlessDocumentListItem extends ConsumerWidget {
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.all(12),
+          padding: EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: showPreview ? 12 : 10,
+          ),
           child: Row(
             children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: SizedBox(
-                  width: 92,
-                  height: 92,
-                  child:
-                      thumbnailWidget ??
-                      (thumbnailImageProvider != null
-                          ? Image(
-                              image: thumbnailImageProvider,
-                              fit: BoxFit.cover,
-                            )
-                          : Image.network(
-                              repository
-                                  .buildDocumentThumbnailUri(document.id)
-                                  .toString(),
-                              headers: repository.buildAuthenticatedHeaders(),
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                return _ThumbnailFallback(document: document);
-                              },
-                              loadingBuilder:
-                                  (context, child, loadingProgress) {
-                                    if (loadingProgress == null) {
-                                      return child;
-                                    }
+              if (showPreview) ...[
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: SizedBox(
+                    width: 92,
+                    height: 92,
+                    child:
+                        thumbnailWidget ??
+                        (thumbnailImageProvider != null
+                            ? Image(
+                                image: thumbnailImageProvider,
+                                fit: BoxFit.cover,
+                              )
+                            : Image.network(
+                                repository
+                                    .buildDocumentThumbnailUri(document.id)
+                                    .toString(),
+                                headers: repository.buildAuthenticatedHeaders(),
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return _ThumbnailFallback(document: document);
+                                },
+                                loadingBuilder:
+                                    (context, child, loadingProgress) {
+                                      if (loadingProgress == null) {
+                                        return child;
+                                      }
 
-                                    return ColoredBox(
-                                      color: colorScheme.surfaceContainerHigh,
-                                      child: const Center(
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2.4,
+                                      return ColoredBox(
+                                        color: colorScheme.surfaceContainerHigh,
+                                        child: const Center(
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2.4,
+                                          ),
                                         ),
-                                      ),
-                                    );
-                                  },
-                            )),
+                                      );
+                                    },
+                              )),
+                  ),
                 ),
-              ),
-              const SizedBox(width: 12),
+                const SizedBox(width: 12),
+              ],
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -118,82 +111,58 @@ class PaperlessDocumentListItem extends ConsumerWidget {
                   children: [
                     Text(
                       document.title,
-                      maxLines: 2,
+                      maxLines: showPreview ? 2 : 1,
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.w600,
                         height: 1.2,
                       ),
                     ),
-                    if (labelChips.isNotEmpty) ...[
+                    if (createdLabel != null || labelChips.isNotEmpty) ...[
                       const SizedBox(height: 8),
                       Wrap(
                         spacing: 6,
                         runSpacing: 6,
                         children: [
+                          if (createdLabel != null)
+                            Text(
+                              createdLabel,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: colorScheme.onSurfaceVariant,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                           for (final label in labelChips.take(2))
                             _CompactChip(label: label),
                         ],
                       ),
                     ],
-                    if (detailParts.isNotEmpty) ...[
-                      const SizedBox(height: 8),
-                      Text(
-                        detailParts.join('  •  '),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
                   ],
                 ),
               ),
-              const SizedBox(width: 12),
-              if (onOpen != null || isOpening)
-                IconButton.filledTonal(
-                  onPressed: isOpening ? null : onOpen,
-                  tooltip: isOpening ? l10n.openingAction : l10n.openAction,
-                  style: IconButton.styleFrom(
-                    minimumSize: const Size(46, 46),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  icon: isOpening
-                      ? SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: colorScheme.primary,
-                          ),
-                        )
-                      : const Icon(Icons.open_in_new_rounded),
-                )
-              else
-                Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    if (trailingLabel != null)
-                      Text(
-                        trailingLabel!,
-                        style: theme.textTheme.labelLarge?.copyWith(
-                          color: colorScheme.primary,
-                          fontWeight: FontWeight.w700,
-                        ),
+              SizedBox(width: showPreview ? 12 : 8),
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  if (trailingLabel != null)
+                    Text(
+                      trailingLabel!,
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        color: colorScheme.primary,
+                        fontWeight: FontWeight.w700,
                       ),
-                    const SizedBox(height: 4),
-                    Icon(
-                      Icons.chevron_right_rounded,
-                      color: colorScheme.onSurfaceVariant,
-                      size: 28,
                     ),
-                  ],
-                ),
+                  const SizedBox(height: 4),
+                  Icon(
+                    Icons.chevron_right_rounded,
+                    color: colorScheme.onSurfaceVariant,
+                    size: 28,
+                  ),
+                ],
+              ),
             ],
           ),
         ),
@@ -219,11 +188,16 @@ class _CompactChip extends StatelessWidget {
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-        child: Text(
-          label,
-          style: theme.textTheme.labelMedium?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-            fontWeight: FontWeight.w600,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 100),
+          child: Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ),
       ),
@@ -273,28 +247,6 @@ String? _resolveOptionName(
       return null;
     },
     orElse: () => null,
-  );
-}
-
-List<String> _resolveTagNames(
-  AsyncValue<List<PaperlessFilterOption>> options,
-  List<int> ids,
-) {
-  if (ids.isEmpty) {
-    return const <String>[];
-  }
-
-  return options.maybeWhen(
-    data: (items) {
-      final namesById = <int, String>{
-        for (final item in items) item.id: item.name,
-      };
-      return ids
-          .map((id) => namesById[id])
-          .whereType<String>()
-          .toList(growable: false);
-    },
-    orElse: () => const <String>[],
   );
 }
 
