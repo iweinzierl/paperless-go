@@ -58,10 +58,10 @@ void main() {
           recentUploadsProvider.overrideWith((ref) async => const []),
           reviewDocumentsProvider.overrideWith((ref) async => const []),
         ],
-        child: MaterialApp(
+        child: const MaterialApp(
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
-          home: const AppShellPage(),
+          home: AppShellPage(),
         ),
       ),
     );
@@ -126,10 +126,10 @@ void main() {
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,
-        child: MaterialApp(
+        child: const MaterialApp(
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
-          home: const AppShellPage(),
+          home: AppShellPage(),
         ),
       ),
     );
