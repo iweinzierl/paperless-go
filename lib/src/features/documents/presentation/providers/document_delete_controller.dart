@@ -15,21 +15,36 @@ class DocumentDeleteController extends Notifier<Set<int>> {
   Set<int> build() => <int>{};
 
   Future<void> deleteDocument(PaperlessDocument document) async {
-    state = <int>{...state, document.id};
+    await deleteDocuments([document]);
+  }
+
+  Future<void> deleteDocuments(Iterable<PaperlessDocument> documents) async {
+    final documentsList = documents.toList(growable: false);
+    if (documentsList.isEmpty) {
+      return;
+    }
+
+    final documentIds = documentsList.map((document) => document.id).toSet();
+    state = <int>{...state, ...documentIds};
 
     try {
-      await ref
-          .read(documentsRepositoryProvider)
-          .deleteDocument(documentId: document.id);
-      ref.invalidate(documentDetailProvider(document.id));
-      ref.invalidate(documentsPageProvider);
-      ref.invalidate(recentUploadsProvider);
-      ref.invalidate(reviewDocumentsProvider);
-      ref
-          .read(recentlyOpenedDocumentsProvider.notifier)
-          .removeDocument(document.id);
+      final repository = ref.read(documentsRepositoryProvider);
+      for (final document in documentsList) {
+        await repository.deleteDocument(documentId: document.id);
+        _handleDeletedDocument(document.id);
+      }
     } finally {
-      state = <int>{...state}..remove(document.id);
+      state = <int>{...state}..removeAll(documentIds);
     }
+  }
+
+  void _handleDeletedDocument(int documentId) {
+    ref.invalidate(documentDetailProvider(documentId));
+    ref.invalidate(documentsPageProvider);
+    ref.invalidate(recentUploadsProvider);
+    ref.invalidate(reviewDocumentsProvider);
+    ref
+        .read(recentlyOpenedDocumentsProvider.notifier)
+        .removeDocument(documentId);
   }
 }

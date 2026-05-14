@@ -11,15 +11,21 @@ class PaperlessDocumentListItem extends ConsumerWidget {
   const PaperlessDocumentListItem({
     required this.document,
     this.onTap,
+    this.onLongPress,
+    this.onLeadingIconPressed,
     this.trailingLabel,
     this.showPreview = true,
+    this.isSelected = false,
     super.key,
   });
 
   final PaperlessDocument document;
   final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
+  final VoidCallback? onLeadingIconPressed;
   final String? trailingLabel;
   final bool showPreview;
+  final bool isSelected;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -46,15 +52,22 @@ class PaperlessDocumentListItem extends ConsumerWidget {
     return Card(
       margin: EdgeInsets.zero,
       elevation: 0,
-      color: colorScheme.surfaceContainer,
+      color: isSelected
+          ? colorScheme.secondaryContainer
+          : colorScheme.surfaceContainer,
       surfaceTintColor: Colors.transparent,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: colorScheme.outlineVariant),
+        side: BorderSide(
+          color: isSelected
+              ? colorScheme.secondary
+              : colorScheme.outlineVariant,
+        ),
       ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
+        onLongPress: onLongPress,
         child: Padding(
           padding: EdgeInsets.symmetric(
             horizontal: 12,
@@ -104,6 +117,27 @@ class PaperlessDocumentListItem extends ConsumerWidget {
                 ),
                 const SizedBox(width: 12),
               ],
+              IconButton(
+                onPressed: onLeadingIconPressed,
+                visualDensity: VisualDensity.compact,
+                style: IconButton.styleFrom(
+                  backgroundColor: isSelected
+                      ? colorScheme.secondary
+                      : colorScheme.surfaceContainerHigh,
+                  foregroundColor: isSelected
+                      ? colorScheme.onSecondary
+                      : colorScheme.onSurfaceVariant,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                icon: Icon(
+                  isSelected
+                      ? Icons.check_circle_rounded
+                      : Icons.description_outlined,
+                ),
+              ),
+              const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -142,27 +176,16 @@ class PaperlessDocumentListItem extends ConsumerWidget {
                   ],
                 ),
               ),
-              SizedBox(width: showPreview ? 12 : 8),
-              Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  if (trailingLabel != null)
-                    Text(
-                      trailingLabel!,
-                      style: theme.textTheme.labelLarge?.copyWith(
-                        color: colorScheme.primary,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  const SizedBox(height: 4),
-                  Icon(
-                    Icons.chevron_right_rounded,
-                    color: colorScheme.onSurfaceVariant,
-                    size: 28,
+              if (trailingLabel != null) ...[
+                SizedBox(width: showPreview ? 12 : 8),
+                Text(
+                  trailingLabel!,
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: colorScheme.primary,
+                    fontWeight: FontWeight.w700,
                   ),
-                ],
-              ),
+                ),
+              ],
             ],
           ),
         ),

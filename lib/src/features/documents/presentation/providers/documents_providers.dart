@@ -57,6 +57,18 @@ final documentsLayoutModeProvider = StateProvider<DocumentsLayoutMode>((ref) {
   return ref.watch(documentsViewPreferencesProvider).readLayoutMode();
 });
 
+final documentsSelectionProvider = StateProvider.autoDispose<Set<int>>(
+  (ref) => <int>{},
+);
+
+final recentUploadsSelectionProvider = StateProvider.autoDispose<Set<int>>(
+  (ref) => <int>{},
+);
+
+final reviewDocumentsSelectionProvider = StateProvider.autoDispose<Set<int>>(
+  (ref) => <int>{},
+);
+
 final tagOptionsProvider = FutureProvider<List<PaperlessFilterOption>>((
   ref,
 ) async {

@@ -12,8 +12,11 @@ import 'package:paperless_ngx_app/src/features/app_shell/presentation/widgets/ap
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_document.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/models/documents_layout_mode.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/pages/document_detail_page.dart';
+import 'package:paperless_ngx_app/src/features/documents/presentation/providers/document_delete_controller.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/providers/document_open_controller.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/providers/documents_providers.dart';
+import 'package:paperless_ngx_app/src/features/documents/presentation/widgets/document_delete_selection_action.dart';
+import 'package:paperless_ngx_app/src/features/documents/presentation/widgets/document_selection_banner.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/widgets/paperless_document_card.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/widgets/paperless_document_list_item.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/providers/selected_document_provider.dart';
@@ -96,6 +99,17 @@ class _ReviewQueuePageState extends ConsumerState<ReviewQueuePage> {
     final filteredDocuments = documents
         ?.where((document) => _matchesSearchQuery(document))
         .toList(growable: false);
+    final selectedIds = ref.watch(reviewDocumentsSelectionProvider);
+    final deletingIds = ref.watch(documentDeleteControllerProvider);
+    final isSelectionActive = selectedIds.isNotEmpty;
+    final selectedDocuments =
+        documents
+            ?.where((document) => selectedIds.contains(document.id))
+            .toList(growable: false) ??
+        const <PaperlessDocument>[];
+    final isDeletingSelection = selectedDocuments.any(
+      (document) => deletingIds.contains(document.id),
+    );
 
     if (documents != null && _lastUpdatedAt == null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -158,6 +172,20 @@ class _ReviewQueuePageState extends ConsumerState<ReviewQueuePage> {
                     ),
                   ],
                   const SizedBox(height: 12),
+                  if (isWideScreen && isSelectionActive) ...[
+                    DocumentSelectionBanner(
+                      count: selectedIds.length,
+                      onClear: _clearSelection,
+                      onDelete: selectedDocuments.isEmpty
+                          ? null
+                          : () => _deleteSelectedDocuments(
+                              context,
+                              selectedDocuments,
+                            ),
+                      isDeleting: isDeletingSelection,
+                    ),
+                    const SizedBox(height: 12),
+                  ],
                   if (!isWideScreen)
                     Align(
                       alignment: Alignment.centerRight,
@@ -283,7 +311,13 @@ class _ReviewQueuePageState extends ConsumerState<ReviewQueuePage> {
                                   showPreview:
                                       effectiveLayoutMode ==
                                       DocumentsLayoutMode.list,
+                                  isSelected: selectedIds.contains(document.id),
                                   onTap: () {
+                                    if (isSelectionActive) {
+                                      _toggleSelection(document.id);
+                                      return;
+                                    }
+
                                     ref
                                         .read(
                                           selectedDocumentIdProvider.notifier,
@@ -298,6 +332,10 @@ class _ReviewQueuePageState extends ConsumerState<ReviewQueuePage> {
                                       );
                                     }
                                   },
+                                  onLongPress: () =>
+                                      _selectDocument(document.id),
+                                  onLeadingIconPressed: () =>
+                                      _toggleSelection(document.id),
                                 ),
                               SizedBox(
                                 height:
@@ -364,34 +402,67 @@ class _ReviewQueuePageState extends ConsumerState<ReviewQueuePage> {
           : AppBar(
               automaticallyImplyLeading: true,
               titleSpacing: 0,
-              title: Text(l10n.navigationInbox),
-              actions: [
-                IconButton(
-                  onPressed: () =>
-                      _updateLayoutMode(_nextLayoutMode(layoutMode)),
-                  icon: Icon(_layoutModeIcon(layoutMode)),
-                ),
-                PopupMenuButton<_ReviewQueuePageAction>(
-                  tooltip: MaterialLocalizations.of(context).showMenuTooltip,
-                  onSelected: (action) {
-                    switch (action) {
-                      case _ReviewQueuePageAction.refresh:
-                        _refreshReviewQueue();
-                    }
-                  },
-                  itemBuilder: (context) => [
-                    PopupMenuItem<_ReviewQueuePageAction>(
-                      value: _ReviewQueuePageAction.refresh,
-                      enabled: !reviewDocuments.isRefreshing,
-                      child: Text(
-                        MaterialLocalizations.of(
-                          context,
-                        ).refreshIndicatorSemanticLabel,
+              title: Text(
+                isSelectionActive
+                    ? _selectionTitle(selectedIds.length)
+                    : l10n.navigationInbox,
+              ),
+              actions: isSelectionActive
+                  ? [
+                      IconButton(
+                        tooltip: l10n.deleteAction,
+                        onPressed:
+                            selectedDocuments.isEmpty || isDeletingSelection
+                            ? null
+                            : () => _deleteSelectedDocuments(
+                                context,
+                                selectedDocuments,
+                              ),
+                        icon: isDeletingSelection
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Icon(Icons.delete_outline_rounded),
                       ),
-                    ),
-                  ],
-                ),
-              ],
+                      IconButton(
+                        tooltip: l10n.clearSearchTooltip,
+                        onPressed: isDeletingSelection ? null : _clearSelection,
+                        icon: const Icon(Icons.close),
+                      ),
+                    ]
+                  : [
+                      IconButton(
+                        onPressed: () =>
+                            _updateLayoutMode(_nextLayoutMode(layoutMode)),
+                        icon: Icon(_layoutModeIcon(layoutMode)),
+                      ),
+                      PopupMenuButton<_ReviewQueuePageAction>(
+                        tooltip: MaterialLocalizations.of(
+                          context,
+                        ).showMenuTooltip,
+                        onSelected: (action) {
+                          switch (action) {
+                            case _ReviewQueuePageAction.refresh:
+                              _refreshReviewQueue();
+                          }
+                        },
+                        itemBuilder: (context) => [
+                          PopupMenuItem<_ReviewQueuePageAction>(
+                            value: _ReviewQueuePageAction.refresh,
+                            enabled: !reviewDocuments.isRefreshing,
+                            child: Text(
+                              MaterialLocalizations.of(
+                                context,
+                              ).refreshIndicatorSemanticLabel,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
             ),
       body: isWideScreen
           ? SafeArea(
@@ -444,6 +515,22 @@ class _ReviewQueuePageState extends ConsumerState<ReviewQueuePage> {
     _updateSearchQuery('');
   }
 
+  void _clearSelection() {
+    ref.read(reviewDocumentsSelectionProvider.notifier).state = <int>{};
+  }
+
+  Future<void> _deleteSelectedDocuments(
+    BuildContext context,
+    List<PaperlessDocument> documents,
+  ) async {
+    await confirmAndDeleteSelectedDocuments(
+      context: context,
+      ref: ref,
+      documents: documents,
+      onDeleted: _clearSelection,
+    );
+  }
+
   bool _matchesSearchQuery(PaperlessDocument document) {
     if (_searchQuery.isEmpty) {
       return true;
@@ -458,6 +545,7 @@ class _ReviewQueuePageState extends ConsumerState<ReviewQueuePage> {
       return;
     }
 
+    _clearSelection();
     setState(() {
       _searchQuery = normalized;
     });
@@ -506,8 +594,38 @@ class _ReviewQueuePageState extends ConsumerState<ReviewQueuePage> {
       return;
     }
 
+    if (mode == DocumentsLayoutMode.card) {
+      _clearSelection();
+    }
+
     ref.read(documentsLayoutModeProvider.notifier).state = mode;
     unawaited(ref.read(documentsViewPreferencesProvider).saveLayoutMode(mode));
+  }
+
+  void _selectDocument(int documentId) {
+    final selectedIds = ref.read(reviewDocumentsSelectionProvider);
+    if (selectedIds.contains(documentId)) {
+      return;
+    }
+
+    ref.read(reviewDocumentsSelectionProvider.notifier).state = <int>{
+      ...selectedIds,
+      documentId,
+    };
+  }
+
+  void _toggleSelection(int documentId) {
+    final selectedIds = ref.read(reviewDocumentsSelectionProvider);
+    final nextSelection = <int>{...selectedIds};
+    if (!nextSelection.add(documentId)) {
+      nextSelection.remove(documentId);
+    }
+
+    ref.read(reviewDocumentsSelectionProvider.notifier).state = nextSelection;
+  }
+
+  String _selectionTitle(int count) {
+    return '$count selected';
   }
 
   DocumentsLayoutMode _nextLayoutMode(DocumentsLayoutMode mode) {

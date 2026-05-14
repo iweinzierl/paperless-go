@@ -17,11 +17,14 @@ import 'package:paperless_ngx_app/src/features/documents/presentation/models/doc
 import 'package:paperless_ngx_app/src/features/documents/presentation/models/documents_layout_mode.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/models/documents_sort_option.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/pages/document_detail_page.dart';
+import 'package:paperless_ngx_app/src/features/documents/presentation/providers/document_delete_controller.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/pages/documents_filters_page.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/providers/document_open_controller.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/providers/documents_providers.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/providers/selected_document_provider.dart';
+import 'package:paperless_ngx_app/src/features/documents/presentation/widgets/document_delete_selection_action.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/widgets/paperless_document_card.dart';
+import 'package:paperless_ngx_app/src/features/documents/presentation/widgets/document_selection_banner.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/widgets/paperless_document_list_item.dart';
 
 enum _DocumentsPageAction { refresh }
@@ -114,6 +117,17 @@ class _DocumentsPageState extends ConsumerState<DocumentsPage> {
     final ordering = ref.watch(documentsOrderingProvider);
     final filterState = ref.watch(documentsFilterStateProvider);
     final layoutMode = ref.watch(documentsLayoutModeProvider);
+    final selectedIds = ref.watch(documentsSelectionProvider);
+    final deletingIds = ref.watch(documentDeleteControllerProvider);
+    final isSelectionActive = selectedIds.isNotEmpty;
+    final selectedDocuments =
+        page?.results
+            .where((document) => selectedIds.contains(document.id))
+            .toList(growable: false) ??
+        const <PaperlessDocument>[];
+    final isDeletingSelection = selectedDocuments.any(
+      (document) => deletingIds.contains(document.id),
+    );
     final activeFilterCount = activeSavedView == null
         ? _activeFilterCount(filterState, ordering)
         : 0;
@@ -158,6 +172,20 @@ class _DocumentsPageState extends ConsumerState<DocumentsPage> {
                     ],
                   ),
                   const SizedBox(height: 16),
+                ],
+                if (isWideScreen && isSelectionActive) ...[
+                  DocumentSelectionBanner(
+                    count: selectedIds.length,
+                    onClear: _clearSelection,
+                    onDelete: selectedDocuments.isEmpty
+                        ? null
+                        : () => _deleteSelectedDocuments(
+                            context,
+                            selectedDocuments,
+                          ),
+                    isDeleting: isDeletingSelection,
+                  ),
+                  const SizedBox(height: 12),
                 ],
                 Row(
                   children: [
@@ -305,34 +333,67 @@ class _DocumentsPageState extends ConsumerState<DocumentsPage> {
           ? null
           : AppBar(
               titleSpacing: 0,
-              title: Text(l10n.navigationDocuments),
-              actions: [
-                IconButton(
-                  onPressed: () =>
-                      _updateLayoutMode(_nextLayoutMode(layoutMode)),
-                  icon: Icon(_layoutModeIcon(layoutMode)),
-                ),
-                PopupMenuButton<_DocumentsPageAction>(
-                  tooltip: MaterialLocalizations.of(context).showMenuTooltip,
-                  onSelected: (action) {
-                    switch (action) {
-                      case _DocumentsPageAction.refresh:
-                        _refreshDocumentsPage();
-                    }
-                  },
-                  itemBuilder: (context) => [
-                    PopupMenuItem<_DocumentsPageAction>(
-                      value: _DocumentsPageAction.refresh,
-                      enabled: !documentsPage.isRefreshing,
-                      child: Text(
-                        MaterialLocalizations.of(
-                          context,
-                        ).refreshIndicatorSemanticLabel,
+              title: Text(
+                isSelectionActive
+                    ? _selectionTitle(selectedIds.length)
+                    : l10n.navigationDocuments,
+              ),
+              actions: isSelectionActive
+                  ? [
+                      IconButton(
+                        tooltip: l10n.deleteAction,
+                        onPressed:
+                            selectedDocuments.isEmpty || isDeletingSelection
+                            ? null
+                            : () => _deleteSelectedDocuments(
+                                context,
+                                selectedDocuments,
+                              ),
+                        icon: isDeletingSelection
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Icon(Icons.delete_outline_rounded),
                       ),
-                    ),
-                  ],
-                ),
-              ],
+                      IconButton(
+                        tooltip: l10n.clearSearchTooltip,
+                        onPressed: isDeletingSelection ? null : _clearSelection,
+                        icon: const Icon(Icons.close),
+                      ),
+                    ]
+                  : [
+                      IconButton(
+                        onPressed: () =>
+                            _updateLayoutMode(_nextLayoutMode(layoutMode)),
+                        icon: Icon(_layoutModeIcon(layoutMode)),
+                      ),
+                      PopupMenuButton<_DocumentsPageAction>(
+                        tooltip: MaterialLocalizations.of(
+                          context,
+                        ).showMenuTooltip,
+                        onSelected: (action) {
+                          switch (action) {
+                            case _DocumentsPageAction.refresh:
+                              _refreshDocumentsPage();
+                          }
+                        },
+                        itemBuilder: (context) => [
+                          PopupMenuItem<_DocumentsPageAction>(
+                            value: _DocumentsPageAction.refresh,
+                            enabled: !documentsPage.isRefreshing,
+                            child: Text(
+                              MaterialLocalizations.of(
+                                context,
+                              ).refreshIndicatorSemanticLabel,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
             ),
       body: isWideScreen
           ? SafeArea(
@@ -382,6 +443,7 @@ class _DocumentsPageState extends ConsumerState<DocumentsPage> {
   }
 
   void _submitSearch(String value) {
+    _clearSelection();
     _clearActiveSavedViewSelection();
     ref.read(documentsSearchQueryProvider.notifier).state = value.trim();
     ref.read(documentsCurrentPageProvider.notifier).state = 1;
@@ -389,16 +451,19 @@ class _DocumentsPageState extends ConsumerState<DocumentsPage> {
 
   void _clearSearch() {
     _searchController.clear();
+    _clearSelection();
     _clearActiveSavedViewSelection();
     ref.read(documentsSearchQueryProvider.notifier).state = '';
     ref.read(documentsCurrentPageProvider.notifier).state = 1;
   }
 
   void _goToPage(int page) {
+    _clearSelection();
     ref.read(documentsCurrentPageProvider.notifier).state = page;
   }
 
   void _updateFilters(DocumentsFilterState nextState) {
+    _clearSelection();
     _clearActiveSavedViewSelection();
     ref.read(documentsFilterStateProvider.notifier).state = nextState;
     ref.read(documentsCurrentPageProvider.notifier).state = 1;
@@ -409,6 +474,7 @@ class _DocumentsPageState extends ConsumerState<DocumentsPage> {
       return;
     }
 
+    _clearSelection();
     _clearActiveSavedViewSelection();
     ref.read(documentsOrderingProvider.notifier).state = ordering;
     ref.read(documentsCurrentPageProvider.notifier).state = 1;
@@ -419,8 +485,28 @@ class _DocumentsPageState extends ConsumerState<DocumentsPage> {
       return;
     }
 
+    if (mode == DocumentsLayoutMode.card) {
+      _clearSelection();
+    }
+
     ref.read(documentsLayoutModeProvider.notifier).state = mode;
     unawaited(ref.read(documentsViewPreferencesProvider).saveLayoutMode(mode));
+  }
+
+  void _clearSelection() {
+    ref.read(documentsSelectionProvider.notifier).state = <int>{};
+  }
+
+  Future<void> _deleteSelectedDocuments(
+    BuildContext context,
+    List<PaperlessDocument> documents,
+  ) async {
+    await confirmAndDeleteSelectedDocuments(
+      context: context,
+      ref: ref,
+      documents: documents,
+      onDeleted: _clearSelection,
+    );
   }
 
   DocumentsLayoutMode _nextLayoutMode(DocumentsLayoutMode mode) {
@@ -473,6 +559,7 @@ class _DocumentsPageState extends ConsumerState<DocumentsPage> {
       return;
     }
 
+    _clearSelection();
     _clearActiveSavedViewSelection();
     ref.read(documentsFilterStateProvider.notifier).state = result.filterState;
     ref.read(documentsOrderingProvider.notifier).state = result.ordering;
@@ -504,6 +591,10 @@ class _DocumentsPageState extends ConsumerState<DocumentsPage> {
     }
 
     return count;
+  }
+
+  String _selectionTitle(int count) {
+    return '$count selected';
   }
 }
 
@@ -652,7 +743,9 @@ class _DocumentsList extends ConsumerWidget {
     final theme = Theme.of(context);
     final currentPage = ref.watch(documentsCurrentPageProvider);
     final openingIds = ref.watch(documentOpenControllerProvider);
+    final selectedIds = ref.watch(documentsSelectionProvider);
     final l10n = context.l10n;
+    final isSelectionActive = selectedIds.isNotEmpty;
 
     if (page.results.isEmpty) {
       return ListView(
@@ -764,7 +857,17 @@ class _DocumentsList extends ConsumerWidget {
             PaperlessDocumentListItem(
               document: document,
               showPreview: layoutMode == DocumentsLayoutMode.list,
-              onTap: () => _openDetails(context, ref, document),
+              isSelected: selectedIds.contains(document.id),
+              onTap: () {
+                if (isSelectionActive) {
+                  _toggleSelection(ref, document.id);
+                  return;
+                }
+
+                _openDetails(context, ref, document);
+              },
+              onLongPress: () => _selectDocument(ref, document.id),
+              onLeadingIconPressed: () => _toggleSelection(ref, document.id),
             ),
           SizedBox(height: layoutMode == DocumentsLayoutMode.card ? 12 : 10),
         ],
@@ -842,6 +945,28 @@ class _DocumentsList extends ConsumerWidget {
         ..hideCurrentSnackBar()
         ..showSnackBar(SnackBar(content: Text(error.toString())));
     }
+  }
+
+  void _selectDocument(WidgetRef ref, int documentId) {
+    final selectedIds = ref.read(documentsSelectionProvider);
+    if (selectedIds.contains(documentId)) {
+      return;
+    }
+
+    ref.read(documentsSelectionProvider.notifier).state = <int>{
+      ...selectedIds,
+      documentId,
+    };
+  }
+
+  void _toggleSelection(WidgetRef ref, int documentId) {
+    final selectedIds = ref.read(documentsSelectionProvider);
+    final nextSelection = <int>{...selectedIds};
+    if (!nextSelection.add(documentId)) {
+      nextSelection.remove(documentId);
+    }
+
+    ref.read(documentsSelectionProvider.notifier).state = nextSelection;
   }
 }
 

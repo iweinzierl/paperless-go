@@ -12,8 +12,11 @@ import 'package:paperless_ngx_app/src/features/app_shell/presentation/widgets/ap
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_document.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/models/documents_layout_mode.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/pages/document_detail_page.dart';
+import 'package:paperless_ngx_app/src/features/documents/presentation/providers/document_delete_controller.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/providers/document_open_controller.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/providers/documents_providers.dart';
+import 'package:paperless_ngx_app/src/features/documents/presentation/widgets/document_delete_selection_action.dart';
+import 'package:paperless_ngx_app/src/features/documents/presentation/widgets/document_selection_banner.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/widgets/paperless_document_card.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/widgets/paperless_document_list_item.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/providers/selected_document_provider.dart';
@@ -28,6 +31,18 @@ class HomePage extends ConsumerWidget {
     final recentUploads = ref.watch(recentUploadsProvider);
     final l10n = context.l10n;
     final layoutMode = ref.watch(documentsLayoutModeProvider);
+    final selectedIds = ref.watch(recentUploadsSelectionProvider);
+    final deletingIds = ref.watch(documentDeleteControllerProvider);
+    final isSelectionActive = selectedIds.isNotEmpty;
+    final documents = recentUploads.valueOrNull;
+    final selectedDocuments =
+        documents
+            ?.where((document) => selectedIds.contains(document.id))
+            .toList(growable: false) ??
+        const <PaperlessDocument>[];
+    final isDeletingSelection = selectedDocuments.any(
+      (document) => deletingIds.contains(document.id),
+    );
     final isWideScreen = useWideLayout(context);
 
     final bodyContent = const _RecentUploadsTab();
@@ -37,34 +52,77 @@ class HomePage extends ConsumerWidget {
       appBar: isWideScreen
           ? null
           : AppBar(
-              title: Text(l10n.navigationRecent),
-              actions: [
-                IconButton(
-                  onPressed: () =>
-                      _updateLayoutMode(ref, _nextLayoutMode(layoutMode)),
-                  icon: Icon(_layoutModeIcon(layoutMode)),
-                ),
-                PopupMenuButton<_HomePageAction>(
-                  tooltip: MaterialLocalizations.of(context).showMenuTooltip,
-                  onSelected: (action) {
-                    switch (action) {
-                      case _HomePageAction.refresh:
-                        _refreshHome(context, ref);
-                    }
-                  },
-                  itemBuilder: (context) => [
-                    PopupMenuItem<_HomePageAction>(
-                      value: _HomePageAction.refresh,
-                      enabled: !recentUploads.isRefreshing,
-                      child: Text(
-                        MaterialLocalizations.of(
-                          context,
-                        ).refreshIndicatorSemanticLabel,
+              title: Text(
+                isSelectionActive
+                    ? _selectionTitle(selectedIds.length)
+                    : l10n.navigationRecent,
+              ),
+              actions: isSelectionActive
+                  ? [
+                      IconButton(
+                        tooltip: l10n.deleteAction,
+                        onPressed:
+                            selectedDocuments.isEmpty || isDeletingSelection
+                            ? null
+                            : () => _deleteSelectedDocuments(
+                                context,
+                                ref,
+                                selectedDocuments,
+                              ),
+                        icon: isDeletingSelection
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Icon(Icons.delete_outline_rounded),
                       ),
-                    ),
-                  ],
-                ),
-              ],
+                      IconButton(
+                        tooltip: l10n.clearSearchTooltip,
+                        onPressed: isDeletingSelection
+                            ? null
+                            : () =>
+                                  ref
+                                          .read(
+                                            recentUploadsSelectionProvider
+                                                .notifier,
+                                          )
+                                          .state =
+                                      <int>{},
+                        icon: const Icon(Icons.close),
+                      ),
+                    ]
+                  : [
+                      IconButton(
+                        onPressed: () =>
+                            _updateLayoutMode(ref, _nextLayoutMode(layoutMode)),
+                        icon: Icon(_layoutModeIcon(layoutMode)),
+                      ),
+                      PopupMenuButton<_HomePageAction>(
+                        tooltip: MaterialLocalizations.of(
+                          context,
+                        ).showMenuTooltip,
+                        onSelected: (action) {
+                          switch (action) {
+                            case _HomePageAction.refresh:
+                              _refreshHome(context, ref);
+                          }
+                        },
+                        itemBuilder: (context) => [
+                          PopupMenuItem<_HomePageAction>(
+                            value: _HomePageAction.refresh,
+                            enabled: !recentUploads.isRefreshing,
+                            child: Text(
+                              MaterialLocalizations.of(
+                                context,
+                              ).refreshIndicatorSemanticLabel,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
             ),
       body: isWideScreen
           ? SafeArea(
@@ -121,6 +179,10 @@ class HomePage extends ConsumerWidget {
       return;
     }
 
+    if (mode == DocumentsLayoutMode.card) {
+      ref.read(recentUploadsSelectionProvider.notifier).state = <int>{};
+    }
+
     ref.read(documentsLayoutModeProvider.notifier).state = mode;
     unawaited(ref.read(documentsViewPreferencesProvider).saveLayoutMode(mode));
   }
@@ -164,6 +226,24 @@ class HomePage extends ConsumerWidget {
         SnackBar(content: Text(context.l10n.homeRefreshFailed)),
       );
     }
+  }
+
+  Future<void> _deleteSelectedDocuments(
+    BuildContext context,
+    WidgetRef ref,
+    List<PaperlessDocument> documents,
+  ) async {
+    await confirmAndDeleteSelectedDocuments(
+      context: context,
+      ref: ref,
+      documents: documents,
+      onDeleted: () =>
+          ref.read(recentUploadsSelectionProvider.notifier).state = <int>{},
+    );
+  }
+
+  String _selectionTitle(int count) {
+    return '$count selected';
   }
 }
 
@@ -243,6 +323,17 @@ class _RecentUploadsTabState extends ConsumerState<_RecentUploadsTab> {
     final filteredDocuments = documents
         ?.where((document) => _matchesSearchQuery(document))
         .toList(growable: false);
+    final selectedIds = ref.watch(recentUploadsSelectionProvider);
+    final deletingIds = ref.watch(documentDeleteControllerProvider);
+    final isSelectionActive = selectedIds.isNotEmpty;
+    final selectedDocuments =
+        documents
+            ?.where((document) => selectedIds.contains(document.id))
+            .toList(growable: false) ??
+        const <PaperlessDocument>[];
+    final isDeletingSelection = selectedDocuments.any(
+      (document) => deletingIds.contains(document.id),
+    );
 
     if (documents != null && _lastUpdatedAt == null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -284,6 +375,21 @@ class _RecentUploadsTabState extends ConsumerState<_RecentUploadsTab> {
                     ],
                   ),
                   const SizedBox(height: 16),
+                ],
+                if (isWideScreen && isSelectionActive) ...[
+                  DocumentSelectionBanner(
+                    count: selectedIds.length,
+                    onClear: _clearSelection,
+                    onDelete: selectedDocuments.isEmpty
+                        ? null
+                        : () => _deleteSelectedDocuments(
+                            context,
+                            ref,
+                            selectedDocuments,
+                          ),
+                    isDeleting: isDeletingSelection,
+                  ),
+                  const SizedBox(height: 12),
                 ],
                 TextField(
                   controller: _searchController,
@@ -425,7 +531,13 @@ class _RecentUploadsTabState extends ConsumerState<_RecentUploadsTab> {
                                   showPreview:
                                       effectiveLayoutMode ==
                                       DocumentsLayoutMode.list,
+                                  isSelected: selectedIds.contains(document.id),
                                   onTap: () {
+                                    if (isSelectionActive) {
+                                      _toggleSelection(document.id);
+                                      return;
+                                    }
+
                                     ref
                                         .read(
                                           selectedDocumentIdProvider.notifier,
@@ -440,6 +552,10 @@ class _RecentUploadsTabState extends ConsumerState<_RecentUploadsTab> {
                                       );
                                     }
                                   },
+                                  onLongPress: () =>
+                                      _selectDocument(document.id),
+                                  onLeadingIconPressed: () =>
+                                      _toggleSelection(document.id),
                                 ),
                               SizedBox(
                                 height:
@@ -505,6 +621,23 @@ class _RecentUploadsTabState extends ConsumerState<_RecentUploadsTab> {
     _updateSearchQuery('');
   }
 
+  void _clearSelection() {
+    ref.read(recentUploadsSelectionProvider.notifier).state = <int>{};
+  }
+
+  Future<void> _deleteSelectedDocuments(
+    BuildContext context,
+    WidgetRef ref,
+    List<PaperlessDocument> documents,
+  ) async {
+    await confirmAndDeleteSelectedDocuments(
+      context: context,
+      ref: ref,
+      documents: documents,
+      onDeleted: _clearSelection,
+    );
+  }
+
   bool _matchesSearchQuery(PaperlessDocument document) {
     if (_searchQuery.isEmpty) {
       return true;
@@ -519,9 +652,32 @@ class _RecentUploadsTabState extends ConsumerState<_RecentUploadsTab> {
       return;
     }
 
+    _clearSelection();
     setState(() {
       _searchQuery = normalized;
     });
+  }
+
+  void _selectDocument(int documentId) {
+    final selectedIds = ref.read(recentUploadsSelectionProvider);
+    if (selectedIds.contains(documentId)) {
+      return;
+    }
+
+    ref.read(recentUploadsSelectionProvider.notifier).state = <int>{
+      ...selectedIds,
+      documentId,
+    };
+  }
+
+  void _toggleSelection(int documentId) {
+    final selectedIds = ref.read(recentUploadsSelectionProvider);
+    final nextSelection = <int>{...selectedIds};
+    if (!nextSelection.add(documentId)) {
+      nextSelection.remove(documentId);
+    }
+
+    ref.read(recentUploadsSelectionProvider.notifier).state = nextSelection;
   }
 
   void _openDocumentDetails(
