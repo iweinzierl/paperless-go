@@ -89,6 +89,13 @@ final documentTypeOptionsProvider = FutureProvider<List<PaperlessFilterOption>>(
   },
 );
 
+final storagePathOptionsProvider = FutureProvider<List<PaperlessFilterOption>>((
+  ref,
+) async {
+  final repository = ref.watch(documentsRepositoryProvider);
+  return repository.fetchStoragePathOptions();
+});
+
 final savedViewsProvider = FutureProvider<List<PaperlessSavedView>>((
   ref,
 ) async {

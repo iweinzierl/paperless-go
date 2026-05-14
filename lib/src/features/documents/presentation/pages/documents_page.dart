@@ -16,6 +16,7 @@ import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless
 import 'package:paperless_ngx_app/src/features/documents/presentation/models/documents_filter_state.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/models/documents_layout_mode.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/models/documents_sort_option.dart';
+import 'package:paperless_ngx_app/src/features/documents/presentation/pages/batch_document_edit_page.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/pages/document_detail_page.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/providers/document_delete_controller.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/pages/documents_filters_page.dart';
@@ -177,6 +178,12 @@ class _DocumentsPageState extends ConsumerState<DocumentsPage> {
                   DocumentSelectionBanner(
                     count: selectedIds.length,
                     onClear: _clearSelection,
+                    onEdit: selectedDocuments.isEmpty || isDeletingSelection
+                        ? null
+                        : () => _editSelectedDocuments(
+                            context,
+                            selectedDocuments,
+                          ),
                     onDelete: selectedDocuments.isEmpty
                         ? null
                         : () => _deleteSelectedDocuments(
@@ -340,6 +347,17 @@ class _DocumentsPageState extends ConsumerState<DocumentsPage> {
               ),
               actions: isSelectionActive
                   ? [
+                      IconButton(
+                        tooltip: 'Batch edit',
+                        onPressed:
+                            selectedDocuments.isEmpty || isDeletingSelection
+                            ? null
+                            : () => _editSelectedDocuments(
+                                context,
+                                selectedDocuments,
+                              ),
+                        icon: const Icon(Icons.edit_outlined),
+                      ),
                       IconButton(
                         tooltip: l10n.deleteAction,
                         onPressed:
@@ -507,6 +525,21 @@ class _DocumentsPageState extends ConsumerState<DocumentsPage> {
       documents: documents,
       onDeleted: _clearSelection,
     );
+  }
+
+  Future<void> _editSelectedDocuments(
+    BuildContext context,
+    List<PaperlessDocument> documents,
+  ) async {
+    final didUpdate = await Navigator.of(context).push<bool>(
+      MaterialPageRoute<bool>(
+        builder: (context) => BatchDocumentEditPage(documents: documents),
+      ),
+    );
+
+    if (didUpdate == true) {
+      _clearSelection();
+    }
   }
 
   DocumentsLayoutMode _nextLayoutMode(DocumentsLayoutMode mode) {

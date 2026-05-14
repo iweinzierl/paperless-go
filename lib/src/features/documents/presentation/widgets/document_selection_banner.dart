@@ -4,6 +4,7 @@ class DocumentSelectionBanner extends StatelessWidget {
   const DocumentSelectionBanner({
     required this.count,
     required this.onClear,
+    this.onEdit,
     this.onDelete,
     this.isDeleting = false,
     super.key,
@@ -11,6 +12,7 @@ class DocumentSelectionBanner extends StatelessWidget {
 
   final int count;
   final VoidCallback onClear;
+  final VoidCallback? onEdit;
   final VoidCallback? onDelete;
   final bool isDeleting;
 
@@ -43,6 +45,13 @@ class DocumentSelectionBanner extends StatelessWidget {
                 ),
               ),
             ),
+            if (onEdit != null)
+              IconButton(
+                onPressed: isDeleting ? null : onEdit,
+                tooltip: 'Batch edit',
+                color: theme.colorScheme.onSecondaryContainer,
+                icon: const Icon(Icons.edit_outlined),
+              ),
             if (onDelete != null)
               IconButton(
                 onPressed: isDeleting ? null : onDelete,

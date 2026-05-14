@@ -57,6 +57,7 @@ class DocumentsRepository {
     String? created,
     int? correspondentId,
     int? documentTypeId,
+    int? storagePathId,
     required List<int> tagIds,
   }) async {
     final token = _requireAuthToken();
@@ -70,6 +71,7 @@ class DocumentsRepository {
         'created': created?.trim().isEmpty == true ? null : created?.trim(),
         'correspondent': correspondentId,
         'document_type': documentTypeId,
+        'storage_path': storagePathId,
         'tags': tagIds,
       },
       options: Options(
@@ -263,6 +265,10 @@ class DocumentsRepository {
 
   Future<List<PaperlessFilterOption>> fetchDocumentTypeOptions() {
     return _fetchFilterOptions(endpoint: 'document_types/');
+  }
+
+  Future<List<PaperlessFilterOption>> fetchStoragePathOptions() {
+    return _fetchFilterOptions(endpoint: 'storage_paths/');
   }
 
   Future<List<PaperlessSavedView>> fetchSavedViews() async {
