@@ -1,3 +1,7 @@
-- added support for saved views
-- improved the app design across the main screens
-- fixed preview loading in the document detail screen
+- new list view mode for document lists with a compact card layout
+- select multiple documents with a long-press gesture
+- delete selected documents in one step
+- new batch edit screen to update tags, correspondents, document types, and storage paths for multiple documents at once
+- batch edit screen pre-fills shared values when all selected documents have the same correspondent, type, or storage path
+- tap the preview image in medium-size list view to enter multi-selection mode
+- UI fixes for large-screen devices

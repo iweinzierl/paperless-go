@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:paperless_ngx_app/src/core/presentation/localization/app_localizations_x.dart';
 
 class DocumentSelectionBanner extends StatelessWidget {
   const DocumentSelectionBanner({
@@ -38,7 +39,7 @@ class DocumentSelectionBanner extends StatelessWidget {
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                '$count selected',
+                context.l10n.documentsSelected(count),
                 style: theme.textTheme.titleSmall?.copyWith(
                   color: theme.colorScheme.onSecondaryContainer,
                   fontWeight: FontWeight.w700,
@@ -48,14 +49,14 @@ class DocumentSelectionBanner extends StatelessWidget {
             if (onEdit != null)
               IconButton(
                 onPressed: isDeleting ? null : onEdit,
-                tooltip: 'Batch edit',
+                tooltip: context.l10n.batchEditTooltip,
                 color: theme.colorScheme.onSecondaryContainer,
                 icon: const Icon(Icons.edit_outlined),
               ),
             if (onDelete != null)
               IconButton(
                 onPressed: isDeleting ? null : onDelete,
-                tooltip: 'Delete',
+                tooltip: context.l10n.deleteAction,
                 color: theme.colorScheme.onSecondaryContainer,
                 icon: isDeleting
                     ? const SizedBox(
@@ -70,7 +71,7 @@ class DocumentSelectionBanner extends StatelessWidget {
               style: TextButton.styleFrom(
                 foregroundColor: theme.colorScheme.onSecondaryContainer,
               ),
-              child: const Text('Clear'),
+              child: Text(context.l10n.clearAction),
             ),
           ],
         ),

@@ -405,5 +405,67 @@
         "type": "int"
       }
     }
+  },
+  "storagePathLabel": "Storage path",
+  "batchEditTitle": "{count, plural, one {Batch Edit (1 item)} other {Batch Edit ({count} items)}}",
+  "@batchEditTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "batchSelectionSummaryTitle": "Selection Summary",
+  "batchSelectionSummaryDescription": "Your changes will be applied to {count} {count, plural, one {document} other {documents}}. Fields marked as \"No change\" keep their current values.",
+  "@batchSelectionSummaryDescription": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "batchNoChangeOption": "No change",
+  "batchCouldNotLoadField": "Could not load {label}.",
+  "@batchCouldNotLoadField": {
+    "placeholders": {
+      "label": {}
+    }
+  },
+  "batchTagsWillBeCleared": "Tags will be cleared.",
+  "batchSelectTagsAction": "Select tags",
+  "batchTagsUntouchedHint": "Leaving tags untouched keeps each document's existing tags.",
+  "batchDocumentsUpdated": "{count, plural, one {Updated 1 document.} other {Updated {count} documents.}}",
+  "@batchDocumentsUpdated": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "documentsSelected": "{count} selected",
+  "@documentsSelected": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "batchEditTooltip": "Batch edit",
+  "deleteDocumentsAction": "Delete documents",
+  "deleteDocumentsConfirmationMessage": "Delete {count} selected documents? This action cannot be undone.",
+  "@deleteDocumentsConfirmationMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "documentsDeleted": "{count, plural, one {1 document deleted.} other {{count} documents deleted.}}",
+  "@documentsDeleted": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   }
 }

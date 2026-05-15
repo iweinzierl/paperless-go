@@ -54,7 +54,7 @@ class _BatchDocumentEditPageState extends ConsumerState<BatchDocumentEditPage> {
     return Scaffold(
       appBar: AppBar(
         titleSpacing: 0,
-        title: Text('Batch Edit ($count item${count == 1 ? '' : 's'})'),
+        title: Text(l10n.batchEditTitle(count)),
         actions: [
           TextButton(
             onPressed: _isSaving ? null : _save,
@@ -106,7 +106,7 @@ class _BatchDocumentEditPageState extends ConsumerState<BatchDocumentEditPage> {
           ),
           const SizedBox(height: 20),
           _BatchOptionField(
-            label: 'Storage path',
+            label: l10n.storagePathLabel,
             icon: Icons.folder_outlined,
             options: storagePathOptions,
             value: _selectedStoragePathId,
@@ -190,11 +190,7 @@ class _BatchDocumentEditPageState extends ConsumerState<BatchDocumentEditPage> {
         ..hideCurrentSnackBar()
         ..showSnackBar(
           SnackBar(
-            content: Text(
-              updatedDocuments.length == 1
-                  ? 'Updated 1 document.'
-                  : 'Updated ${updatedDocuments.length} documents.',
-            ),
+            content: Text(context.l10n.batchDocumentsUpdated(updatedDocuments.length)),
           ),
         );
       Navigator.of(context).pop(true);
@@ -247,6 +243,7 @@ class _BatchInfoCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
 
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -268,7 +265,7 @@ class _BatchInfoCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Selection Summary',
+                    l10n.batchSelectionSummaryTitle,
                     style: theme.textTheme.labelLarge?.copyWith(
                       color: theme.colorScheme.primary,
                       fontWeight: FontWeight.w700,
@@ -276,7 +273,7 @@ class _BatchInfoCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    'Your changes will be applied to $count selected documents. Fields marked as "No change" keep their current values.',
+                    l10n.batchSelectionSummaryDescription(count),
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
@@ -309,10 +306,11 @@ class _BatchOptionField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final entries = <DropdownMenuEntry<int>>[
-      const DropdownMenuEntry<int>(
+      DropdownMenuEntry<int>(
         value: _BatchDocumentEditPageState._noChangeOptionValue,
-        label: 'No change',
+        label: l10n.batchNoChangeOption,
       ),
       ...options.maybeWhen(
         data: (values) => values
@@ -344,7 +342,7 @@ class _BatchOptionField extends StatelessWidget {
               enabled: !options.isLoading,
               initialSelection: value,
               leadingIcon: Icon(icon),
-              errorText: options.hasError ? 'Could not load $label.' : null,
+              errorText: options.hasError ? context.l10n.batchCouldNotLoadField(label) : null,
               onSelected: (next) {
                 if (next != null) {
                   onChanged(next);
@@ -406,14 +404,14 @@ class _BatchTagsField extends StatelessWidget {
               children: [
                 if (!tagsTouched)
                   Text(
-                    'No change',
+                    context.l10n.batchNoChangeOption,
                     style: theme.textTheme.bodyLarge?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
                   )
                 else if (selectedTags.isEmpty)
                   Text(
-                    'Tags will be cleared.',
+                    context.l10n.batchTagsWillBeCleared,
                     style: theme.textTheme.bodyLarge?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
@@ -432,12 +430,12 @@ class _BatchTagsField extends StatelessWidget {
                   onPressed: options.isLoading ? null : onEdit,
                   icon: const Icon(Icons.sell_outlined),
                   label: Text(
-                    tagsTouched ? context.l10n.editTagsAction : 'Select tags',
+                    tagsTouched ? context.l10n.editTagsAction : context.l10n.batchSelectTagsAction,
                   ),
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'Leaving tags untouched keeps each document\'s existing tags.',
+                  context.l10n.batchTagsUntouchedHint,
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
@@ -507,7 +505,7 @@ class _BatchTagSelectionSheetState extends State<_BatchTagSelectionSheet> {
                   onPressed: () => setState(() {
                     _selection = <int>{};
                   }),
-                  child: const Text('Clear'),
+                  child: Text(l10n.clearAction),
                 ),
                 FilledButton(
                   onPressed: () => Navigator.of(context).pop(_selection),

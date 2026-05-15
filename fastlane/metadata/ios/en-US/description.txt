@@ -7,6 +7,7 @@ Key features:
 - review recent uploads and documents that still need attention
 - search your archive and filter by tags, correspondents, and document types
 - open document details and update metadata
+- select multiple documents and edit or delete them in bulk
 - scan paper documents with your camera and upload them as PDFs
 
 Paperless Go is built for people who already use paperless-ngx and want a focused mobile companion for their archive.

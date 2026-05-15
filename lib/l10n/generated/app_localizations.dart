@@ -1813,6 +1813,96 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Document #{id}'**
   String documentFallback(int id);
+
+  /// No description provided for @storagePathLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Storage path'**
+  String get storagePathLabel;
+
+  /// No description provided for @batchEditTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one {Batch Edit (1 item)} other {Batch Edit ({count} items)}}'**
+  String batchEditTitle(int count);
+
+  /// No description provided for @batchSelectionSummaryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Selection Summary'**
+  String get batchSelectionSummaryTitle;
+
+  /// No description provided for @batchSelectionSummaryDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Your changes will be applied to {count} {count, plural, one {document} other {documents}}. Fields marked as \"No change\" keep their current values.'**
+  String batchSelectionSummaryDescription(int count);
+
+  /// No description provided for @batchNoChangeOption.
+  ///
+  /// In en, this message translates to:
+  /// **'No change'**
+  String get batchNoChangeOption;
+
+  /// No description provided for @batchCouldNotLoadField.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load {label}.'**
+  String batchCouldNotLoadField(Object label);
+
+  /// No description provided for @batchTagsWillBeCleared.
+  ///
+  /// In en, this message translates to:
+  /// **'Tags will be cleared.'**
+  String get batchTagsWillBeCleared;
+
+  /// No description provided for @batchSelectTagsAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Select tags'**
+  String get batchSelectTagsAction;
+
+  /// No description provided for @batchTagsUntouchedHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Leaving tags untouched keeps each document\'s existing tags.'**
+  String get batchTagsUntouchedHint;
+
+  /// No description provided for @batchDocumentsUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one {Updated 1 document.} other {Updated {count} documents.}}'**
+  String batchDocumentsUpdated(int count);
+
+  /// No description provided for @documentsSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} selected'**
+  String documentsSelected(int count);
+
+  /// No description provided for @batchEditTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Batch edit'**
+  String get batchEditTooltip;
+
+  /// No description provided for @deleteDocumentsAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete documents'**
+  String get deleteDocumentsAction;
+
+  /// No description provided for @deleteDocumentsConfirmationMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete {count} selected documents? This action cannot be undone.'**
+  String deleteDocumentsConfirmationMessage(int count);
+
+  /// No description provided for @documentsDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one {1 document deleted.} other {{count} documents deleted.}}'**
+  String documentsDeleted(int count);
 }
 
 class _AppLocalizationsDelegate

@@ -994,4 +994,90 @@ class AppLocalizationsDe extends AppLocalizations {
   String documentFallback(int id) {
     return 'Dokument #$id';
   }
+
+  @override
+  String get storagePathLabel => 'Ablagepfad';
+
+  @override
+  String batchEditTitle(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Stapelbearbeitung ($count Elemente)',
+      one: 'Stapelbearbeitung (1 Element)',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get batchSelectionSummaryTitle => 'Auswahl-Zusammenfassung';
+
+  @override
+  String batchSelectionSummaryDescription(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Deine Änderungen werden auf $count ausgewählte Dokumente angewendet. Felder mit \"Keine Änderung\" behalten ihre aktuellen Werte.',
+      one:
+          'Deine Änderungen werden auf 1 ausgewähltes Dokument angewendet. Felder mit \"Keine Änderung\" behalten ihre aktuellen Werte.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get batchNoChangeOption => 'Keine Änderung';
+
+  @override
+  String batchCouldNotLoadField(Object label) {
+    return '$label konnte nicht geladen werden.';
+  }
+
+  @override
+  String get batchTagsWillBeCleared => 'Tags werden geleert.';
+
+  @override
+  String get batchSelectTagsAction => 'Tags auswählen';
+
+  @override
+  String get batchTagsUntouchedHint =>
+      'Wenn Tags nicht geändert werden, behält jedes Dokument seine bestehenden Tags.';
+
+  @override
+  String batchDocumentsUpdated(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Dokumente aktualisiert.',
+      one: '1 Dokument aktualisiert.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String documentsSelected(int count) {
+    return '$count ausgewählt';
+  }
+
+  @override
+  String get batchEditTooltip => 'Stapelbearbeitung';
+
+  @override
+  String get deleteDocumentsAction => 'Dokumente löschen';
+
+  @override
+  String deleteDocumentsConfirmationMessage(int count) {
+    return '$count ausgewählte Dokumente löschen? Diese Aktion kann nicht rückgängig gemacht werden.';
+  }
+
+  @override
+  String documentsDeleted(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Dokumente gelöscht.',
+      one: '1 Dokument gelöscht.',
+    );
+    return '$_temp0';
+  }
 }

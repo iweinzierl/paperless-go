@@ -4,9 +4,10 @@ Behalte neue Eingange im Blick, finde wichtige Unterlagen schneller und pflege M
 
 Wichtige Funktionen:
 - Anmeldung an deinem eigenen paperless-ngx Server mittels Benutzername/Passwort
-- Uberblick uber aktuelle Uploads und Dokumente mit Handlungsbedarf
-- Suche und Filter fur Tags, Korrespondenten und Dokumenttypen
+- Überblick über aktuelle Uploads und Dokumente mit Handlungsbedarf
+- Suche und Filter für Tags, Korrespondenten und Dokumenttypen
 - Anzeigen von Dokumentdetails und Bearbeiten von Metadaten
+- Mehrere Dokumente gleichzeitig auswählen und in einem Schritt bearbeiten oder löschen
 - Anzeigen und Download der Originaldokumente
 - Papierdokumente mit der Kamera scannen und als PDF hochladen
 

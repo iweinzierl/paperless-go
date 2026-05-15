@@ -982,4 +982,88 @@ class AppLocalizationsEn extends AppLocalizations {
   String documentFallback(int id) {
     return 'Document #$id';
   }
+
+  @override
+  String get storagePathLabel => 'Storage path';
+
+  @override
+  String batchEditTitle(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Batch Edit ($count items)',
+      one: 'Batch Edit (1 item)',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get batchSelectionSummaryTitle => 'Selection Summary';
+
+  @override
+  String batchSelectionSummaryDescription(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'documents',
+      one: 'document',
+    );
+    return 'Your changes will be applied to $count $_temp0. Fields marked as \"No change\" keep their current values.';
+  }
+
+  @override
+  String get batchNoChangeOption => 'No change';
+
+  @override
+  String batchCouldNotLoadField(Object label) {
+    return 'Could not load $label.';
+  }
+
+  @override
+  String get batchTagsWillBeCleared => 'Tags will be cleared.';
+
+  @override
+  String get batchSelectTagsAction => 'Select tags';
+
+  @override
+  String get batchTagsUntouchedHint =>
+      'Leaving tags untouched keeps each document\'s existing tags.';
+
+  @override
+  String batchDocumentsUpdated(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Updated $count documents.',
+      one: 'Updated 1 document.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String documentsSelected(int count) {
+    return '$count selected';
+  }
+
+  @override
+  String get batchEditTooltip => 'Batch edit';
+
+  @override
+  String get deleteDocumentsAction => 'Delete documents';
+
+  @override
+  String deleteDocumentsConfirmationMessage(int count) {
+    return 'Delete $count selected documents? This action cannot be undone.';
+  }
+
+  @override
+  String documentsDeleted(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count documents deleted.',
+      one: '1 document deleted.',
+    );
+    return '$_temp0';
+  }
 }

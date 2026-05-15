@@ -1,5 +1,5 @@
 - neuer Listenansichtsmodus für Dokumentlisten mit kompaktem Kartenlayout
-- mehrere Dokumente per langes Tippen auswählen
+- mehrere Dokumente per Langes Tippen auswählen
 - ausgewählte Dokumente in einem Schritt löschen
 - neuer Stapelbearbeitungs-Bildschirm zum gleichzeitigen Bearbeiten von Tags, Korrespondenten, Dokumenttypen und Ablagepfaden mehrerer Dokumente
 - Stapelbearbeitung füllt gemeinsame Werte automatisch vor, wenn alle ausgewählten Dokumente denselben Korrespondenten, Typ oder Ablagepfad teilen

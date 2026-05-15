@@ -20,14 +20,16 @@ Future<void> confirmAndDeleteSelectedDocuments({
       title: Text(
         documents.length == 1
             ? dialogContext.l10n.deleteDocumentAction
-            : 'Delete documents',
+            : dialogContext.l10n.deleteDocumentsAction,
       ),
       content: Text(
         documents.length == 1
             ? dialogContext.l10n.deleteDocumentConfirmationMessage(
                 documents.single.title,
               )
-            : 'Delete ${documents.length} selected documents? This action cannot be undone.',
+            : dialogContext.l10n.deleteDocumentsConfirmationMessage(
+                documents.length,
+              ),
       ),
       actions: [
         TextButton(
@@ -65,7 +67,7 @@ Future<void> confirmAndDeleteSelectedDocuments({
           content: Text(
             documents.length == 1
                 ? context.l10n.documentDeleted
-                : '${documents.length} documents deleted.',
+                : context.l10n.documentsDeleted(documents.length),
           ),
         ),
       );

@@ -993,4 +993,88 @@ class AppLocalizationsIt extends AppLocalizations {
   String documentFallback(int id) {
     return 'Documento #$id';
   }
+
+  @override
+  String get storagePathLabel => 'Percorso di archiviazione';
+
+  @override
+  String batchEditTitle(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Modifica in batch ($count elementi)',
+      one: 'Modifica in batch (1 elemento)',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get batchSelectionSummaryTitle => 'Riepilogo selezione';
+
+  @override
+  String batchSelectionSummaryDescription(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'documenti selezionati',
+      one: 'documento selezionato',
+    );
+    return 'Le modifiche verranno applicate a $count $_temp0. I campi contrassegnati come \"Nessuna modifica\" mantengono i valori attuali.';
+  }
+
+  @override
+  String get batchNoChangeOption => 'Nessuna modifica';
+
+  @override
+  String batchCouldNotLoadField(Object label) {
+    return 'Impossibile caricare $label.';
+  }
+
+  @override
+  String get batchTagsWillBeCleared => 'I tag verranno rimossi.';
+
+  @override
+  String get batchSelectTagsAction => 'Seleziona tag';
+
+  @override
+  String get batchTagsUntouchedHint =>
+      'Lasciando i tag invariati, ogni documento mantiene i propri tag esistenti.';
+
+  @override
+  String batchDocumentsUpdated(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count documenti aggiornati.',
+      one: '1 documento aggiornato.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String documentsSelected(int count) {
+    return '$count selezionati';
+  }
+
+  @override
+  String get batchEditTooltip => 'Modifica in batch';
+
+  @override
+  String get deleteDocumentsAction => 'Elimina documenti';
+
+  @override
+  String deleteDocumentsConfirmationMessage(int count) {
+    return 'Eliminare $count documenti selezionati? Questa azione non può essere annullata.';
+  }
+
+  @override
+  String documentsDeleted(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count documenti eliminati.',
+      one: '1 documento eliminato.',
+    );
+    return '$_temp0';
+  }
 }

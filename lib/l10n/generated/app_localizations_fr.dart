@@ -999,4 +999,94 @@ class AppLocalizationsFr extends AppLocalizations {
   String documentFallback(int id) {
     return 'Document #$id';
   }
+
+  @override
+  String get storagePathLabel => 'Chemin de stockage';
+
+  @override
+  String batchEditTitle(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Modification par lot ($count éléments)',
+      one: 'Modification par lot (1 élément)',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get batchSelectionSummaryTitle => 'Résumé de la sélection';
+
+  @override
+  String batchSelectionSummaryDescription(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'documents sélectionnés',
+      one: 'document sélectionné',
+    );
+    return 'Vos modifications seront appliquées à $count $_temp0. Les champs marqués « Sans modification » conservent leurs valeurs actuelles.';
+  }
+
+  @override
+  String get batchNoChangeOption => 'Sans modification';
+
+  @override
+  String batchCouldNotLoadField(Object label) {
+    return 'Impossible de charger $label.';
+  }
+
+  @override
+  String get batchTagsWillBeCleared => 'Les étiquettes seront effacées.';
+
+  @override
+  String get batchSelectTagsAction => 'Sélectionner les étiquettes';
+
+  @override
+  String get batchTagsUntouchedHint =>
+      'Laisser les étiquettes intactes conserve les étiquettes existantes de chaque document.';
+
+  @override
+  String batchDocumentsUpdated(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count documents mis à jour.',
+      one: '1 document mis à jour.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String documentsSelected(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count sélectionnés',
+      one: '1 sélectionné',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get batchEditTooltip => 'Modification par lot';
+
+  @override
+  String get deleteDocumentsAction => 'Supprimer des documents';
+
+  @override
+  String deleteDocumentsConfirmationMessage(int count) {
+    return 'Supprimer $count documents sélectionnés ? Cette action est irréversible.';
+  }
+
+  @override
+  String documentsDeleted(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count documents supprimés.',
+      one: '1 document supprimé.',
+    );
+    return '$_temp0';
+  }
 }
