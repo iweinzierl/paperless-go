@@ -76,68 +76,78 @@ class PaperlessDocumentListItem extends ConsumerWidget {
           child: Row(
             children: [
               if (showPreview) ...[
-                ClipRRect(
+                InkWell(
+                  onTap: onLeadingIconPressed,
                   borderRadius: BorderRadius.circular(8),
-                  child: SizedBox(
-                    width: 92,
-                    height: 92,
-                    child:
-                        thumbnailWidget ??
-                        (thumbnailImageProvider != null
-                            ? Image(
-                                image: thumbnailImageProvider,
-                                fit: BoxFit.cover,
-                              )
-                            : Image.network(
-                                repository
-                                    .buildDocumentThumbnailUri(document.id)
-                                    .toString(),
-                                headers: repository.buildAuthenticatedHeaders(),
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return _ThumbnailFallback(document: document);
-                                },
-                                loadingBuilder:
-                                    (context, child, loadingProgress) {
-                                      if (loadingProgress == null) {
-                                        return child;
-                                      }
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: SizedBox(
+                      width: 92,
+                      height: 92,
+                      child:
+                          thumbnailWidget ??
+                          (thumbnailImageProvider != null
+                              ? Image(
+                                  image: thumbnailImageProvider,
+                                  fit: BoxFit.cover,
+                                )
+                              : Image.network(
+                                  repository
+                                      .buildDocumentThumbnailUri(document.id)
+                                      .toString(),
+                                  headers: repository
+                                      .buildAuthenticatedHeaders(),
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return _ThumbnailFallback(
+                                      document: document,
+                                    );
+                                  },
+                                  loadingBuilder:
+                                      (context, child, loadingProgress) {
+                                        if (loadingProgress == null) {
+                                          return child;
+                                        }
 
-                                      return ColoredBox(
-                                        color: colorScheme.surfaceContainerHigh,
-                                        child: const Center(
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2.4,
+                                        return ColoredBox(
+                                          color:
+                                              colorScheme.surfaceContainerHigh,
+                                          child: const Center(
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2.4,
+                                            ),
                                           ),
-                                        ),
-                                      );
-                                    },
-                              )),
+                                        );
+                                      },
+                                )),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 12),
               ],
-              IconButton(
-                onPressed: onLeadingIconPressed,
-                visualDensity: VisualDensity.compact,
-                style: IconButton.styleFrom(
-                  backgroundColor: isSelected
-                      ? colorScheme.secondary
-                      : colorScheme.surfaceContainerHigh,
-                  foregroundColor: isSelected
-                      ? colorScheme.onSecondary
-                      : colorScheme.onSurfaceVariant,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
+              if (!showPreview) ...[
+                IconButton(
+                  onPressed: onLeadingIconPressed,
+                  visualDensity: VisualDensity.compact,
+                  style: IconButton.styleFrom(
+                    backgroundColor: isSelected
+                        ? colorScheme.secondary
+                        : colorScheme.surfaceContainerHigh,
+                    foregroundColor: isSelected
+                        ? colorScheme.onSecondary
+                        : colorScheme.onSurfaceVariant,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  icon: Icon(
+                    isSelected
+                        ? Icons.check_circle_rounded
+                        : Icons.description_outlined,
                   ),
                 ),
-                icon: Icon(
-                  isSelected
-                      ? Icons.check_circle_rounded
-                      : Icons.description_outlined,
-                ),
-              ),
-              const SizedBox(width: 10),
+                const SizedBox(width: 10),
+              ],
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
