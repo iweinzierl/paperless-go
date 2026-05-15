@@ -372,7 +372,7 @@ class _DrawerActionTile extends StatelessWidget {
                     ),
                   ),
                 ],
-                if (trailingCountLabel != null)
+                if (!isMinimized && trailingCountLabel != null)
                   _CountPill(label: trailingCountLabel!),
               ],
             ),

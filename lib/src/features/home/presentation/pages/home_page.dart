@@ -385,26 +385,6 @@ class _RecentUploadsTabState extends ConsumerState<_RecentUploadsTab> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (isWideScreen) ...[
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          l10n.navigationRecent,
-                          style: theme.textTheme.headlineLarge?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                      RefreshStatusText(
-                        lastUpdatedAt: _lastUpdatedAt,
-                        isRefreshing: recentUploads.isRefreshing,
-                        lastRefreshFailedAt: _lastRefreshFailedAt,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                ],
                 if (isWideScreen && isSelectionActive) ...[
                   DocumentSelectionBanner(
                     count: selectedIds.length,
@@ -444,6 +424,17 @@ class _RecentUploadsTabState extends ConsumerState<_RecentUploadsTab> {
                         : null,
                   ),
                 ),
+                if (isWideScreen) ...[
+                  const SizedBox(height: 12),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: RefreshStatusText(
+                      lastUpdatedAt: _lastUpdatedAt,
+                      isRefreshing: recentUploads.isRefreshing,
+                      lastRefreshFailedAt: _lastRefreshFailedAt,
+                    ),
+                  ),
+                ],
                 if (!isWideScreen) ...[
                   const SizedBox(height: 12),
                   Align(

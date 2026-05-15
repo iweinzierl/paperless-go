@@ -149,31 +149,6 @@ class _DocumentsPageState extends ConsumerState<DocumentsPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (isWideScreen) ...[
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          l10n.navigationDocuments,
-                          style: theme.textTheme.headlineLarge?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                      Flexible(
-                        child: Align(
-                          alignment: Alignment.centerRight,
-                          child: RefreshStatusText(
-                            lastUpdatedAt: _lastUpdatedAt,
-                            isRefreshing: documentsPage.isRefreshing,
-                            lastRefreshFailedAt: _lastRefreshFailedAt,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                ],
                 if (isWideScreen && isSelectionActive) ...[
                   DocumentSelectionBanner(
                     count: selectedIds.length,

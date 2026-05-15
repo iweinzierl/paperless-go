@@ -31,6 +31,7 @@ class PaperlessDocumentListItem extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final documentIcon = _documentTypeIcon(document);
     final repository = ref.watch(documentsRepositoryProvider);
     final thumbnailWidget = repository.buildDocumentThumbnailWidget(document);
     final thumbnailImageProvider = repository
@@ -141,9 +142,7 @@ class PaperlessDocumentListItem extends ConsumerWidget {
                     ),
                   ),
                   icon: Icon(
-                    isSelected
-                        ? Icons.check_circle_rounded
-                        : Icons.description_outlined,
+                    isSelected ? Icons.check_circle_rounded : documentIcon,
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -253,13 +252,50 @@ class _ThumbnailFallback extends StatelessWidget {
       ),
       child: Center(
         child: Icon(
-          Icons.description_outlined,
+          _documentTypeIcon(document),
           size: 34,
           color: theme.colorScheme.onSurfaceVariant,
         ),
       ),
     );
   }
+}
+
+IconData _documentTypeIcon(PaperlessDocument document) {
+  final mimeType = document.mimeType?.trim().toLowerCase();
+  if (mimeType != null && mimeType.startsWith('image/')) {
+    return Icons.image_outlined;
+  }
+
+  final fileName = document.preferredFileName.toLowerCase();
+  if (_hasImageExtension(fileName)) {
+    return Icons.image_outlined;
+  }
+
+  return Icons.description_outlined;
+}
+
+bool _hasImageExtension(String fileName) {
+  const imageExtensions = <String>{
+    '.png',
+    '.jpg',
+    '.jpeg',
+    '.gif',
+    '.bmp',
+    '.webp',
+    '.tif',
+    '.tiff',
+    '.heic',
+    '.heif',
+  };
+
+  for (final extension in imageExtensions) {
+    if (fileName.endsWith(extension)) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 String? _resolveOptionName(

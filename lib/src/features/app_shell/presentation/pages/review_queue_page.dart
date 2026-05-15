@@ -154,22 +154,13 @@ class _ReviewQueuePageState extends ConsumerState<ReviewQueuePage> {
                   ),
                   if (isWideScreen) ...[
                     const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            l10n.navigationInbox,
-                            style: theme.textTheme.headlineSmall?.copyWith(
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                        RefreshStatusText(
-                          lastUpdatedAt: _lastUpdatedAt,
-                          isRefreshing: reviewDocuments.isRefreshing,
-                          lastRefreshFailedAt: _lastRefreshFailedAt,
-                        ),
-                      ],
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: RefreshStatusText(
+                        lastUpdatedAt: _lastUpdatedAt,
+                        isRefreshing: reviewDocuments.isRefreshing,
+                        lastRefreshFailedAt: _lastRefreshFailedAt,
+                      ),
                     ),
                   ],
                   const SizedBox(height: 12),
