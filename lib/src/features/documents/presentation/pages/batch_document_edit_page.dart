@@ -29,6 +29,20 @@ class _BatchDocumentEditPageState extends ConsumerState<BatchDocumentEditPage> {
   bool _isSaving = false;
 
   @override
+  void initState() {
+    super.initState();
+    _selectedCorrespondentId = _sharedValueOrNoChange(
+      widget.documents.map((document) => document.correspondentId),
+    );
+    _selectedDocumentTypeId = _sharedValueOrNoChange(
+      widget.documents.map((document) => document.documentTypeId),
+    );
+    _selectedStoragePathId = _sharedValueOrNoChange(
+      widget.documents.map((document) => document.storagePathId),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final correspondentOptions = ref.watch(correspondentOptionsProvider);
@@ -199,6 +213,29 @@ class _BatchDocumentEditPageState extends ConsumerState<BatchDocumentEditPage> {
         });
       }
     }
+  }
+
+  int _sharedValueOrNoChange(Iterable<int?> values) {
+    int? sharedValue;
+    var hasValue = false;
+
+    for (final value in values) {
+      if (!hasValue) {
+        sharedValue = value;
+        hasValue = true;
+        continue;
+      }
+
+      if (sharedValue != value) {
+        return _noChangeOptionValue;
+      }
+    }
+
+    if (!hasValue || sharedValue == null) {
+      return _noChangeOptionValue;
+    }
+
+    return sharedValue;
   }
 }
 
