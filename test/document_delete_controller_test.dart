@@ -137,6 +137,8 @@ class _FakeDocumentsRepository extends DocumentsRepository {
     bool? isInInbox,
     int? correspondentId,
     int? documentTypeId,
+    String? createdFrom,
+    String? createdTo,
   }) async {
     fetchDocumentsCallCount += 1;
     return const PaperlessDocumentPage(
@@ -164,6 +166,8 @@ class _FakeDocumentsRepository extends DocumentsRepository {
     bool? isInInbox,
     int? correspondentId,
     int? documentTypeId,
+    String? createdFrom,
+    String? createdTo,
   }) async {
     fetchAllDocumentsCallCount += 1;
     return const <PaperlessDocument>[

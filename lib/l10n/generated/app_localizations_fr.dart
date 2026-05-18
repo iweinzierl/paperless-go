@@ -622,6 +622,12 @@ class AppLocalizationsFr extends AppLocalizations {
   String get filterDocumentTypeLabel => 'Type de document';
 
   @override
+  String get filterCreatedFromLabel => 'Cree a partir de';
+
+  @override
+  String get filterCreatedToLabel => 'Cree jusqu\'a';
+
+  @override
   String get anyOption => 'Tous';
 
   @override

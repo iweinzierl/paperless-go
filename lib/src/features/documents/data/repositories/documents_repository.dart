@@ -151,6 +151,8 @@ class DocumentsRepository {
     bool? isInInbox,
     int? correspondentId,
     int? documentTypeId,
+    String? createdFrom,
+    String? createdTo,
   }) async {
     return _fetchDocumentsWithQueryParameters(
       page: page,
@@ -165,6 +167,10 @@ class DocumentsRepository {
           'correspondent__id': correspondentId.toString(),
         if (documentTypeId != null)
           'document_type__id': documentTypeId.toString(),
+        if (createdFrom != null && createdFrom.trim().isNotEmpty)
+          'created__date__gte': createdFrom.trim(),
+        if (createdTo != null && createdTo.trim().isNotEmpty)
+          'created__date__lte': createdTo.trim(),
       },
     );
   }
@@ -237,6 +243,8 @@ class DocumentsRepository {
     bool? isInInbox,
     int? correspondentId,
     int? documentTypeId,
+    String? createdFrom,
+    String? createdTo,
   }) async {
     final documents = <PaperlessDocument>[];
     var page = 1;
@@ -252,6 +260,8 @@ class DocumentsRepository {
         isInInbox: isInInbox,
         correspondentId: correspondentId,
         documentTypeId: documentTypeId,
+        createdFrom: createdFrom,
+        createdTo: createdTo,
       );
       totalCount = currentPage.count;
       documents.addAll(currentPage.results);

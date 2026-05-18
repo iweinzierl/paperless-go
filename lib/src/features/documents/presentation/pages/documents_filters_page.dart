@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:paperless_ngx_app/l10n/generated/app_localizations.dart';
+import 'package:paperless_ngx_app/src/core/presentation/formatters/timestamp_text.dart';
 import 'package:paperless_ngx_app/src/core/presentation/layout/adaptive_layout.dart';
 import 'package:paperless_ngx_app/src/core/presentation/localization/app_localizations_x.dart';
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_filter_option.dart';
@@ -191,6 +192,8 @@ class _DocumentsFiltersPageState extends ConsumerState<DocumentsFiltersPage> {
                         onRemoveTag: _removeTag,
                         onClearCorrespondent: _clearCorrespondent,
                         onClearDocumentType: _clearDocumentType,
+                        onClearCreatedFrom: _clearCreatedFrom,
+                        onClearCreatedTo: _clearCreatedTo,
                       ),
                       const SizedBox(height: 24),
                     ],
@@ -265,6 +268,8 @@ class _DocumentsFiltersPageState extends ConsumerState<DocumentsFiltersPage> {
           onRemoveTag: _removeTag,
           onClearCorrespondent: _clearCorrespondent,
           onClearDocumentType: _clearDocumentType,
+          onClearCreatedFrom: _clearCreatedFrom,
+          onClearCreatedTo: _clearCreatedTo,
         ),
         const SizedBox(height: 24),
       ],
@@ -328,6 +333,24 @@ class _DocumentsFiltersPageState extends ConsumerState<DocumentsFiltersPage> {
             dialogTitle: l10n.selectDocumentTypeDialogTitle,
             noResultsMessage: l10n.noDocumentTypesMatchSearch,
             onChanged: _setDocumentType,
+          ),
+          _CreatedDateCategoryCard(
+            title: l10n.filterCreatedFromLabel,
+            subtitle: _filterDateSummary(context, _filterState.createdFrom),
+            icon: Icons.event_available_outlined,
+            iconBackgroundColor: const Color(0xFFE9F5E6),
+            selectedDateValue: _filterState.createdFrom,
+            onChanged: (value) =>
+                _setCreatedRange(from: value, to: _filterState.createdTo),
+          ),
+          _CreatedDateCategoryCard(
+            title: l10n.filterCreatedToLabel,
+            subtitle: _filterDateSummary(context, _filterState.createdTo),
+            icon: Icons.event_busy_outlined,
+            iconBackgroundColor: const Color(0xFFFFF2DF),
+            selectedDateValue: _filterState.createdTo,
+            onChanged: (value) =>
+                _setCreatedRange(from: _filterState.createdFrom, to: value),
           ),
         ],
       ),
@@ -438,6 +461,47 @@ class _DocumentsFiltersPageState extends ConsumerState<DocumentsFiltersPage> {
         clearTag: value.isEmpty,
       );
     });
+  }
+
+  void _clearCreatedFrom() {
+    _setCreatedRange(from: null, to: _filterState.createdTo);
+  }
+
+  void _clearCreatedTo() {
+    _setCreatedRange(from: _filterState.createdFrom, to: null);
+  }
+
+  void _setCreatedRange({required String? from, required String? to}) {
+    final normalized = _normalizeCreatedRange(from: from, to: to);
+    setState(() {
+      _filterState = _filterState.copyWith(
+        createdFrom: normalized.$1,
+        createdTo: normalized.$2,
+        clearCreatedFrom: normalized.$1 == null,
+        clearCreatedTo: normalized.$2 == null,
+      );
+    });
+  }
+
+  (String?, String?) _normalizeCreatedRange({
+    required String? from,
+    required String? to,
+  }) {
+    if (from == null || to == null) {
+      return (from, to);
+    }
+
+    final parsedFrom = DateTime.tryParse(from);
+    final parsedTo = DateTime.tryParse(to);
+    if (parsedFrom == null || parsedTo == null) {
+      return (from, to);
+    }
+
+    if (parsedFrom.isAfter(parsedTo)) {
+      return (to, from);
+    }
+
+    return (from, to);
   }
 
   void _reset() {
@@ -555,6 +619,8 @@ class _ActiveFiltersWrap extends StatelessWidget {
     required this.onRemoveTag,
     required this.onClearCorrespondent,
     required this.onClearDocumentType,
+    required this.onClearCreatedFrom,
+    required this.onClearCreatedTo,
   });
 
   final DocumentsFilterState filterState;
@@ -564,6 +630,8 @@ class _ActiveFiltersWrap extends StatelessWidget {
   final void Function(int tagId) onRemoveTag;
   final VoidCallback onClearCorrespondent;
   final VoidCallback onClearDocumentType;
+  final VoidCallback onClearCreatedFrom;
+  final VoidCallback onClearCreatedTo;
 
   @override
   Widget build(BuildContext context) {
@@ -608,6 +676,30 @@ class _ActiveFiltersWrap extends StatelessWidget {
           tint: const Color(0xFFF6ECFF),
           icon: Icons.description_outlined,
           onRemoved: onClearDocumentType,
+        ),
+      );
+    }
+
+    if (filterState.createdFrom != null) {
+      chips.add(
+        _FilterChip(
+          label:
+              '${context.l10n.filterCreatedFromLabel}: ${_formatFilterDateLabel(context, filterState.createdFrom!)}',
+          tint: const Color(0xFFE8F6EA),
+          icon: Icons.event_available_outlined,
+          onRemoved: onClearCreatedFrom,
+        ),
+      );
+    }
+
+    if (filterState.createdTo != null) {
+      chips.add(
+        _FilterChip(
+          label:
+              '${context.l10n.filterCreatedToLabel}: ${_formatFilterDateLabel(context, filterState.createdTo!)}',
+          tint: const Color(0xFFFFF3E2),
+          icon: Icons.event_busy_outlined,
+          onRemoved: onClearCreatedTo,
         ),
       );
     }
@@ -1045,6 +1137,49 @@ class _SingleFilterCategoryCard extends StatelessWidget {
   }
 }
 
+class _CreatedDateCategoryCard extends StatelessWidget {
+  const _CreatedDateCategoryCard({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.iconBackgroundColor,
+    required this.selectedDateValue,
+    required this.onChanged,
+  });
+
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final Color iconBackgroundColor;
+  final String? selectedDateValue;
+  final ValueChanged<String> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return _CategoryCard(
+      icon: icon,
+      iconBackgroundColor: iconBackgroundColor,
+      title: title,
+      subtitle: subtitle,
+      onTap: () async {
+        final initialDate = _parseApiDate(selectedDateValue) ?? DateTime.now();
+        final picked = await showDatePicker(
+          context: context,
+          initialDate: initialDate,
+          firstDate: DateTime(1900),
+          lastDate: DateTime(2100),
+        );
+
+        if (picked == null) {
+          return;
+        }
+
+        onChanged(_toApiDate(picked));
+      },
+    );
+  }
+}
+
 class _CategoryCard extends StatelessWidget {
   const _CategoryCard({
     required this.icon,
@@ -1184,6 +1319,37 @@ String _selectedSummary(List<String> names) {
   }
 
   return '${names.take(2).join(', ')} +${names.length - 2}';
+}
+
+String _filterDateSummary(BuildContext context, String? dateValue) {
+  if (dateValue == null || dateValue.trim().isEmpty) {
+    return context.l10n.anyOption;
+  }
+
+  return _formatFilterDateLabel(context, dateValue);
+}
+
+String _formatFilterDateLabel(BuildContext context, String dateValue) {
+  final parsedDate = _parseApiDate(dateValue);
+  if (parsedDate == null) {
+    return dateValue;
+  }
+
+  return formatAbsoluteDate(parsedDate, localeName: context.localeName);
+}
+
+DateTime? _parseApiDate(String? value) {
+  if (value == null || value.trim().isEmpty) {
+    return null;
+  }
+
+  return DateTime.tryParse(value);
+}
+
+String _toApiDate(DateTime value) {
+  final month = value.month.toString().padLeft(2, '0');
+  final day = value.day.toString().padLeft(2, '0');
+  return '${value.year}-$month-$day';
 }
 
 class _SingleFilterOptionSheet extends StatefulWidget {

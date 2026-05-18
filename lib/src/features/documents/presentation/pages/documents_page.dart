@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:paperless_ngx_app/src/core/data/local/sync_status_preferences.dart';
 import 'package:paperless_ngx_app/src/core/presentation/layout/adaptive_layout.dart';
 import 'package:paperless_ngx_app/src/core/presentation/localization/app_localizations_x.dart';
+import 'package:paperless_ngx_app/src/core/presentation/formatters/timestamp_text.dart';
 import 'package:paperless_ngx_app/src/core/presentation/widgets/refresh_status_text.dart';
 import 'package:paperless_ngx_app/src/core/providers/sync_status_preferences_provider.dart';
 import 'package:paperless_ngx_app/src/features/app_shell/presentation/providers/app_shell_providers.dart';
@@ -241,6 +242,16 @@ class _DocumentsPageState extends ConsumerState<DocumentsPage> {
                     onClearDocumentType: filterState.documentTypeId != null
                         ? () => _updateFilters(
                             filterState.copyWith(clearDocumentType: true),
+                          )
+                        : null,
+                    onClearCreatedFrom: filterState.createdFrom != null
+                        ? () => _updateFilters(
+                            filterState.copyWith(clearCreatedFrom: true),
+                          )
+                        : null,
+                    onClearCreatedTo: filterState.createdTo != null
+                        ? () => _updateFilters(
+                            filterState.copyWith(clearCreatedTo: true),
                           )
                         : null,
                     onResetOrdering:
@@ -594,6 +605,9 @@ class _DocumentsPageState extends ConsumerState<DocumentsPage> {
     if (filterState.documentTypeId != null) {
       count += 1;
     }
+    if (filterState.createdFrom != null || filterState.createdTo != null) {
+      count += 1;
+    }
     if (ordering != documentsSortOptions.first.ordering) {
       count += 1;
     }
@@ -635,6 +649,8 @@ class _ActiveDocumentsControls extends ConsumerWidget {
     required this.onRemoveTag,
     required this.onClearCorrespondent,
     required this.onClearDocumentType,
+    required this.onClearCreatedFrom,
+    required this.onClearCreatedTo,
     required this.onResetOrdering,
   });
 
@@ -643,6 +659,8 @@ class _ActiveDocumentsControls extends ConsumerWidget {
   final void Function(int tagId) onRemoveTag;
   final VoidCallback? onClearCorrespondent;
   final VoidCallback? onClearDocumentType;
+  final VoidCallback? onClearCreatedFrom;
+  final VoidCallback? onClearCreatedTo;
   final VoidCallback? onResetOrdering;
 
   @override
@@ -693,6 +711,32 @@ class _ActiveDocumentsControls extends ConsumerWidget {
       onDeleted: onClearDocumentType,
     );
 
+    if (filterState.createdFrom != null) {
+      chips.add(
+        InputChip(
+          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          label: Text(
+            '${l10n.filterCreatedFromLabel}: ${_formatDateChipLabel(context, filterState.createdFrom!)}',
+          ),
+          onDeleted: onClearCreatedFrom,
+          deleteIcon: const Icon(Icons.close),
+        ),
+      );
+    }
+
+    if (filterState.createdTo != null) {
+      chips.add(
+        InputChip(
+          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          label: Text(
+            '${l10n.filterCreatedToLabel}: ${_formatDateChipLabel(context, filterState.createdTo!)}',
+          ),
+          onDeleted: onClearCreatedTo,
+          deleteIcon: const Icon(Icons.close),
+        ),
+      );
+    }
+
     if (chips.isEmpty) {
       return const SizedBox.shrink();
     }
@@ -719,11 +763,21 @@ class _ActiveDocumentsControls extends ConsumerWidget {
 
     chips.add(
       InputChip(
+        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
         label: Text(label ?? '$fallbackPrefix #$optionId'),
         onDeleted: onDeleted,
         deleteIcon: const Icon(Icons.close),
       ),
     );
+  }
+
+  String _formatDateChipLabel(BuildContext context, String dateValue) {
+    final parsedDate = DateTime.tryParse(dateValue);
+    if (parsedDate == null) {
+      return dateValue;
+    }
+
+    return formatAbsoluteDate(parsedDate, localeName: context.localeName);
   }
 }
 

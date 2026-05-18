@@ -236,6 +236,8 @@
   "filterTagLabel": "Tag",
   "filterCorrespondentLabel": "Correspondent",
   "filterDocumentTypeLabel": "Document type",
+  "filterCreatedFromLabel": "Created from",
+  "filterCreatedToLabel": "Created to",
   "anyOption": "Any",
   "applyFiltersAction": "Apply filters",
   "sortCreatedNewest": "Created date (newest first)",

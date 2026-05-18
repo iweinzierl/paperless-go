@@ -914,6 +914,8 @@ void main() {
     expect(find.text('Tag'), findsOneWidget);
     expect(find.text('Correspondent'), findsOneWidget);
     expect(find.text('Document type'), findsOneWidget);
+    expect(find.text('Created from'), findsOneWidget);
+    expect(find.text('Created to'), findsOneWidget);
     expect(find.text('Apply filters'), findsOneWidget);
     expect(find.text('Created date'), findsOneWidget);
     expect(find.text('newest first'), findsOneWidget);

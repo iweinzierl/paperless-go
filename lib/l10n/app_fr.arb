@@ -190,6 +190,8 @@
   "filterTagLabel": "Tag",
   "filterCorrespondentLabel": "Correspondant",
   "filterDocumentTypeLabel": "Type de document",
+  "filterCreatedFromLabel": "Cree a partir de",
+  "filterCreatedToLabel": "Cree jusqu'a",
   "anyOption": "Tous",
   "applyFiltersAction": "Appliquer les filtres",
   "sortCreatedNewest": "Date de création (plus récent d'abord)",

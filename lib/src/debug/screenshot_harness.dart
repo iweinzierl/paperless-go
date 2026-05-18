@@ -863,6 +863,8 @@ class ScreenshotDocumentsRepository extends DocumentsRepository {
     bool? isInInbox,
     int? correspondentId,
     int? documentTypeId,
+    String? createdFrom,
+    String? createdTo,
   }) async {
     final query = titleFilter.trim().toLowerCase();
     final results = _fixture.documents

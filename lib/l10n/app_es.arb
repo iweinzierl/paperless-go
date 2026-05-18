@@ -190,6 +190,8 @@
   "filterTagLabel": "Etiqueta",
   "filterCorrespondentLabel": "Corresponsal",
   "filterDocumentTypeLabel": "Tipo de documento",
+  "filterCreatedFromLabel": "Creado desde",
+  "filterCreatedToLabel": "Creado hasta",
   "anyOption": "Cualquiera",
   "applyFiltersAction": "Aplicar filtros",
   "sortCreatedNewest": "Fecha de creación (más recientes primero)",

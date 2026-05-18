@@ -1160,6 +1160,18 @@ abstract class AppLocalizations {
   /// **'Document type'**
   String get filterDocumentTypeLabel;
 
+  /// No description provided for @filterCreatedFromLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Created from'**
+  String get filterCreatedFromLabel;
+
+  /// No description provided for @filterCreatedToLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Created to'**
+  String get filterCreatedToLabel;
+
   /// No description provided for @anyOption.
   ///
   /// In en, this message translates to:

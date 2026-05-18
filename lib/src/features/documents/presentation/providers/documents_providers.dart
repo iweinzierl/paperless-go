@@ -169,5 +169,7 @@ final documentsPageProvider = FutureProvider<PaperlessDocumentPage>((
     tagIds: filters.tagIds,
     correspondentId: filters.correspondentId,
     documentTypeId: filters.documentTypeId,
+    createdFrom: filters.createdFrom,
+    createdTo: filters.createdTo,
   );
 });
