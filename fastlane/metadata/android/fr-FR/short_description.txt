@@ -1,1 +1,1 @@
-Client mobile pour paperless-ngx : recherche et gestion de documents.
+Client mobile paperless-ngx : recherche, metadonnees et champs personnalises.

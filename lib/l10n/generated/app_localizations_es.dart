@@ -964,6 +964,143 @@ class AppLocalizationsEs extends AppLocalizations {
   String get tagDeleted => 'Etiqueta eliminada.';
 
   @override
+  String get customFieldsLabel => 'Campos personalizados';
+
+  @override
+  String get addCustomFieldAction => 'Añadir campo';
+
+  @override
+  String get removeCustomFieldAction => 'Quitar';
+
+  @override
+  String get noCustomFieldsAssigned =>
+      'No hay campos personalizados asignados.';
+
+  @override
+  String get couldNotLoadCustomFields =>
+      'No se pudieron cargar los campos personalizados.';
+
+  @override
+  String get customFieldNoValueOption => 'Sin valor';
+
+  @override
+  String get customFieldUrlHint => 'https://ejemplo.es';
+
+  @override
+  String get customFieldDateHint => 'AAAA-MM-DD';
+
+  @override
+  String get customFieldIntegerHint => 'Valor entero';
+
+  @override
+  String get customFieldFloatHint => 'Valor decimal';
+
+  @override
+  String get customFieldMonetaryHint => 'EUR11.10';
+
+  @override
+  String get customFieldCurrencyHint => 'EUR';
+
+  @override
+  String get customFieldAmountHint => '11.10';
+
+  @override
+  String get customFieldDocumentLinkHint =>
+      'IDs de documento separados por comas';
+
+  @override
+  String get customFieldLongTextHint => 'Texto largo';
+
+  @override
+  String get customFieldGenericHint => 'Valor';
+
+  @override
+  String get allCustomFieldsAlreadyAdded =>
+      'Todos los campos personalizados ya están añadidos.';
+
+  @override
+  String get customFieldBooleanError => 'Usa true/false';
+
+  @override
+  String get customFieldIntegerError => 'Introduce un valor entero válido';
+
+  @override
+  String get customFieldFloatError => 'Introduce un valor decimal válido';
+
+  @override
+  String get customFieldAmountError => 'Introduce un importe';
+
+  @override
+  String get customFieldCurrencyError => 'Introduce una moneda';
+
+  @override
+  String get customFieldMonetaryError => 'Introduce un importe válido';
+
+  @override
+  String get customFieldDateError => 'Usa una fecha válida (AAAA-MM-DD)';
+
+  @override
+  String get customFieldUrlError => 'Introduce una URL válida';
+
+  @override
+  String get customFieldDocumentLinkError =>
+      'Usa IDs de documento separados por comas (por ejemplo 3,7)';
+
+  @override
+  String get customFieldSelectError => 'Elige uno de los valores disponibles';
+
+  @override
+  String get addCustomFieldTitle => 'Añadir campo personalizado';
+
+  @override
+  String get searchCustomFieldsHint => 'Buscar campos';
+
+  @override
+  String get noCustomFieldsMatchSearch =>
+      'Ningún campo personalizado coincide con tu búsqueda.';
+
+  @override
+  String customFieldFallbackLabel(int fieldId) {
+    return 'Campo #$fieldId';
+  }
+
+  @override
+  String get customFieldBooleanTrue => 'Sí';
+
+  @override
+  String get customFieldBooleanFalse => 'No';
+
+  @override
+  String get customFieldTypeString => 'Texto';
+
+  @override
+  String get customFieldTypeUrl => 'URL';
+
+  @override
+  String get customFieldTypeDate => 'Fecha';
+
+  @override
+  String get customFieldTypeBoolean => 'Booleano';
+
+  @override
+  String get customFieldTypeInteger => 'Entero';
+
+  @override
+  String get customFieldTypeFloat => 'Número';
+
+  @override
+  String get customFieldTypeMonetary => 'Monetario';
+
+  @override
+  String get customFieldTypeDocumentLink => 'Enlace de documento';
+
+  @override
+  String get customFieldTypeSelect => 'Selección';
+
+  @override
+  String get customFieldTypeLongText => 'Texto largo';
+
+  @override
   String get couldNotLoadDocumentDetails =>
       'No se pudieron cargar los detalles del documento.';
 

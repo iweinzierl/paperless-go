@@ -1,0 +1,3 @@
+- Personnalisez mieux votre organisation grâce aux champs de document personnalisés.
+- Saisissez les montants plus rapidement avec des champs séparés pour devise et montant.
+- Profitez d'une édition des détails de document plus claire et plus fluide.

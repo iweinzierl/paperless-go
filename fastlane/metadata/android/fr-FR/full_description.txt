@@ -7,6 +7,8 @@ Fonctionnalites principales :
 - consultation des imports recents et des documents qui demandent encore une action
 - recherche dans l'archive avec filtres par etiquettes, correspondants et types de documents
 - ouverture des details d'un document et modification des metadonnees
+- affichage et modification des champs personnalises directement dans les details du document
+- saisie des montants plus rapide avec des champs separes pour devise et montant
 - sélectionner plusieurs documents et les modifier ou supprimer en une seule action
 - numerisation de documents papier avec l'appareil photo et import en PDF
 

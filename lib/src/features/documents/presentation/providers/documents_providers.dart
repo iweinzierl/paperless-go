@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:paperless_ngx_app/src/core/providers/shared_preferences_provider.dart';
 import 'package:paperless_ngx_app/src/features/documents/data/local/documents_view_preferences.dart';
 import 'package:paperless_ngx_app/src/features/documents/data/repositories/documents_repository.dart';
+import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_custom_field.dart';
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_document.dart';
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_document_page.dart';
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_filter_option.dart';
@@ -95,6 +96,12 @@ final storagePathOptionsProvider = FutureProvider<List<PaperlessFilterOption>>((
   final repository = ref.watch(documentsRepositoryProvider);
   return repository.fetchStoragePathOptions();
 });
+
+final customFieldDefinitionsProvider =
+    FutureProvider<List<PaperlessCustomField>>((ref) async {
+      final repository = ref.watch(documentsRepositoryProvider);
+      return repository.fetchCustomFieldDefinitions();
+    });
 
 final savedViewsProvider = FutureProvider<List<PaperlessSavedView>>((
   ref,

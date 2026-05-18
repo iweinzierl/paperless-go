@@ -41,42 +41,12 @@ class ScreenshotTest {
     }
 
     @Test
-    fun captureLoginScreen() {
-        writeScenario(ScreenshotScenario.LOGIN, authenticated = false)
-
-        launchMainActivity().use {
-            waitForFlutterToSettle()
-            captureScreenshot("01-login-screen", it)
-        }
-    }
-
-    @Test
-    fun captureDocumentsScreen() {
-        writeScenario(ScreenshotScenario.DOCUMENTS, authenticated = true)
-
-        launchMainActivity().use {
-            waitForFlutterToSettle()
-            captureScreenshot("02-document-list", it)
-        }
-    }
-
-    @Test
     fun captureCondensedDocumentsScreen() {
         writeScenario(ScreenshotScenario.DOCUMENTS_LIST, authenticated = true)
 
         launchMainActivity().use {
             waitForFlutterToSettle()
-            captureScreenshot("03-document-list-condensed", it)
-        }
-    }
-
-    @Test
-    fun captureDocumentsFiltersScreen() {
-        writeScenario(ScreenshotScenario.DOCUMENTS_FILTERS, authenticated = true)
-
-        launchMainActivity().use {
-            waitForFlutterToSettle()
-            captureScreenshot("04-filter-sort", it)
+            captureScreenshot("01-document-list-condensed", it)
         }
     }
 
@@ -86,7 +56,17 @@ class ScreenshotTest {
 
         launchMainActivity().use {
             waitForFlutterToSettle()
-            captureScreenshot("07-documents-drawer", it)
+            captureScreenshot("02-documents-drawer", it)
+        }
+    }
+
+    @Test
+    fun captureDocumentsFiltersScreen() {
+        writeScenario(ScreenshotScenario.DOCUMENTS_FILTERS, authenticated = true)
+
+        launchMainActivity().use {
+            waitForFlutterToSettle()
+            captureScreenshot("03-filter-sort", it)
         }
     }
 
@@ -96,17 +76,17 @@ class ScreenshotTest {
 
         launchMainActivity().use {
             waitForFlutterToSettle()
-            captureScreenshot("05-document-detail", it)
+            captureScreenshot("04-document-detail", it)
         }
     }
 
     @Test
-    fun captureDocumentMetadataEditScreen() {
-        writeScenario(ScreenshotScenario.DOCUMENT_METADATA_EDIT, authenticated = true)
+    fun captureLoginScreen() {
+        writeScenario(ScreenshotScenario.LOGIN, authenticated = false)
 
         launchMainActivity().use {
             waitForFlutterToSettle()
-            captureScreenshot("06-document-metadata-edit", it)
+            captureScreenshot("05-login-screen", it)
         }
     }
 
@@ -116,7 +96,27 @@ class ScreenshotTest {
 
         launchMainActivity().use {
             waitForFlutterToSettle()
-            captureScreenshot("08-settings-screen", it)
+            captureScreenshot("06-settings-screen", it)
+        }
+    }
+
+    @Test
+    fun captureDocumentMetadataEditScreen() {
+        writeScenario(ScreenshotScenario.DOCUMENT_METADATA_EDIT, authenticated = true)
+
+        launchMainActivity().use {
+            waitForFlutterToSettle()
+            captureScreenshot("07-document-metadata-edit", it)
+        }
+    }
+
+    @Test
+    fun captureDocumentsScreen() {
+        writeScenario(ScreenshotScenario.DOCUMENTS, authenticated = true)
+
+        launchMainActivity().use {
+            waitForFlutterToSettle()
+            captureScreenshot("08-document-list-large", it)
         }
     }
 

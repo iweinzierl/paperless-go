@@ -949,6 +949,139 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tagDeleted => 'Tag deleted.';
 
   @override
+  String get customFieldsLabel => 'Custom fields';
+
+  @override
+  String get addCustomFieldAction => 'Add field';
+
+  @override
+  String get removeCustomFieldAction => 'Remove';
+
+  @override
+  String get noCustomFieldsAssigned => 'No custom fields assigned.';
+
+  @override
+  String get couldNotLoadCustomFields => 'Could not load custom fields.';
+
+  @override
+  String get customFieldNoValueOption => 'No value';
+
+  @override
+  String get customFieldUrlHint => 'https://example.com';
+
+  @override
+  String get customFieldDateHint => 'YYYY-MM-DD';
+
+  @override
+  String get customFieldIntegerHint => 'Integer value';
+
+  @override
+  String get customFieldFloatHint => 'Decimal value';
+
+  @override
+  String get customFieldMonetaryHint => 'USD11.10';
+
+  @override
+  String get customFieldCurrencyHint => 'USD';
+
+  @override
+  String get customFieldAmountHint => '11.10';
+
+  @override
+  String get customFieldDocumentLinkHint => 'Comma-separated document IDs';
+
+  @override
+  String get customFieldLongTextHint => 'Long text';
+
+  @override
+  String get customFieldGenericHint => 'Value';
+
+  @override
+  String get allCustomFieldsAlreadyAdded =>
+      'All custom fields are already added.';
+
+  @override
+  String get customFieldBooleanError => 'Use true/false';
+
+  @override
+  String get customFieldIntegerError => 'Enter a valid integer value';
+
+  @override
+  String get customFieldFloatError => 'Enter a valid decimal value';
+
+  @override
+  String get customFieldAmountError => 'Enter an amount';
+
+  @override
+  String get customFieldCurrencyError => 'Enter a currency';
+
+  @override
+  String get customFieldMonetaryError => 'Enter a valid amount';
+
+  @override
+  String get customFieldDateError => 'Use a valid date (YYYY-MM-DD)';
+
+  @override
+  String get customFieldUrlError => 'Enter a valid URL';
+
+  @override
+  String get customFieldDocumentLinkError =>
+      'Use comma-separated document IDs (for example 3,7)';
+
+  @override
+  String get customFieldSelectError => 'Pick one of the available values';
+
+  @override
+  String get addCustomFieldTitle => 'Add custom field';
+
+  @override
+  String get searchCustomFieldsHint => 'Search fields';
+
+  @override
+  String get noCustomFieldsMatchSearch => 'No custom fields match your search.';
+
+  @override
+  String customFieldFallbackLabel(int fieldId) {
+    return 'Custom #$fieldId';
+  }
+
+  @override
+  String get customFieldBooleanTrue => 'Yes';
+
+  @override
+  String get customFieldBooleanFalse => 'No';
+
+  @override
+  String get customFieldTypeString => 'Text';
+
+  @override
+  String get customFieldTypeUrl => 'URL';
+
+  @override
+  String get customFieldTypeDate => 'Date';
+
+  @override
+  String get customFieldTypeBoolean => 'Boolean';
+
+  @override
+  String get customFieldTypeInteger => 'Integer';
+
+  @override
+  String get customFieldTypeFloat => 'Number';
+
+  @override
+  String get customFieldTypeMonetary => 'Monetary';
+
+  @override
+  String get customFieldTypeDocumentLink => 'Document link';
+
+  @override
+  String get customFieldTypeSelect => 'Select';
+
+  @override
+  String get customFieldTypeLongText => 'Long text';
+
+  @override
   String get couldNotLoadDocumentDetails =>
       'Could not load the document details.';
 

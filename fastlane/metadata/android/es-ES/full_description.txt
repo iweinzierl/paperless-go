@@ -7,6 +7,8 @@ Funciones principales:
 - vista de cargas recientes y documentos que aun requieren revision
 - busqueda en el archivo y filtros por etiquetas, corresponsales y tipos de documento
 - apertura de detalles del documento y edicion de metadatos
+- visualizacion y edicion de campos personalizados directamente en los detalles del documento
+- introduccion mas rapida de importes con campos separados para moneda e importe
 - seleccionar varios documentos y editarlos o eliminarlos de forma masiva
 - escaneo de documentos en papel con la camara y subida como PDF
 

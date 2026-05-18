@@ -7,6 +7,8 @@ Funzionalita principali:
 - panoramica dei caricamenti recenti e dei documenti che richiedono ancora attenzione
 - ricerca nell'archivio con filtri per tag, corrispondenti e tipi di documento
 - apertura dei dettagli del documento e modifica dei metadati
+- visualizzazione e modifica dei campi personalizzati direttamente nei dettagli del documento
+- inserimento piu rapido degli importi con campi separati per valuta e importo
 - selezionare più documenti e modificarli o eliminarli in blocco
 - scansione di documenti cartacei con la fotocamera e caricamento come PDF
 

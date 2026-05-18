@@ -1,7 +1,4 @@
-- nuevo modo de vista de lista para documentos con diseño de tarjeta compacta
-- seleccionar varios documentos con un gesto de pulsación larga
-- eliminar documentos seleccionados en un solo paso
-- nueva pantalla de edición por lotes para actualizar etiquetas, corresponsales, tipos de documento y rutas de almacenamiento de varios documentos a la vez
-- la pantalla de edición por lotes rellena automáticamente los valores comunes cuando todos los documentos seleccionados comparten el mismo corresponsal, tipo o ruta
-- tocar la imagen de vista previa en el modo de lista mediana para activar la selección múltiple
-- correcciones de interfaz para dispositivos con pantallas grandes
+- Ahora puedes ver y editar campos personalizados directamente en los detalles del documento.
+- Introduce importes más rápido con campos separados para moneda e importe.
+- El formato de números ahora sigue el idioma de la app.
+- La edición de detalles del documento es ahora más clara y fluida.

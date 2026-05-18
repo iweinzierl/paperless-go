@@ -345,7 +345,7 @@ final _liveScreenshotScenarioContextProvider =
               : <int>[tagOptions.first.id],
           correspondentId: correspondentOptions.isEmpty
               ? null
-              : correspondentOptions.first.id,
+              : correspondentOptions[1].id,
           documentTypeId: documentTypeOptions.isEmpty
               ? null
               : documentTypeOptions.first.id,

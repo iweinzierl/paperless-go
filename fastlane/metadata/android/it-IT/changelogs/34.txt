@@ -1,0 +1,3 @@
+- Personalizza meglio il tuo flusso di lavoro con i campi documento personalizzati.
+- Inserisci gli importi più velocemente con campi separati per valuta e importo.
+- Goditi una modifica dei dettagli documento più chiara e fluida.

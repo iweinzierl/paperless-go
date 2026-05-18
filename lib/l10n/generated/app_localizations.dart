@@ -1778,6 +1778,264 @@ abstract class AppLocalizations {
   /// **'Tag deleted.'**
   String get tagDeleted;
 
+  /// No description provided for @customFieldsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom fields'**
+  String get customFieldsLabel;
+
+  /// No description provided for @addCustomFieldAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Add field'**
+  String get addCustomFieldAction;
+
+  /// No description provided for @removeCustomFieldAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get removeCustomFieldAction;
+
+  /// No description provided for @noCustomFieldsAssigned.
+  ///
+  /// In en, this message translates to:
+  /// **'No custom fields assigned.'**
+  String get noCustomFieldsAssigned;
+
+  /// No description provided for @couldNotLoadCustomFields.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load custom fields.'**
+  String get couldNotLoadCustomFields;
+
+  /// No description provided for @customFieldNoValueOption.
+  ///
+  /// In en, this message translates to:
+  /// **'No value'**
+  String get customFieldNoValueOption;
+
+  /// No description provided for @customFieldUrlHint.
+  ///
+  /// In en, this message translates to:
+  /// **'https://example.com'**
+  String get customFieldUrlHint;
+
+  /// No description provided for @customFieldDateHint.
+  ///
+  /// In en, this message translates to:
+  /// **'YYYY-MM-DD'**
+  String get customFieldDateHint;
+
+  /// No description provided for @customFieldIntegerHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Integer value'**
+  String get customFieldIntegerHint;
+
+  /// No description provided for @customFieldFloatHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Decimal value'**
+  String get customFieldFloatHint;
+
+  /// No description provided for @customFieldMonetaryHint.
+  ///
+  /// In en, this message translates to:
+  /// **'USD11.10'**
+  String get customFieldMonetaryHint;
+
+  /// No description provided for @customFieldCurrencyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'USD'**
+  String get customFieldCurrencyHint;
+
+  /// No description provided for @customFieldAmountHint.
+  ///
+  /// In en, this message translates to:
+  /// **'11.10'**
+  String get customFieldAmountHint;
+
+  /// No description provided for @customFieldDocumentLinkHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Comma-separated document IDs'**
+  String get customFieldDocumentLinkHint;
+
+  /// No description provided for @customFieldLongTextHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Long text'**
+  String get customFieldLongTextHint;
+
+  /// No description provided for @customFieldGenericHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Value'**
+  String get customFieldGenericHint;
+
+  /// No description provided for @allCustomFieldsAlreadyAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'All custom fields are already added.'**
+  String get allCustomFieldsAlreadyAdded;
+
+  /// No description provided for @customFieldBooleanError.
+  ///
+  /// In en, this message translates to:
+  /// **'Use true/false'**
+  String get customFieldBooleanError;
+
+  /// No description provided for @customFieldIntegerError.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid integer value'**
+  String get customFieldIntegerError;
+
+  /// No description provided for @customFieldFloatError.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid decimal value'**
+  String get customFieldFloatError;
+
+  /// No description provided for @customFieldAmountError.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter an amount'**
+  String get customFieldAmountError;
+
+  /// No description provided for @customFieldCurrencyError.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a currency'**
+  String get customFieldCurrencyError;
+
+  /// No description provided for @customFieldMonetaryError.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid amount'**
+  String get customFieldMonetaryError;
+
+  /// No description provided for @customFieldDateError.
+  ///
+  /// In en, this message translates to:
+  /// **'Use a valid date (YYYY-MM-DD)'**
+  String get customFieldDateError;
+
+  /// No description provided for @customFieldUrlError.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid URL'**
+  String get customFieldUrlError;
+
+  /// No description provided for @customFieldDocumentLinkError.
+  ///
+  /// In en, this message translates to:
+  /// **'Use comma-separated document IDs (for example 3,7)'**
+  String get customFieldDocumentLinkError;
+
+  /// No description provided for @customFieldSelectError.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick one of the available values'**
+  String get customFieldSelectError;
+
+  /// No description provided for @addCustomFieldTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add custom field'**
+  String get addCustomFieldTitle;
+
+  /// No description provided for @searchCustomFieldsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search fields'**
+  String get searchCustomFieldsHint;
+
+  /// No description provided for @noCustomFieldsMatchSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'No custom fields match your search.'**
+  String get noCustomFieldsMatchSearch;
+
+  /// No description provided for @customFieldFallbackLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom #{fieldId}'**
+  String customFieldFallbackLabel(int fieldId);
+
+  /// No description provided for @customFieldBooleanTrue.
+  ///
+  /// In en, this message translates to:
+  /// **'Yes'**
+  String get customFieldBooleanTrue;
+
+  /// No description provided for @customFieldBooleanFalse.
+  ///
+  /// In en, this message translates to:
+  /// **'No'**
+  String get customFieldBooleanFalse;
+
+  /// No description provided for @customFieldTypeString.
+  ///
+  /// In en, this message translates to:
+  /// **'Text'**
+  String get customFieldTypeString;
+
+  /// No description provided for @customFieldTypeUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'URL'**
+  String get customFieldTypeUrl;
+
+  /// No description provided for @customFieldTypeDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Date'**
+  String get customFieldTypeDate;
+
+  /// No description provided for @customFieldTypeBoolean.
+  ///
+  /// In en, this message translates to:
+  /// **'Boolean'**
+  String get customFieldTypeBoolean;
+
+  /// No description provided for @customFieldTypeInteger.
+  ///
+  /// In en, this message translates to:
+  /// **'Integer'**
+  String get customFieldTypeInteger;
+
+  /// No description provided for @customFieldTypeFloat.
+  ///
+  /// In en, this message translates to:
+  /// **'Number'**
+  String get customFieldTypeFloat;
+
+  /// No description provided for @customFieldTypeMonetary.
+  ///
+  /// In en, this message translates to:
+  /// **'Monetary'**
+  String get customFieldTypeMonetary;
+
+  /// No description provided for @customFieldTypeDocumentLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Document link'**
+  String get customFieldTypeDocumentLink;
+
+  /// No description provided for @customFieldTypeSelect.
+  ///
+  /// In en, this message translates to:
+  /// **'Select'**
+  String get customFieldTypeSelect;
+
+  /// No description provided for @customFieldTypeLongText.
+  ///
+  /// In en, this message translates to:
+  /// **'Long text'**
+  String get customFieldTypeLongText;
+
   /// No description provided for @couldNotLoadDocumentDetails.
   ///
   /// In en, this message translates to:

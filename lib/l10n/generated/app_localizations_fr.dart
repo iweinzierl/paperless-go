@@ -966,6 +966,143 @@ class AppLocalizationsFr extends AppLocalizations {
   String get tagDeleted => 'Tag supprimé.';
 
   @override
+  String get customFieldsLabel => 'Champs personnalisés';
+
+  @override
+  String get addCustomFieldAction => 'Ajouter un champ';
+
+  @override
+  String get removeCustomFieldAction => 'Supprimer';
+
+  @override
+  String get noCustomFieldsAssigned => 'Aucun champ personnalisé attribué.';
+
+  @override
+  String get couldNotLoadCustomFields =>
+      'Impossible de charger les champs personnalisés.';
+
+  @override
+  String get customFieldNoValueOption => 'Aucune valeur';
+
+  @override
+  String get customFieldUrlHint => 'https://exemple.fr';
+
+  @override
+  String get customFieldDateHint => 'AAAA-MM-JJ';
+
+  @override
+  String get customFieldIntegerHint => 'Valeur entière';
+
+  @override
+  String get customFieldFloatHint => 'Valeur décimale';
+
+  @override
+  String get customFieldMonetaryHint => 'EUR11.10';
+
+  @override
+  String get customFieldCurrencyHint => 'EUR';
+
+  @override
+  String get customFieldAmountHint => '11.10';
+
+  @override
+  String get customFieldDocumentLinkHint =>
+      'IDs de documents séparés par des virgules';
+
+  @override
+  String get customFieldLongTextHint => 'Texte long';
+
+  @override
+  String get customFieldGenericHint => 'Valeur';
+
+  @override
+  String get allCustomFieldsAlreadyAdded =>
+      'Tous les champs personnalisés sont déjà ajoutés.';
+
+  @override
+  String get customFieldBooleanError => 'Utilisez true/false';
+
+  @override
+  String get customFieldIntegerError => 'Entrez une valeur entière valide';
+
+  @override
+  String get customFieldFloatError => 'Entrez une valeur décimale valide';
+
+  @override
+  String get customFieldAmountError => 'Entrez un montant';
+
+  @override
+  String get customFieldCurrencyError => 'Entrez une devise';
+
+  @override
+  String get customFieldMonetaryError => 'Entrez un montant valide';
+
+  @override
+  String get customFieldDateError => 'Utilisez une date valide (AAAA-MM-JJ)';
+
+  @override
+  String get customFieldUrlError => 'Entrez une URL valide';
+
+  @override
+  String get customFieldDocumentLinkError =>
+      'Utilisez des IDs de documents séparés par des virgules (par ex. 3,7)';
+
+  @override
+  String get customFieldSelectError =>
+      'Choisissez une valeur parmi celles disponibles';
+
+  @override
+  String get addCustomFieldTitle => 'Ajouter un champ personnalisé';
+
+  @override
+  String get searchCustomFieldsHint => 'Rechercher des champs';
+
+  @override
+  String get noCustomFieldsMatchSearch =>
+      'Aucun champ personnalisé ne correspond à votre recherche.';
+
+  @override
+  String customFieldFallbackLabel(int fieldId) {
+    return 'Champ #$fieldId';
+  }
+
+  @override
+  String get customFieldBooleanTrue => 'Oui';
+
+  @override
+  String get customFieldBooleanFalse => 'Non';
+
+  @override
+  String get customFieldTypeString => 'Texte';
+
+  @override
+  String get customFieldTypeUrl => 'URL';
+
+  @override
+  String get customFieldTypeDate => 'Date';
+
+  @override
+  String get customFieldTypeBoolean => 'Booléen';
+
+  @override
+  String get customFieldTypeInteger => 'Entier';
+
+  @override
+  String get customFieldTypeFloat => 'Nombre';
+
+  @override
+  String get customFieldTypeMonetary => 'Monétaire';
+
+  @override
+  String get customFieldTypeDocumentLink => 'Lien de document';
+
+  @override
+  String get customFieldTypeSelect => 'Sélection';
+
+  @override
+  String get customFieldTypeLongText => 'Texte long';
+
+  @override
   String get couldNotLoadDocumentDetails =>
       'Impossible de charger les détails du document.';
 

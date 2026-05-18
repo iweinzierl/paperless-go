@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'package:pdfrx/pdfrx.dart';
 import 'package:paperless_ngx_app/l10n/generated/app_localizations.dart';
 import 'package:paperless_ngx_app/src/core/providers/shared_preferences_provider.dart';
@@ -9,6 +10,7 @@ import 'package:paperless_ngx_app/src/core/presentation/localization/app_localiz
 import 'package:paperless_ngx_app/src/core/presentation/formatters/timestamp_text.dart';
 import 'package:paperless_ngx_app/src/debug/screenshot_harness.dart';
 import 'package:paperless_ngx_app/src/features/app_shell/presentation/providers/app_shell_providers.dart';
+import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_custom_field.dart';
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_document.dart';
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_filter_option.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/providers/document_delete_controller.dart';
@@ -319,6 +321,11 @@ class _DocumentDetailBodyState extends ConsumerState<_DocumentDetailBody> {
     final correspondentOptions = ref.watch(correspondentOptionsProvider);
     final documentTypeOptions = ref.watch(documentTypeOptionsProvider);
     final tagOptions = ref.watch(tagOptionsProvider);
+    final customFieldDefinitions = document.customFields.isEmpty
+        ? const AsyncValue<List<PaperlessCustomField>>.data(
+            <PaperlessCustomField>[],
+          )
+        : ref.watch(customFieldDefinitionsProvider);
     final correspondentName = _resolveOptionName(
       correspondentOptions,
       document.correspondentId,
@@ -468,6 +475,10 @@ class _DocumentDetailBodyState extends ConsumerState<_DocumentDetailBody> {
                                   fallbackValue: document.documentTypeId
                                       ?.toString(),
                                 ),
+                                _ResolvedCustomFieldsRows(
+                                  document: document,
+                                  definitions: customFieldDefinitions,
+                                ),
                               ],
                             ),
                           ),
@@ -527,6 +538,10 @@ class _DocumentDetailBodyState extends ConsumerState<_DocumentDetailBody> {
                           _ResolvedTagsRow(
                             document: document,
                             options: tagOptions,
+                          ),
+                          _ResolvedCustomFieldsRows(
+                            document: document,
+                            definitions: customFieldDefinitions,
                           ),
                         ],
                       ),
@@ -703,6 +718,14 @@ class _EditDocumentMetadataPageState
     extends ConsumerState<_EditDocumentMetadataPage> {
   late final TextEditingController _titleController;
   late final TextEditingController _createdController;
+  late final Map<int, Object?> _selectedCustomFieldValues;
+  final Map<int, TextEditingController> _customFieldControllers =
+      <int, TextEditingController>{};
+  final Map<int, TextEditingController> _customFieldCurrencyControllers =
+      <int, TextEditingController>{};
+  final Map<int, TextEditingController> _customFieldAmountControllers =
+      <int, TextEditingController>{};
+  Map<int, String> _customFieldErrors = <int, String>{};
   late int? _selectedCorrespondentId;
   late int? _selectedDocumentTypeId;
   late Set<int> _selectedTagIds;
@@ -728,12 +751,25 @@ class _EditDocumentMetadataPageState
     _selectedCorrespondentId = widget.document.correspondentId;
     _selectedDocumentTypeId = widget.document.documentTypeId;
     _selectedTagIds = widget.document.tags.toSet();
+    _selectedCustomFieldValues = <int, Object?>{
+      for (final customField in widget.document.customFields)
+        customField.field: customField.value,
+    };
   }
 
   @override
   void dispose() {
     _titleController.dispose();
     _createdController.dispose();
+    for (final controller in _customFieldControllers.values) {
+      controller.dispose();
+    }
+    for (final controller in _customFieldCurrencyControllers.values) {
+      controller.dispose();
+    }
+    for (final controller in _customFieldAmountControllers.values) {
+      controller.dispose();
+    }
     super.dispose();
   }
 
@@ -777,6 +813,7 @@ class _EditDocumentMetadataPageState
     final correspondents = ref.watch(correspondentOptionsProvider);
     final documentTypes = ref.watch(documentTypeOptionsProvider);
     final tags = ref.watch(tagOptionsProvider);
+    final customFieldDefinitions = ref.watch(customFieldDefinitionsProvider);
     final selectedCorrespondentLabel = correspondents.maybeWhen(
       data: (items) => items
           .where((item) => item.id == _selectedCorrespondentId)
@@ -850,6 +887,7 @@ class _EditDocumentMetadataPageState
                       correspondents,
                       documentTypes,
                       tags,
+                      customFieldDefinitions,
                       selectedCorrespondentLabel,
                       selectedDocumentTypeLabel,
                       selectedTags,
@@ -863,6 +901,7 @@ class _EditDocumentMetadataPageState
                       correspondents,
                       documentTypes,
                       tags,
+                      customFieldDefinitions,
                       selectedCorrespondentLabel,
                       selectedDocumentTypeLabel,
                       selectedTags,
@@ -893,6 +932,7 @@ class _EditDocumentMetadataPageState
     AsyncValue<List<PaperlessFilterOption>> correspondents,
     AsyncValue<List<PaperlessFilterOption>> documentTypes,
     AsyncValue<List<PaperlessFilterOption>> tags,
+    AsyncValue<List<PaperlessCustomField>> customFieldDefinitions,
     String? selectedCorrespondentLabel,
     String? selectedDocumentTypeLabel,
     List<MapEntry<int, String>> selectedTags,
@@ -919,6 +959,12 @@ class _EditDocumentMetadataPageState
             ),
             const SizedBox(height: 16),
             _buildCompactTagsField(context, theme, l10n, tags, selectedTags),
+            const SizedBox(height: 16),
+            _buildCompactCustomFieldsSection(
+              theme,
+              l10n,
+              customFieldDefinitions,
+            ),
             const SizedBox(height: 20),
             _EditMetadataHero(
               document: widget.document,
@@ -959,6 +1005,7 @@ class _EditDocumentMetadataPageState
     AsyncValue<List<PaperlessFilterOption>> correspondents,
     AsyncValue<List<PaperlessFilterOption>> documentTypes,
     AsyncValue<List<PaperlessFilterOption>> tags,
+    AsyncValue<List<PaperlessCustomField>> customFieldDefinitions,
     String? selectedCorrespondentLabel,
     String? selectedDocumentTypeLabel,
     List<MapEntry<int, String>> selectedTags,
@@ -1010,6 +1057,11 @@ class _EditDocumentMetadataPageState
                                   l10n,
                                   tags,
                                   selectedTags,
+                                ),
+                                const SizedBox(height: 16),
+                                _buildWideCustomFieldsSection(
+                                  l10n,
+                                  customFieldDefinitions,
                                 ),
                               ],
                             ),
@@ -1375,6 +1427,681 @@ class _EditDocumentMetadataPageState
     );
   }
 
+  Widget _buildCompactCustomFieldsSection(
+    ThemeData theme,
+    AppLocalizations l10n,
+    AsyncValue<List<PaperlessCustomField>> definitions,
+  ) {
+    return _EditFieldSection(
+      label: l10n.customFieldsLabel,
+      trailing: TextButton.icon(
+        onPressed: _isBusy
+            ? null
+            : () {
+                final values = definitions.valueOrNull;
+                if (values != null) {
+                  _openCustomFieldSelection(values);
+                }
+              },
+        icon: const Icon(Icons.add_rounded),
+        label: Text(l10n.addCustomFieldAction),
+      ),
+      child: _buildCustomFieldsEditorBody(theme, l10n, definitions),
+    );
+  }
+
+  Widget _buildWideCustomFieldsSection(
+    AppLocalizations l10n,
+    AsyncValue<List<PaperlessCustomField>> definitions,
+  ) {
+    return _EditFieldSection(
+      label: l10n.customFieldsLabel,
+      trailing: TextButton.icon(
+        onPressed: _isBusy
+            ? null
+            : () {
+                final values = definitions.valueOrNull;
+                if (values != null) {
+                  _openCustomFieldSelection(values);
+                }
+              },
+        icon: const Icon(Icons.add_rounded),
+        label: Text(l10n.addCustomFieldAction),
+      ),
+      child: _buildCustomFieldsEditorBody(Theme.of(context), l10n, definitions),
+    );
+  }
+
+  Widget _buildCustomFieldsEditorBody(
+    ThemeData theme,
+    AppLocalizations l10n,
+    AsyncValue<List<PaperlessCustomField>> definitions,
+  ) {
+    return definitions.when(
+      data: (items) {
+        final selectedIds = _selectedCustomFieldValues.keys.toSet();
+        final selectedDefinitions =
+            items
+                .where((item) => selectedIds.contains(item.id))
+                .toList(growable: false)
+              ..sort((left, right) => left.name.compareTo(right.name));
+
+        if (selectedDefinitions.isEmpty) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            child: Text(
+              l10n.noCustomFieldsAssigned,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          );
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            for (
+              var index = 0;
+              index < selectedDefinitions.length;
+              index++
+            ) ...[
+              _buildCustomFieldEditor(selectedDefinitions[index]),
+              if (index < selectedDefinitions.length - 1)
+                const SizedBox(height: 18),
+            ],
+          ],
+        );
+      },
+      error: (error, stackTrace) => _EditInlineStatusCard(
+        message: l10n.couldNotLoadCustomFields,
+        isError: true,
+      ),
+      loading: () => const _EditLoadingCard(),
+    );
+  }
+
+  Widget _buildCustomFieldEditor(PaperlessCustomField definition) {
+    final value = _selectedCustomFieldValues[definition.id];
+    final errorText = _customFieldErrors[definition.id];
+
+    return _EditFieldSection(
+      label: definition.name,
+      trailing: TextButton.icon(
+        onPressed: _isBusy ? null : () => _removeCustomField(definition.id),
+        icon: const Icon(Icons.remove_circle_outline_rounded),
+        label: Text(context.l10n.removeCustomFieldAction),
+      ),
+      child: switch (definition.dataType) {
+        PaperlessCustomFieldDataType.boolean => SwitchListTile.adaptive(
+          value: value is bool ? value : false,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+          title: Text(
+            value == true
+                ? context.l10n.customFieldBooleanTrue
+                : context.l10n.customFieldBooleanFalse,
+          ),
+          onChanged: _isBusy
+              ? null
+              : (next) => _setCustomFieldValue(definition.id, next),
+        ),
+        PaperlessCustomFieldDataType.select => _buildSelectCustomFieldEditor(
+          definition,
+          value,
+          errorText,
+        ),
+        PaperlessCustomFieldDataType.monetary =>
+          _buildMonetaryCustomFieldEditor(definition, value, errorText),
+        _ => _buildTextCustomFieldEditor(definition, value, errorText),
+      },
+    );
+  }
+
+  Widget _buildMonetaryCustomFieldEditor(
+    PaperlessCustomField definition,
+    Object? value,
+    String? errorText,
+  ) {
+    final monetaryValue = _monetaryValueForCustomField(
+      fieldId: definition.id,
+      value: value,
+      defaultCurrency: definition.defaultCurrency,
+    );
+    final currencyController = _currencyControllerForCustomField(
+      definition.id,
+      monetaryValue,
+    );
+    final amountController = _amountControllerForCustomField(
+      definition.id,
+      monetaryValue,
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              width: 110,
+              child: _EditMetadataTextField(
+                controller: currencyController,
+                enabled: !_isBusy,
+                hintText: context.l10n.customFieldCurrencyHint,
+                textInputAction: TextInputAction.next,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _EditMetadataTextField(
+                controller: amountController,
+                enabled: !_isBusy,
+                hintText: context.l10n.customFieldAmountHint,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                  signed: true,
+                ),
+                textInputAction: TextInputAction.next,
+              ),
+            ),
+          ],
+        ),
+        if (errorText != null) ...[
+          const SizedBox(height: 8),
+          Text(
+            errorText,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: Theme.of(context).colorScheme.error,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildSelectCustomFieldEditor(
+    PaperlessCustomField definition,
+    Object? value,
+    String? errorText,
+  ) {
+    final selectedId = value?.toString();
+    final selectedOption = definition.selectOptions
+        .where((item) => item.id == selectedId)
+        .firstOrNull;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _EditSelectionField(
+          icon: Icons.tune_rounded,
+          value: selectedOption?.label,
+          placeholder: context.l10n.customFieldNoValueOption,
+          actionIcon: Icons.unfold_more,
+          enabled: !_isBusy,
+          onTap: _isBusy ? null : () => _openCustomSelectOption(definition),
+        ),
+        if (errorText != null) ...[
+          const SizedBox(height: 8),
+          Text(
+            errorText,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: Theme.of(context).colorScheme.error,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildTextCustomFieldEditor(
+    PaperlessCustomField definition,
+    Object? value,
+    String? errorText,
+  ) {
+    final controller = _controllerForCustomField(
+      definition.id,
+      value,
+      definition,
+    );
+
+    return _EditMetadataTextField(
+      controller: controller,
+      enabled: !_isBusy,
+      hintText: _customFieldHint(definition.dataType),
+      keyboardType: _customFieldKeyboardType(definition.dataType),
+      textInputAction: TextInputAction.next,
+      errorText: errorText,
+    );
+  }
+
+  TextEditingController _controllerForCustomField(
+    int fieldId,
+    Object? value, [
+    PaperlessCustomField? definition,
+  ]) {
+    final existing = _customFieldControllers[fieldId];
+    if (existing != null) {
+      return existing;
+    }
+
+    final controller = TextEditingController(
+      text: _editorValueForCustomField(value, definition),
+    );
+    controller.addListener(() {
+      _selectedCustomFieldValues[fieldId] = controller.text;
+      if (_customFieldErrors.containsKey(fieldId)) {
+        setState(() {
+          _customFieldErrors = Map<int, String>.from(_customFieldErrors)
+            ..remove(fieldId);
+        });
+      }
+    });
+    _customFieldControllers[fieldId] = controller;
+    return controller;
+  }
+
+  TextEditingController _currencyControllerForCustomField(
+    int fieldId,
+    _MonetaryCustomFieldValue value,
+  ) {
+    final existing = _customFieldCurrencyControllers[fieldId];
+    if (existing != null) {
+      return existing;
+    }
+
+    final controller = TextEditingController(text: value.currency);
+    controller.addListener(() {
+      _selectedCustomFieldValues[fieldId] = _MonetaryCustomFieldValue(
+        currency: controller.text,
+        amount: _customFieldAmountControllers[fieldId]?.text ?? value.amount,
+      );
+      if (_customFieldErrors.containsKey(fieldId)) {
+        setState(() {
+          _customFieldErrors = Map<int, String>.from(_customFieldErrors)
+            ..remove(fieldId);
+        });
+      }
+    });
+    _customFieldCurrencyControllers[fieldId] = controller;
+    return controller;
+  }
+
+  TextEditingController _amountControllerForCustomField(
+    int fieldId,
+    _MonetaryCustomFieldValue value,
+  ) {
+    final existing = _customFieldAmountControllers[fieldId];
+    if (existing != null) {
+      return existing;
+    }
+
+    final localizedAmount = _formatLocalizedNumericString(
+      context,
+      value.amount,
+    );
+    final controller = TextEditingController(text: localizedAmount);
+    controller.addListener(() {
+      _selectedCustomFieldValues[fieldId] = _MonetaryCustomFieldValue(
+        currency:
+            _customFieldCurrencyControllers[fieldId]?.text ?? value.currency,
+        amount: controller.text,
+      );
+      if (_customFieldErrors.containsKey(fieldId)) {
+        setState(() {
+          _customFieldErrors = Map<int, String>.from(_customFieldErrors)
+            ..remove(fieldId);
+        });
+      }
+    });
+    _customFieldAmountControllers[fieldId] = controller;
+    return controller;
+  }
+
+  _MonetaryCustomFieldValue _monetaryValueForCustomField({
+    required int fieldId,
+    required Object? value,
+    required String? defaultCurrency,
+  }) {
+    final currentValue = _selectedCustomFieldValues[fieldId];
+    if (currentValue is _MonetaryCustomFieldValue) {
+      return currentValue;
+    }
+
+    final parsed = _parseMonetaryCustomFieldValue(value, defaultCurrency);
+    final normalized = _MonetaryCustomFieldValue(
+      currency: parsed.currency,
+      amount: parsed.amount,
+    );
+    _selectedCustomFieldValues[fieldId] = normalized;
+    return normalized;
+  }
+
+  String _stringValueForCustomField(Object? value) {
+    if (value == null) {
+      return '';
+    }
+
+    if (value is List) {
+      return value.map((item) => item.toString()).join(',');
+    }
+
+    return value.toString();
+  }
+
+  String _editorValueForCustomField(
+    Object? value,
+    PaperlessCustomField? definition,
+  ) {
+    if (definition == null) {
+      return _stringValueForCustomField(value);
+    }
+
+    return switch (definition.dataType) {
+      PaperlessCustomFieldDataType.integer ||
+      PaperlessCustomFieldDataType.float => _formatLocalizedNumericString(
+        context,
+        value?.toString() ?? '',
+      ),
+      _ => _stringValueForCustomField(value),
+    };
+  }
+
+  String _customFieldHint(PaperlessCustomFieldDataType dataType) {
+    return switch (dataType) {
+      PaperlessCustomFieldDataType.url => context.l10n.customFieldUrlHint,
+      PaperlessCustomFieldDataType.date => context.l10n.customFieldDateHint,
+      PaperlessCustomFieldDataType.integer =>
+        context.l10n.customFieldIntegerHint,
+      PaperlessCustomFieldDataType.float => context.l10n.customFieldFloatHint,
+      PaperlessCustomFieldDataType.monetary =>
+        context.l10n.customFieldMonetaryHint,
+      PaperlessCustomFieldDataType.documentLink =>
+        context.l10n.customFieldDocumentLinkHint,
+      PaperlessCustomFieldDataType.longText =>
+        context.l10n.customFieldLongTextHint,
+      _ => context.l10n.customFieldGenericHint,
+    };
+  }
+
+  TextInputType? _customFieldKeyboardType(
+    PaperlessCustomFieldDataType dataType,
+  ) {
+    return switch (dataType) {
+      PaperlessCustomFieldDataType.url => TextInputType.url,
+      PaperlessCustomFieldDataType.date => TextInputType.datetime,
+      PaperlessCustomFieldDataType.integer => TextInputType.number,
+      PaperlessCustomFieldDataType.float =>
+        const TextInputType.numberWithOptions(decimal: true),
+      PaperlessCustomFieldDataType.documentLink => TextInputType.number,
+      PaperlessCustomFieldDataType.longText => TextInputType.multiline,
+      _ => TextInputType.text,
+    };
+  }
+
+  void _setCustomFieldValue(int fieldId, Object? value) {
+    setState(() {
+      _selectedCustomFieldValues[fieldId] = value;
+      _customFieldErrors = Map<int, String>.from(_customFieldErrors)
+        ..remove(fieldId);
+    });
+  }
+
+  void _removeCustomField(int fieldId) {
+    setState(() {
+      _selectedCustomFieldValues.remove(fieldId);
+      _customFieldErrors = Map<int, String>.from(_customFieldErrors)
+        ..remove(fieldId);
+    });
+    _customFieldControllers.remove(fieldId)?.dispose();
+    _customFieldCurrencyControllers.remove(fieldId)?.dispose();
+    _customFieldAmountControllers.remove(fieldId)?.dispose();
+  }
+
+  Future<void> _openCustomFieldSelection(
+    List<PaperlessCustomField> definitions,
+  ) async {
+    final selectedIds = _selectedCustomFieldValues.keys.toSet();
+    final available =
+        definitions
+            .where((item) => !selectedIds.contains(item.id))
+            .toList(growable: false)
+          ..sort((left, right) => left.name.compareTo(right.name));
+
+    if (available.isEmpty) {
+      _showStatusMessage(context.l10n.allCustomFieldsAlreadyAdded);
+      return;
+    }
+
+    final result = await showModalBottomSheet<int>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (dialogContext) =>
+          _CustomFieldSelectionSheet(availableFields: available),
+    );
+
+    if (!mounted || result == null) {
+      return;
+    }
+
+    setState(() {
+      _selectedCustomFieldValues[result] = null;
+      _customFieldErrors = Map<int, String>.from(_customFieldErrors)
+        ..remove(result);
+    });
+  }
+
+  Future<void> _openCustomSelectOption(PaperlessCustomField field) async {
+    final selectedValue = _selectedCustomFieldValues[field.id]?.toString();
+    final result = await showModalBottomSheet<String?>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (dialogContext) => _CustomFieldValueSelectionSheet(
+        fieldName: field.name,
+        options: field.selectOptions,
+        selectedValue: selectedValue,
+      ),
+    );
+
+    if (!mounted) {
+      return;
+    }
+
+    _setCustomFieldValue(field.id, result);
+  }
+
+  List<PaperlessDocumentCustomField>? _buildValidatedCustomFieldPayload(
+    List<PaperlessCustomField> definitions,
+  ) {
+    final definitionsById = <int, PaperlessCustomField>{
+      for (final definition in definitions) definition.id: definition,
+    };
+    final nextErrors = <int, String>{};
+    final payload = <PaperlessDocumentCustomField>[];
+
+    final sortedIds = _selectedCustomFieldValues.keys.toList(growable: false)
+      ..sort();
+    for (final fieldId in sortedIds) {
+      final definition = definitionsById[fieldId];
+      final rawValue = _selectedCustomFieldValues[fieldId];
+      final normalized = _normalizeCustomFieldValue(rawValue, definition);
+      if (normalized.error != null) {
+        nextErrors[fieldId] = normalized.error!;
+        continue;
+      }
+
+      payload.add(
+        PaperlessDocumentCustomField(field: fieldId, value: normalized.value),
+      );
+    }
+
+    if (nextErrors.isNotEmpty) {
+      setState(() {
+        _customFieldErrors = nextErrors;
+      });
+      return null;
+    }
+
+    if (_customFieldErrors.isNotEmpty) {
+      setState(() {
+        _customFieldErrors = <int, String>{};
+      });
+    }
+
+    return payload;
+  }
+
+  ({Object? value, String? error}) _normalizeCustomFieldValue(
+    Object? rawValue,
+    PaperlessCustomField? definition,
+  ) {
+    if (definition == null) {
+      if (rawValue is String && rawValue.trim().isEmpty) {
+        return (value: null, error: null);
+      }
+      return (value: rawValue, error: null);
+    }
+
+    final type = definition.dataType;
+    switch (type) {
+      case PaperlessCustomFieldDataType.boolean:
+        if (rawValue is bool) {
+          return (value: rawValue, error: null);
+        }
+        final text = rawValue?.toString().toLowerCase().trim();
+        if (text == null || text.isEmpty) {
+          return (value: null, error: null);
+        }
+        if (text == 'true' || text == 'yes' || text == '1') {
+          return (value: true, error: null);
+        }
+        if (text == 'false' || text == 'no' || text == '0') {
+          return (value: false, error: null);
+        }
+        return (value: null, error: context.l10n.customFieldBooleanError);
+      case PaperlessCustomFieldDataType.integer:
+        final text = rawValue?.toString().trim() ?? '';
+        if (text.isEmpty) {
+          return (value: null, error: null);
+        }
+        final normalizedText = _normalizeLocalizedNumericInput(
+          context,
+          text,
+          allowDecimal: false,
+        );
+        final parsed = int.tryParse(normalizedText);
+        if (parsed == null) {
+          return (value: null, error: context.l10n.customFieldIntegerError);
+        }
+        return (value: parsed, error: null);
+      case PaperlessCustomFieldDataType.float:
+        final text = rawValue?.toString().trim() ?? '';
+        if (text.isEmpty) {
+          return (value: null, error: null);
+        }
+        final normalizedText = _normalizeLocalizedNumericInput(context, text);
+        final parsed = double.tryParse(normalizedText);
+        if (parsed == null) {
+          return (value: null, error: context.l10n.customFieldFloatError);
+        }
+        return (value: parsed, error: null);
+      case PaperlessCustomFieldDataType.date:
+        final text = rawValue?.toString().trim() ?? '';
+        if (text.isEmpty) {
+          return (value: null, error: null);
+        }
+        if (DateTime.tryParse(text) == null) {
+          return (value: null, error: context.l10n.customFieldDateError);
+        }
+        return (value: text, error: null);
+      case PaperlessCustomFieldDataType.url:
+        final text = rawValue?.toString().trim() ?? '';
+        if (text.isEmpty) {
+          return (value: null, error: null);
+        }
+        final parsed = Uri.tryParse(text);
+        if (parsed == null || !parsed.hasScheme) {
+          return (value: null, error: context.l10n.customFieldUrlError);
+        }
+        return (value: text, error: null);
+      case PaperlessCustomFieldDataType.documentLink:
+        final text = rawValue?.toString().trim() ?? '';
+        if (text.isEmpty) {
+          return (value: <int>[], error: null);
+        }
+        final parts = text
+            .split(',')
+            .map((part) => part.trim())
+            .where((part) => part.isNotEmpty)
+            .toList(growable: false);
+        final ids = <int>[];
+        for (final part in parts) {
+          final id = int.tryParse(part);
+          if (id == null) {
+            return (
+              value: null,
+              error: context.l10n.customFieldDocumentLinkError,
+            );
+          }
+          ids.add(id);
+        }
+        return (value: ids, error: null);
+      case PaperlessCustomFieldDataType.select:
+        final text = rawValue?.toString().trim() ?? '';
+        if (text.isEmpty) {
+          return (value: null, error: null);
+        }
+        final exists = definition.selectOptions
+            .where((option) => option.id == text)
+            .isNotEmpty;
+        if (!exists) {
+          return (value: null, error: context.l10n.customFieldSelectError);
+        }
+        return (value: text, error: null);
+      case PaperlessCustomFieldDataType.monetary:
+        final monetaryValue = switch (rawValue) {
+          _MonetaryCustomFieldValue value => value,
+          _ => _parseMonetaryCustomFieldValue(
+            rawValue,
+            definition.defaultCurrency,
+          ),
+        };
+        final currency = monetaryValue.currency.trim().toUpperCase();
+        final amount = monetaryValue.amount.trim();
+        if (currency.isEmpty && amount.isEmpty) {
+          return (value: null, error: null);
+        }
+        if (amount.isEmpty) {
+          return (value: null, error: context.l10n.customFieldAmountError);
+        }
+        final normalizedAmount = _normalizeLocalizedNumericInput(
+          context,
+          amount,
+        );
+        if (double.tryParse(normalizedAmount) == null) {
+          return (value: null, error: context.l10n.customFieldMonetaryError);
+        }
+        final effectiveCurrency = currency.isNotEmpty
+            ? currency
+            : (definition.defaultCurrency ?? '').trim().toUpperCase();
+        if (effectiveCurrency.isEmpty) {
+          return (value: null, error: context.l10n.customFieldCurrencyError);
+        }
+        return (value: '$effectiveCurrency$normalizedAmount', error: null);
+      case PaperlessCustomFieldDataType.string:
+      case PaperlessCustomFieldDataType.longText:
+      case PaperlessCustomFieldDataType.unknown:
+        final text = rawValue?.toString() ?? '';
+        if (text.trim().isEmpty) {
+          return (value: null, error: null);
+        }
+        return (value: text.trim(), error: null);
+    }
+  }
+
   Future<void> _pickCreatedDate() async {
     final initialDate =
         DateTime.tryParse(_createdController.text.trim()) ??
@@ -1645,6 +2372,22 @@ class _EditDocumentMetadataPageState
       return;
     }
 
+    List<PaperlessCustomField> customFieldDefinitions;
+    try {
+      customFieldDefinitions = await ref.read(
+        customFieldDefinitionsProvider.future,
+      );
+    } catch (_) {
+      customFieldDefinitions = const <PaperlessCustomField>[];
+    }
+
+    final customFieldPayload = _buildValidatedCustomFieldPayload(
+      customFieldDefinitions,
+    );
+    if (customFieldPayload == null) {
+      return;
+    }
+
     setState(() {
       _isSaving = true;
     });
@@ -1659,6 +2402,7 @@ class _EditDocumentMetadataPageState
             correspondentId: _selectedCorrespondentId,
             documentTypeId: _selectedDocumentTypeId,
             tagIds: _selectedTagIds.toList(growable: false),
+            customFields: customFieldPayload,
           );
 
       ref.invalidate(documentDetailProvider(widget.document.id));
@@ -3191,6 +3935,194 @@ class _SingleOptionSelectionSheetState
   }
 }
 
+class _CustomFieldSelectionSheet extends StatefulWidget {
+  const _CustomFieldSelectionSheet({required this.availableFields});
+
+  final List<PaperlessCustomField> availableFields;
+
+  @override
+  State<_CustomFieldSelectionSheet> createState() =>
+      _CustomFieldSelectionSheetState();
+}
+
+class _CustomFieldSelectionSheetState
+    extends State<_CustomFieldSelectionSheet> {
+  late final TextEditingController _searchController;
+  String _query = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController = TextEditingController()
+      ..addListener(() {
+        setState(() {
+          _query = _searchController.text;
+        });
+      });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final l10n = context.l10n;
+    final normalizedQuery = _query.trim().toLowerCase();
+    final visibleFields =
+        widget.availableFields
+            .where((field) {
+              if (normalizedQuery.isEmpty) {
+                return true;
+              }
+
+              return field.name.toLowerCase().contains(normalizedQuery);
+            })
+            .toList(growable: false)
+          ..sort((left, right) => left.name.compareTo(right.name));
+
+    return SafeArea(
+      top: false,
+      child: SizedBox(
+        height: MediaQuery.sizeOf(context).height * 0.8,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                l10n.addCustomFieldTitle,
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _searchController,
+                decoration: InputDecoration(
+                  hintText: l10n.searchCustomFieldsHint,
+                  prefixIcon: const Icon(Icons.search),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Expanded(
+                child: visibleFields.isEmpty
+                    ? Center(
+                        child: Text(
+                          l10n.noCustomFieldsMatchSearch,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      )
+                    : ListView.builder(
+                        itemCount: visibleFields.length,
+                        itemBuilder: (context, index) {
+                          final field = visibleFields[index];
+                          return ListTile(
+                            title: Text(field.name),
+                            subtitle: Text(
+                              _customFieldTypeLabel(l10n, field.dataType),
+                            ),
+                            onTap: () => Navigator.of(context).pop(field.id),
+                          );
+                        },
+                      ),
+              ),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: Text(context.l10n.cancelAction),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CustomFieldValueSelectionSheet extends StatelessWidget {
+  const _CustomFieldValueSelectionSheet({
+    required this.fieldName,
+    required this.options,
+    required this.selectedValue,
+  });
+
+  final String fieldName;
+  final List<PaperlessCustomFieldSelectOption> options;
+  final String? selectedValue;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final l10n = context.l10n;
+
+    return SafeArea(
+      top: false,
+      child: SizedBox(
+        height: MediaQuery.sizeOf(context).height * 0.7,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                fieldName,
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 12),
+              ListTile(
+                leading: Icon(
+                  selectedValue == null
+                      ? Icons.radio_button_checked
+                      : Icons.radio_button_off,
+                ),
+                title: Text(l10n.customFieldNoValueOption),
+                onTap: () => Navigator.of(context).pop<String?>(null),
+              ),
+              const SizedBox(height: 6),
+              Expanded(
+                child: ListView.builder(
+                  itemCount: options.length,
+                  itemBuilder: (context, index) {
+                    final option = options[index];
+                    final selected = option.id == selectedValue;
+                    return ListTile(
+                      leading: Icon(
+                        selected
+                            ? Icons.radio_button_checked
+                            : Icons.radio_button_off,
+                      ),
+                      title: Text(option.label),
+                      onTap: () =>
+                          Navigator.of(context).pop<String?>(option.id),
+                    );
+                  },
+                ),
+              ),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton(
+                  onPressed: () => Navigator.of(context).pop(selectedValue),
+                  child: Text(context.l10n.cancelAction),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _TagSelectionSheetState extends State<_TagSelectionSheet> {
   late final TextEditingController _searchController;
   late List<PaperlessFilterOption> _tags;
@@ -3521,6 +4453,261 @@ class _ResolvedTagsRow extends StatelessWidget {
       ),
     );
   }
+}
+
+class _ResolvedCustomFieldsRows extends StatelessWidget {
+  const _ResolvedCustomFieldsRows({
+    required this.document,
+    required this.definitions,
+  });
+
+  final PaperlessDocument document;
+  final AsyncValue<List<PaperlessCustomField>> definitions;
+
+  @override
+  Widget build(BuildContext context) {
+    if (document.customFields.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return definitions.when(
+      data: (items) {
+        final namesById = <int, PaperlessCustomField>{
+          for (final field in items) field.id: field,
+        };
+
+        return Column(
+          children: [
+            for (final instance in document.customFields)
+              _MetadataInfoRow(
+                label:
+                    namesById[instance.field]?.name ??
+                    context.l10n.customFieldFallbackLabel(instance.field),
+                value: _formatCustomFieldValue(
+                  context,
+                  instance.value,
+                  namesById[instance.field],
+                ),
+              ),
+          ],
+        );
+      },
+      error: (error, stackTrace) => Column(
+        children: [
+          for (final instance in document.customFields)
+            _MetadataInfoRow(
+              label: context.l10n.customFieldFallbackLabel(instance.field),
+              value: _formatCustomFieldValue(context, instance.value, null),
+            ),
+        ],
+      ),
+      loading: () => _MetadataInfoRow(
+        label: context.l10n.customFieldsLabel,
+        value: context.l10n.loadingStatus,
+      ),
+    );
+  }
+}
+
+String _formatCustomFieldValue(
+  BuildContext context,
+  Object? value,
+  PaperlessCustomField? field,
+) {
+  if (value == null) {
+    return '';
+  }
+
+  if (field?.dataType == PaperlessCustomFieldDataType.select) {
+    final optionId = value.toString();
+    final option = field?.selectOptions
+        .where((item) => item.id == optionId)
+        .firstOrNull;
+    return option?.label ?? optionId;
+  }
+
+  if (field?.dataType == PaperlessCustomFieldDataType.boolean) {
+    if (value is bool) {
+      return value
+          ? context.l10n.customFieldBooleanTrue
+          : context.l10n.customFieldBooleanFalse;
+    }
+    final normalized = value.toString().toLowerCase();
+    if (normalized == 'true') {
+      return context.l10n.customFieldBooleanTrue;
+    }
+    if (normalized == 'false') {
+      return context.l10n.customFieldBooleanFalse;
+    }
+  }
+
+  if (field?.dataType == PaperlessCustomFieldDataType.monetary) {
+    final parsed = _parseMonetaryCustomFieldValue(
+      value,
+      field?.defaultCurrency,
+    );
+    final formattedAmount = _formatLocalizedNumericString(
+      context,
+      parsed.amount,
+    );
+    if (parsed.amount.trim().isEmpty && parsed.currency.trim().isEmpty) {
+      return '';
+    }
+    if (parsed.currency.trim().isEmpty) {
+      return formattedAmount;
+    }
+    if (formattedAmount.isEmpty) {
+      return parsed.currency.trim();
+    }
+    return '${parsed.currency.trim()} $formattedAmount';
+  }
+
+  if (field?.dataType == PaperlessCustomFieldDataType.integer ||
+      field?.dataType == PaperlessCustomFieldDataType.float) {
+    return _formatLocalizedNumericString(context, value.toString());
+  }
+
+  if (value is List) {
+    return value.map((item) => item.toString()).join(', ');
+  }
+
+  return value.toString();
+}
+
+String _customFieldTypeLabel(
+  AppLocalizations l10n,
+  PaperlessCustomFieldDataType type,
+) {
+  return switch (type) {
+    PaperlessCustomFieldDataType.string => l10n.customFieldTypeString,
+    PaperlessCustomFieldDataType.url => l10n.customFieldTypeUrl,
+    PaperlessCustomFieldDataType.date => l10n.customFieldTypeDate,
+    PaperlessCustomFieldDataType.boolean => l10n.customFieldTypeBoolean,
+    PaperlessCustomFieldDataType.integer => l10n.customFieldTypeInteger,
+    PaperlessCustomFieldDataType.float => l10n.customFieldTypeFloat,
+    PaperlessCustomFieldDataType.monetary => l10n.customFieldTypeMonetary,
+    PaperlessCustomFieldDataType.documentLink =>
+      l10n.customFieldTypeDocumentLink,
+    PaperlessCustomFieldDataType.select => l10n.customFieldTypeSelect,
+    PaperlessCustomFieldDataType.longText => l10n.customFieldTypeLongText,
+    PaperlessCustomFieldDataType.unknown => l10n.unknownLabel,
+  };
+}
+
+_MonetaryCustomFieldValue _parseMonetaryCustomFieldValue(
+  Object? value,
+  String? defaultCurrency,
+) {
+  if (value is _MonetaryCustomFieldValue) {
+    return value;
+  }
+
+  final raw = value?.toString().trim() ?? '';
+  if (raw.isEmpty) {
+    return _MonetaryCustomFieldValue(
+      currency: defaultCurrency ?? '',
+      amount: '',
+    );
+  }
+
+  final prefixedMoneyMatch = RegExp(
+    r'^([A-Za-z]{3})\s*([-+]?\d+(?:[\.,]\d+)?)$',
+  ).firstMatch(raw);
+  if (prefixedMoneyMatch != null) {
+    return _MonetaryCustomFieldValue(
+      currency: prefixedMoneyMatch.group(1)!.toUpperCase(),
+      amount: prefixedMoneyMatch.group(2)!,
+    );
+  }
+
+  return _MonetaryCustomFieldValue(
+    currency: defaultCurrency ?? '',
+    amount: raw,
+  );
+}
+
+class _MonetaryCustomFieldValue {
+  const _MonetaryCustomFieldValue({
+    required this.currency,
+    required this.amount,
+  });
+
+  final String currency;
+  final String amount;
+}
+
+String _formatLocalizedNumericString(BuildContext context, String rawValue) {
+  final trimmed = rawValue.trim();
+  if (trimmed.isEmpty) {
+    return '';
+  }
+
+  final normalized = trimmed.replaceAll(',', '.');
+  final parsed = double.tryParse(normalized);
+  if (parsed == null) {
+    return trimmed;
+  }
+
+  final decimalSeparatorIndex = normalized.indexOf('.');
+  final fractionDigits = decimalSeparatorIndex == -1
+      ? 0
+      : normalized.length - decimalSeparatorIndex - 1;
+
+  final formatter = NumberFormat.decimalPattern(context.localeName)
+    ..minimumFractionDigits = fractionDigits
+    ..maximumFractionDigits = fractionDigits;
+
+  return formatter.format(parsed);
+}
+
+String _normalizeLocalizedNumericInput(
+  BuildContext context,
+  String rawValue, {
+  bool allowDecimal = true,
+}) {
+  final trimmed = rawValue.trim();
+  if (trimmed.isEmpty) {
+    return '';
+  }
+
+  final symbols = NumberFormat.decimalPattern(context.localeName).symbols;
+  final decimalSeparator = symbols.DECIMAL_SEP;
+  final groupSeparator = symbols.GROUP_SEP;
+  final compact = trimmed.replaceAll('\u00a0', '').replaceAll(' ', '');
+
+  if (!allowDecimal) {
+    return compact
+        .replaceAll(groupSeparator, '')
+        .replaceAll(RegExp(r'[\.,]'), '');
+  }
+
+  if (compact.contains(',') && compact.contains('.')) {
+    final lastComma = compact.lastIndexOf(',');
+    final lastDot = compact.lastIndexOf('.');
+    final decimal = lastComma > lastDot ? ',' : '.';
+    final group = decimal == ',' ? '.' : ',';
+    return compact.replaceAll(group, '').replaceAll(decimal, '.');
+  }
+
+  if (compact.contains(decimalSeparator)) {
+    return compact
+        .replaceAll(groupSeparator, '')
+        .replaceAll(decimalSeparator, '.');
+  }
+
+  if (compact.contains(',') || compact.contains('.')) {
+    final separator = compact.contains(',') ? ',' : '.';
+    final separatorIndex = compact.lastIndexOf(separator);
+    final fractionLength = compact.length - separatorIndex - 1;
+    final looksLikeGrouping =
+        separator == groupSeparator && fractionLength == 3;
+    if (looksLikeGrouping) {
+      return compact.replaceAll(separator, '');
+    }
+    return compact.replaceAll(separator, '.');
+  }
+
+  return compact;
 }
 
 class _DetailSection extends StatelessWidget {

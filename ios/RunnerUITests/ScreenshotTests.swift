@@ -6,33 +6,25 @@ final class ScreenshotTests: XCTestCase {
     continueAfterFailure = false
   }
 
-  func testLoginScreen() {
+  func testCondensedDocumentsScreen() {
     captureScreenshot(
-      named: "01-login-screen",
-      scenario: .login,
-      authenticated: false
-    )
-  }
-
-  func testDocumentsScreen() {
-    captureScreenshot(
-      named: "02-document-list",
-      scenario: .documents,
+      named: "01-document-list-condensed",
+      scenario: .documentsList,
       authenticated: true
     )
   }
 
-  func testCondensedDocumentsScreen() {
+  func testDocumentsDrawerScreen() {
     captureScreenshot(
-      named: "03-document-list-condensed",
-      scenario: .documentsList,
+      named: "02-documents-drawer",
+      scenario: .documentsDrawer,
       authenticated: true
     )
   }
 
   func testDocumentsFiltersScreen() {
     captureScreenshot(
-      named: "04-filter-sort",
+      named: "03-filter-sort",
       scenario: .documentsFilters,
       authenticated: true
     )
@@ -40,32 +32,40 @@ final class ScreenshotTests: XCTestCase {
 
   func testDocumentDetailScreen() {
     captureScreenshot(
-      named: "05-document-detail",
+      named: "04-document-detail",
       scenario: .documentDetail,
+      authenticated: true
+    )
+  }
+
+  func testLoginScreen() {
+    captureScreenshot(
+      named: "05-login-screen",
+      scenario: .login,
+      authenticated: false
+    )
+  }
+
+  func testSettingsScreen() {
+    captureScreenshot(
+      named: "06-settings-screen",
+      scenario: .settings,
       authenticated: true
     )
   }
 
   func testDocumentMetadataEditScreen() {
     captureScreenshot(
-      named: "06-document-metadata-edit",
+      named: "07-document-metadata-edit",
       scenario: .documentMetadataEdit,
       authenticated: true
     )
   }
 
-  func testDocumentsDrawerScreen() {
+  func testDocumentsScreen() {
     captureScreenshot(
-      named: "07-documents-drawer",
-      scenario: .documentsDrawer,
-      authenticated: true
-    )
-  }
-
-  func testSettingsScreen() {
-    captureScreenshot(
-      named: "08-settings-screen",
-      scenario: .settings,
+      named: "08-document-list",
+      scenario: .documents,
       authenticated: true
     )
   }

@@ -7,6 +7,8 @@ Wichtige Funktionen:
 - Überblick über aktuelle Uploads und Dokumente mit Handlungsbedarf
 - Suche und Filter für Tags, Korrespondenten und Dokumenttypen
 - Anzeigen von Dokumentdetails und Bearbeiten von Metadaten
+- Benutzerdefinierte Dokumentfelder direkt in den Dokumentdetails anzeigen und bearbeiten
+- Geldbetrage schneller erfassen mit getrennten Feldern fur Wahrung und Betrag
 - Mehrere Dokumente gleichzeitig auswählen und in einem Schritt bearbeiten oder löschen
 - Anzeigen und Download der Originaldokumente
 - Papierdokumente mit der Kamera scannen und als PDF hochladen

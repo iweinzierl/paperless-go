@@ -1,0 +1,3 @@
+- Personalise your workflow with support for custom document fields.
+- Enter money values faster with separate currency and amount inputs.
+- Enjoy a cleaner, smoother document details editing experience.

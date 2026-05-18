@@ -8,6 +8,7 @@ import 'package:paperless_ngx_app/src/core/network/dio_provider.dart';
 import 'package:paperless_ngx_app/src/features/auth/domain/models/paperless_auth_session.dart';
 import 'package:paperless_ngx_app/src/features/auth/presentation/controllers/auth_session_controller.dart';
 import 'package:paperless_ngx_app/src/features/documents/data/query/paperless_saved_view_query_parameters.dart';
+import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_custom_field.dart';
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_document.dart';
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_document_page.dart';
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_filter_option.dart';
@@ -59,6 +60,7 @@ class DocumentsRepository {
     int? documentTypeId,
     int? storagePathId,
     required List<int> tagIds,
+    List<PaperlessDocumentCustomField>? customFields,
   }) async {
     final token = _requireAuthToken();
     final apiUri = Uri.parse(
@@ -73,6 +75,10 @@ class DocumentsRepository {
         'document_type': documentTypeId,
         'storage_path': storagePathId,
         'tags': tagIds,
+        if (customFields != null)
+          'custom_fields': customFields
+              .map((field) => field.toJson())
+              .toList(growable: false),
       },
       options: Options(
         headers: <String, Object>{'Authorization': 'Token $token'},
@@ -271,6 +277,10 @@ class DocumentsRepository {
     return _fetchFilterOptions(endpoint: 'storage_paths/');
   }
 
+  Future<List<PaperlessCustomField>> fetchCustomFieldDefinitions() {
+    return _fetchCustomFields(endpoint: 'custom_fields/');
+  }
+
   Future<List<PaperlessSavedView>> fetchSavedViews() async {
     final token = _requireAuthToken();
     final apiUri = Uri.parse(_session.serverUrl).resolve('api/saved_views/');
@@ -465,6 +475,37 @@ class DocumentsRepository {
           ),
         )
         .toList();
+  }
+
+  Future<List<PaperlessCustomField>> _fetchCustomFields({
+    required String endpoint,
+  }) async {
+    final token = _requireAuthToken();
+
+    final apiUri = Uri.parse(_session.serverUrl).resolve('api/$endpoint');
+    final response = await _dio.getUri(
+      apiUri.replace(
+        queryParameters: const <String, String>{
+          'page': '1',
+          'page_size': '1000',
+        },
+      ),
+      options: Options(
+        headers: <String, Object>{'Authorization': 'Token $token'},
+      ),
+    );
+
+    final payload = _asJsonMap(response.data);
+    final results = payload['results'] as List<dynamic>? ?? const <dynamic>[];
+
+    return results
+        .whereType<Map>()
+        .map(
+          (item) => PaperlessCustomField.fromJson(
+            item.map((key, value) => MapEntry(key.toString(), value)),
+          ),
+        )
+        .toList(growable: false);
   }
 
   Future<PaperlessFilterOption> _createFilterOption({

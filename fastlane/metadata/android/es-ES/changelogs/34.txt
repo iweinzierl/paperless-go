@@ -1,0 +1,3 @@
+- Personaliza mejor tu flujo de trabajo con campos personalizados en tus documentos.
+- Introduce importes más rápido con campos separados para moneda e importe.
+- Disfruta de una edición de detalles de documento más clara y fluida.

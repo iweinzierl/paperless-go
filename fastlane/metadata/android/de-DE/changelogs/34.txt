@@ -1,0 +1,3 @@
+- Passe deinen Workflow mit benutzerdefinierten Dokumentfeldern besser an.
+- Erfasse Geldbeträge schneller mit getrennten Feldern für Währung und Betrag.
+- Genieße eine klarere und flüssigere Bearbeitung der Dokumentdetails.

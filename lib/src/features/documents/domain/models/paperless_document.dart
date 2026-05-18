@@ -1,4 +1,5 @@
 import 'package:paperless_ngx_app/src/features/auth/domain/models/paperless_user_capabilities.dart';
+import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_custom_field.dart';
 
 class PaperlessDocument {
   const PaperlessDocument({
@@ -20,6 +21,7 @@ class PaperlessDocument {
     this.userCanChange,
     this.isSharedByRequester,
     this.tags = const <int>[],
+    this.customFields = const <PaperlessDocumentCustomField>[],
   });
 
   factory PaperlessDocument.fromJson(Map<String, dynamic> json) {
@@ -46,6 +48,15 @@ class PaperlessDocument {
       tags: (json['tags'] as List<dynamic>? ?? const <dynamic>[])
           .whereType<int>()
           .toList(),
+      customFields:
+          (json['custom_fields'] as List<dynamic>? ?? const <dynamic>[])
+              .whereType<Map>()
+              .map(
+                (item) => PaperlessDocumentCustomField.fromJson(
+                  item.map((key, value) => MapEntry(key.toString(), value)),
+                ),
+              )
+              .toList(growable: false),
     );
   }
 
@@ -67,6 +78,7 @@ class PaperlessDocument {
   final bool? userCanChange;
   final bool? isSharedByRequester;
   final List<int> tags;
+  final List<PaperlessDocumentCustomField> customFields;
 
   bool canBeChangedBy(PaperlessUserCapabilities capabilities) {
     if (!capabilities.hasPermission('change_document')) {

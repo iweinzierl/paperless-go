@@ -961,6 +961,142 @@ class AppLocalizationsDe extends AppLocalizations {
   String get tagDeleted => 'Tag gelöscht.';
 
   @override
+  String get customFieldsLabel => 'Benutzerdefinierte Felder';
+
+  @override
+  String get addCustomFieldAction => 'Feld hinzufügen';
+
+  @override
+  String get removeCustomFieldAction => 'Entfernen';
+
+  @override
+  String get noCustomFieldsAssigned =>
+      'Keine benutzerdefinierten Felder zugewiesen.';
+
+  @override
+  String get couldNotLoadCustomFields =>
+      'Benutzerdefinierte Felder konnten nicht geladen werden.';
+
+  @override
+  String get customFieldNoValueOption => 'Kein Wert';
+
+  @override
+  String get customFieldUrlHint => 'https://beispiel.de';
+
+  @override
+  String get customFieldDateHint => 'JJJJ-MM-TT';
+
+  @override
+  String get customFieldIntegerHint => 'Ganzzahlwert';
+
+  @override
+  String get customFieldFloatHint => 'Dezimalwert';
+
+  @override
+  String get customFieldMonetaryHint => 'EUR11.10';
+
+  @override
+  String get customFieldCurrencyHint => 'EUR';
+
+  @override
+  String get customFieldAmountHint => '11.10';
+
+  @override
+  String get customFieldDocumentLinkHint => 'Dokument-IDs durch Komma getrennt';
+
+  @override
+  String get customFieldLongTextHint => 'Langer Text';
+
+  @override
+  String get customFieldGenericHint => 'Wert';
+
+  @override
+  String get allCustomFieldsAlreadyAdded =>
+      'Alle benutzerdefinierten Felder sind bereits hinzugefügt.';
+
+  @override
+  String get customFieldBooleanError => 'Verwende true/false';
+
+  @override
+  String get customFieldIntegerError => 'Gib einen gültigen Ganzzahlwert ein';
+
+  @override
+  String get customFieldFloatError => 'Gib einen gültigen Dezimalwert ein';
+
+  @override
+  String get customFieldAmountError => 'Gib einen Betrag ein';
+
+  @override
+  String get customFieldCurrencyError => 'Gib eine Währung ein';
+
+  @override
+  String get customFieldMonetaryError => 'Gib einen gültigen Betrag ein';
+
+  @override
+  String get customFieldDateError => 'Verwende ein gültiges Datum (JJJJ-MM-TT)';
+
+  @override
+  String get customFieldUrlError => 'Gib eine gültige URL ein';
+
+  @override
+  String get customFieldDocumentLinkError =>
+      'Verwende Dokument-IDs durch Komma getrennt (z. B. 3,7)';
+
+  @override
+  String get customFieldSelectError => 'Wähle einen der verfügbaren Werte';
+
+  @override
+  String get addCustomFieldTitle => 'Benutzerdefiniertes Feld hinzufügen';
+
+  @override
+  String get searchCustomFieldsHint => 'Felder suchen';
+
+  @override
+  String get noCustomFieldsMatchSearch =>
+      'Keine benutzerdefinierten Felder entsprechen der Suche.';
+
+  @override
+  String customFieldFallbackLabel(int fieldId) {
+    return 'Feld #$fieldId';
+  }
+
+  @override
+  String get customFieldBooleanTrue => 'Ja';
+
+  @override
+  String get customFieldBooleanFalse => 'Nein';
+
+  @override
+  String get customFieldTypeString => 'Text';
+
+  @override
+  String get customFieldTypeUrl => 'URL';
+
+  @override
+  String get customFieldTypeDate => 'Datum';
+
+  @override
+  String get customFieldTypeBoolean => 'Boolean';
+
+  @override
+  String get customFieldTypeInteger => 'Ganzzahl';
+
+  @override
+  String get customFieldTypeFloat => 'Zahl';
+
+  @override
+  String get customFieldTypeMonetary => 'Währung';
+
+  @override
+  String get customFieldTypeDocumentLink => 'Dokumentverknüpfung';
+
+  @override
+  String get customFieldTypeSelect => 'Auswahl';
+
+  @override
+  String get customFieldTypeLongText => 'Langer Text';
+
+  @override
   String get couldNotLoadDocumentDetails =>
       'Die Dokumentdetails konnten nicht geladen werden.';
 

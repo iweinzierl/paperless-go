@@ -1,7 +1,4 @@
-- nuova modalità vista elenco per i documenti con layout a schede compatte
-- selezionare più documenti con una pressione prolungata
-- eliminare i documenti selezionati in un solo passaggio
-- nuova schermata di modifica in batch per aggiornare tag, corrispondenti, tipi di documento e percorsi di archiviazione di più documenti contemporaneamente
-- la schermata di modifica in batch precompila i valori comuni quando tutti i documenti selezionati condividono lo stesso corrispondente, tipo o percorso
-- toccare l'immagine di anteprima nella vista elenco media per attivare la selezione multipla
-- correzioni dell'interfaccia per dispositivi con schermi grandi
+- Ora puoi visualizzare e modificare i campi personalizzati direttamente nei dettagli del documento.
+- Inserisci gli importi più velocemente con campi separati per valuta e importo.
+- La formattazione dei numeri segue ora la lingua dell'app.
+- La modifica dei dettagli documento è più chiara e fluida.

@@ -1,7 +1,4 @@
-- new list view mode for document lists with a compact card layout
-- select multiple documents with a long-press gesture
-- delete selected documents in one step
-- new batch edit screen to update tags, correspondents, document types, and storage paths for multiple documents at once
-- batch edit screen pre-fills shared values when all selected documents have the same correspondent, type, or storage path
-- tap the preview image in medium-size list view to enter multi-selection mode
-- UI fixes for large-screen devices
+- View and edit custom fields directly in document details.
+- Enter money values faster with separate currency and amount fields.
+- Number formatting now follows your app language.
+- Document details editing is now smoother and clearer.

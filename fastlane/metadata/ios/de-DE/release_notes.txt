@@ -1,7 +1,4 @@
-- neuer Listenansichtsmodus für Dokumentlisten mit kompaktem Kartenlayout
-- mehrere Dokumente per langes Tippen auswählen
-- ausgewählte Dokumente in einem Schritt löschen
-- neuer Stapelbearbeitungs-Bildschirm zum gleichzeitigen Bearbeiten von Tags, Korrespondenten, Dokumenttypen und Ablagepfaden mehrerer Dokumente
-- Stapelbearbeitung füllt gemeinsame Werte automatisch vor, wenn alle ausgewählten Dokumente denselben Korrespondenten, Typ oder Ablagepfad teilen
-- Vorschaubild in der mittleren Listenansicht antippen, um die Mehrfachauswahl zu aktivieren
-- UI-Korrekturen für Geräte mit großen Bildschirmen
+- Benutzerdefinierte Felder kannst du jetzt direkt in den Dokumentdetails anzeigen und bearbeiten.
+- Geldbeträge lassen sich schneller eingeben, mit getrennten Feldern für Währung und Betrag.
+- Zahlen werden jetzt passend zur App-Sprache formatiert.
+- Die Bearbeitung der Dokumentdetails ist jetzt klarer und flüssiger.

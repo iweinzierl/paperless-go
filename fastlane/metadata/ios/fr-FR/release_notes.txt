@@ -1,7 +1,4 @@
-- nouveau mode vue liste pour les documents avec une mise en page en cartes compactes
-- sélectionner plusieurs documents avec un appui long
-- supprimer les documents sélectionnés en une seule étape
-- nouvel écran de modification par lot pour mettre à jour les étiquettes, correspondants, types de documents et chemins de stockage de plusieurs documents à la fois
-- l'écran de modification par lot pré-remplit les valeurs communes lorsque tous les documents sélectionnés partagent le même correspondant, type ou chemin
-- appuyer sur l'image d'aperçu en mode liste taille moyenne pour activer la sélection multiple
-- corrections d'interface pour les appareils à grand écran
+- Affichez et modifiez les champs personnalisés directement dans les détails du document.
+- Saisissez les montants plus vite grâce à des champs séparés pour la devise et le montant.
+- Le format des nombres suit désormais la langue de l'application.
+- La modification des détails du document est plus fluide et plus claire.
