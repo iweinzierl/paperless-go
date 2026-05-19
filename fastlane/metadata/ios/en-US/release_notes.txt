@@ -1,4 +1,1 @@
-- View and edit custom fields directly in document details.
-- Enter money values faster with separate currency and amount fields.
-- Number formatting now follows your app language.
-- Document details editing is now smoother and clearer.
+- Filter documents by creation date to find what you need faster.
