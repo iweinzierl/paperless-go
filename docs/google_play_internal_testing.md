@@ -169,6 +169,23 @@ You can also limit a run to a specific screenshot bucket or locale. For example,
 
 Supported `device_type` values are `phone` and `tenInch`.
 
+You can also re-create only specific screenshots without clearing the rest of the generated set. Pass the stable screenshot file names through `screenshots:`:
+
+```bash
+./scripts/android/run_fastlane.sh screenshots screenshots:"03-filter-sort,06-settings-screen"
+```
+
+Supported Android screenshot names:
+
+- `01-document-list-condensed`
+- `02-documents-drawer`
+- `03-filter-sort`
+- `04-document-detail`
+- `05-login-screen`
+- `06-settings-screen`
+- `07-document-metadata-edit`
+- `08-document-list-large`
+
 ### Validate the upload without publishing it
 
 ```bash

@@ -137,6 +137,23 @@ All commands are run from the project root.
 
 This lane uses `snapshot`, captures both the 6.3-inch and 6.5-inch iPhone App Store screenshot sets, normalizes the generated files into the Android-style layout under `fastlane/metadata/ios/<locale>/images/phoneScreenshots/`, and writes an HTML report to `fastlane/metadata/ios/screenshots.html`.
 
+To re-create only specific screenshots without clearing the rest of the generated set, pass a comma-separated `screenshots:` filter with the stable screenshot names:
+
+```bash
+./scripts/ios/run_fastlane.sh screenshots screenshots:"03-filter-sort,06-settings-screen"
+```
+
+Supported iOS screenshot names:
+
+- `01-document-list-condensed`
+- `02-documents-drawer`
+- `03-filter-sort`
+- `04-document-detail`
+- `05-login-screen`
+- `06-settings-screen`
+- `07-document-metadata-edit`
+- `08-document-list`
+
 ### Upload App Store metadata and screenshots
 
 ```bash

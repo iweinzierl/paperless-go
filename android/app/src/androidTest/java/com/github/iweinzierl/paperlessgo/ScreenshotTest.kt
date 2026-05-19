@@ -8,6 +8,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiDevice
 import java.io.File
+import org.junit.Assume.assumeTrue
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -26,6 +27,14 @@ class ScreenshotTest {
     private val launchArguments = InstrumentationRegistry.getArguments()
     private val targetContext: Context = instrumentation.targetContext
     private val device: UiDevice = UiDevice.getInstance(instrumentation)
+    private val requestedScreenshotNames: Set<String>? by lazy {
+        optionalLaunchArgument("paperlessScreenshotNames")
+            ?.split(',')
+            ?.map { it.trim() }
+            ?.filter { it.isNotEmpty() }
+            ?.toSet()
+            ?.takeIf { it.isNotEmpty() }
+    }
 
     @get:Rule
     val localeTestRule = LocaleTestRule()
@@ -42,6 +51,7 @@ class ScreenshotTest {
 
     @Test
     fun captureCondensedDocumentsScreen() {
+        skipUnlessRequested("01-document-list-condensed")
         writeScenario(ScreenshotScenario.DOCUMENTS_LIST, authenticated = true)
 
         launchMainActivity().use {
@@ -52,6 +62,7 @@ class ScreenshotTest {
 
     @Test
     fun captureDocumentsDrawerScreen() {
+        skipUnlessRequested("02-documents-drawer")
         writeScenario(ScreenshotScenario.DOCUMENTS_DRAWER, authenticated = true)
 
         launchMainActivity().use {
@@ -62,6 +73,7 @@ class ScreenshotTest {
 
     @Test
     fun captureDocumentsFiltersScreen() {
+        skipUnlessRequested("03-filter-sort")
         writeScenario(ScreenshotScenario.DOCUMENTS_FILTERS, authenticated = true)
 
         launchMainActivity().use {
@@ -72,6 +84,7 @@ class ScreenshotTest {
 
     @Test
     fun captureDocumentDetailScreen() {
+        skipUnlessRequested("04-document-detail")
         writeScenario(ScreenshotScenario.DOCUMENT_DETAIL, authenticated = true)
 
         launchMainActivity().use {
@@ -82,6 +95,7 @@ class ScreenshotTest {
 
     @Test
     fun captureLoginScreen() {
+        skipUnlessRequested("05-login-screen")
         writeScenario(ScreenshotScenario.LOGIN, authenticated = false)
 
         launchMainActivity().use {
@@ -92,6 +106,7 @@ class ScreenshotTest {
 
     @Test
     fun captureSettingsScreen() {
+        skipUnlessRequested("06-settings-screen")
         writeScenario(ScreenshotScenario.SETTINGS, authenticated = true)
 
         launchMainActivity().use {
@@ -102,6 +117,7 @@ class ScreenshotTest {
 
     @Test
     fun captureDocumentMetadataEditScreen() {
+        skipUnlessRequested("07-document-metadata-edit")
         writeScenario(ScreenshotScenario.DOCUMENT_METADATA_EDIT, authenticated = true)
 
         launchMainActivity().use {
@@ -112,6 +128,7 @@ class ScreenshotTest {
 
     @Test
     fun captureDocumentsScreen() {
+        skipUnlessRequested("08-document-list-large")
         writeScenario(ScreenshotScenario.DOCUMENTS, authenticated = true)
 
         launchMainActivity().use {
@@ -212,6 +229,13 @@ class ScreenshotTest {
     private fun optionalLaunchArgument(name: String): String? {
         val value = launchArguments.getString(name)?.trim()
         return value?.takeIf { it.isNotEmpty() }
+    }
+
+    private fun skipUnlessRequested(name: String) {
+        assumeTrue(
+            "Skipping screenshot '$name' because it is not part of the requested filtered run.",
+            requestedScreenshotNames?.contains(name) != false,
+        )
     }
 
     private fun appLanguageForLocale(): String {

@@ -77,6 +77,10 @@ final class ScreenshotTests: XCTestCase {
   ) {
     let app = XCUIApplication()
     setupSnapshot(app)
+    guard shouldCaptureScreenshot(named: name, for: app) else {
+      NSLog("paperless-screenshot skip name=%@", name)
+      return
+    }
     configure(app, scenario: scenario, authenticated: authenticated)
     app.launch()
     configureDeviceOrientation()
@@ -221,6 +225,30 @@ final class ScreenshotTests: XCTestCase {
     }
 
     return values
+  }
+
+  private func selectedScreenshotNames(for app: XCUIApplication) -> Set<String>? {
+    let configuredValue = screenshotSetting(
+      named: "PAPERLESS_SCREENSHOT_NAMES",
+      environment: ProcessInfo.processInfo.environment,
+      launchArguments: screenshotLaunchArguments(for: app),
+      fileConfiguration: screenshotConfigurationFromFile()
+    )
+
+    let names = configuredValue?
+      .split(separator: ",")
+      .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+      .filter { !$0.isEmpty } ?? []
+
+    return names.isEmpty ? nil : Set(names)
+  }
+
+  private func shouldCaptureScreenshot(named name: String, for app: XCUIApplication) -> Bool {
+    guard let selectedNames = selectedScreenshotNames(for: app) else {
+      return true
+    }
+
+    return selectedNames.contains(name)
   }
 
   private func screenshotConfigurationFromFile() -> [String: String] {

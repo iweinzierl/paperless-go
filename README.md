@@ -79,6 +79,8 @@ Android and iOS screenshot lanes can now run against a live demo server instead 
 2. Set `PAPERLESS_SCREENSHOT_DATA_SOURCE=live` together with `PAPERLESS_SCREENSHOT_SERVER_URL`, `PAPERLESS_SCREENSHOT_USERNAME`, and `PAPERLESS_SCREENSHOT_PASSWORD`.
 3. Run `./scripts/android/run_fastlane.sh screenshots` for Play Store screenshots or `./scripts/ios/run_fastlane.sh screenshots` for App Store screenshots.
 
+To re-create only specific screenshots, pass a comma-separated `screenshots:` filter with the stable screenshot file names, for example `./scripts/android/run_fastlane.sh screenshots screenshots:"03-filter-sort,06-settings-screen"`.
+
 The local `scripts/screenshot-env.sh` file is ignored by git and is sourced automatically by both Fastlane wrapper scripts.
 
 ## Tech Stack

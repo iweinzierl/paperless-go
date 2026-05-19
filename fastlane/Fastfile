@@ -26,6 +26,26 @@ IOS_SCREENSHOTS_UPLOAD_DIRECTORY = File.expand_path("../build/fastlane/ios-scree
 IOS_PROJECT_FILE = File.expand_path("../ios/Runner.xcodeproj/project.pbxproj", FASTLANE_DIR)
 IOS_SCREENSHOT_LANGUAGES = ["de-DE", "en-GB", "en-US", "es-ES", "fr-FR", "it-IT"].freeze
 IOS_SCREENSHOT_SCENARIO_COUNT = 8
+ANDROID_CAPTURED_SCREENSHOT_NAMES = [
+  "01-document-list-condensed",
+  "02-documents-drawer",
+  "03-filter-sort",
+  "04-document-detail",
+  "05-login-screen",
+  "06-settings-screen",
+  "07-document-metadata-edit",
+  "08-document-list-large",
+].freeze
+IOS_CAPTURED_SCREENSHOT_NAMES = [
+  "01-document-list-condensed",
+  "02-documents-drawer",
+  "03-filter-sort",
+  "04-document-detail",
+  "05-login-screen",
+  "06-settings-screen",
+  "07-document-metadata-edit",
+  "08-document-list",
+].freeze
 ANDROID_SCREENSHOT_TARGETS = [
   {
     description: "phone",
@@ -207,10 +227,54 @@ def ensure_live_screenshot_configuration!(platform_name)
   )
 end
 
-def android_screengrab_launch_arguments
+def requested_screenshot_names(options, known_names:, platform_name:)
+  raw_values = [:screenshots, :only_screenshots]
+    .flat_map do |key|
+      value = options[key]
+      case value
+      when nil
+        []
+      when Array
+        value
+      else
+        value.to_s.split(",")
+      end
+    end
+    .map(&:to_s)
+    .map(&:strip)
+    .reject(&:empty?)
+    .uniq
+
+  return nil if raw_values.empty?
+
+  unknown_values = raw_values - known_names
+  unless unknown_values.empty?
+    UI.user_error!(
+      "Unsupported #{platform_name} screenshot name(s): #{unknown_values.join(", ")}. Supported values: #{known_names.join(", ")}",
+    )
+  end
+
+  raw_values
+end
+
+def clear_selected_screenshots!(root_path:, screenshot_names:)
+  return if screenshot_names.nil? || screenshot_names.empty?
+
+  screenshot_names.each do |screenshot_name|
+    Dir[File.join(root_path, "*", "images", "*", "#{screenshot_name}.png")].each do |file_path|
+      FileUtils.rm_f(file_path)
+    end
+  end
+end
+
+def android_screengrab_launch_arguments(selected_screenshot_names = nil)
   arguments = [
     "paperlessScreenshotDataSource #{Shellwords.escape(screenshot_data_source)}",
   ]
+
+  unless selected_screenshot_names.nil? || selected_screenshot_names.empty?
+    arguments << "paperlessScreenshotNames #{Shellwords.escape(selected_screenshot_names.join(','))}"
+  end
 
   return arguments unless live_screenshot_data_source?
 
@@ -222,11 +286,18 @@ def android_screengrab_launch_arguments
   arguments
 end
 
-def ios_snapshot_launch_arguments
+def ios_snapshot_launch_arguments(selected_screenshot_names = nil)
   arguments = [
     "-PAPERLESS_SCREENSHOT_DATA_SOURCE",
     screenshot_data_source,
   ]
+
+  unless selected_screenshot_names.nil? || selected_screenshot_names.empty?
+    arguments.concat([
+      "-PAPERLESS_SCREENSHOT_NAMES",
+      selected_screenshot_names.join(","),
+    ])
+  end
 
   return arguments unless live_screenshot_data_source?
 
@@ -1280,6 +1351,11 @@ platform :android do
   desc "Build screenshot artifacts and capture Play Store screenshots with Screengrab"
   lane :screenshots do |options|
     ensure_live_screenshot_configuration!("Android")
+    selected_screenshot_names = requested_screenshot_names(
+      options,
+      known_names: ANDROID_CAPTURED_SCREENSHOT_NAMES,
+      platform_name: "Android",
+    )
 
     connected_devices = android_connected_devices
     if connected_devices.empty?
@@ -1295,6 +1371,19 @@ platform :android do
       )
     end
     requested_locales = android_requested_locales(options)
+    clear_previous_screenshots = if options.key?(:clear_previous_screenshots)
+      options[:clear_previous_screenshots]
+    else
+      selected_screenshot_names.nil?
+    end
+
+    unless selected_screenshot_names.nil?
+      UI.message("Filtering Android screenshots to #{selected_screenshot_names.join(', ')}.")
+      clear_selected_screenshots!(
+        root_path: File.expand_path("metadata/android", FASTLANE_DIR),
+        screenshot_names: selected_screenshot_names,
+      ) unless clear_previous_screenshots
+    end
 
     gradle(
       project_dir: "android",
@@ -1313,10 +1402,10 @@ platform :android do
 
       screengrab_options = {
         device_type: target[:device_type],
-        clear_previous_screenshots: index.zero?,
+        clear_previous_screenshots: index.zero? && clear_previous_screenshots,
         skip_open_summary: index < screenshot_targets.length - 1,
         reinstall_app: true,
-        launch_arguments: android_screengrab_launch_arguments,
+        launch_arguments: android_screengrab_launch_arguments(selected_screenshot_names),
       }
       screengrab_options[:locales] = requested_locales unless requested_locales.nil?
       screengrab_options[:specific_device] = target[:specific_device] unless target[:specific_device].nil?
@@ -1366,6 +1455,11 @@ platform :ios do
     configure_ios_build_environment
     ensure_ios_screenshot_setup!(options)
     ensure_live_screenshot_configuration!("iOS")
+    selected_screenshot_names = requested_screenshot_names(
+      options,
+      known_names: IOS_CAPTURED_SCREENSHOT_NAMES,
+      platform_name: "iOS",
+    )
     patch_snapshot_destination_generation!
     patch_snapshot_boot_wait!
     FileUtils.mkdir_p(IOS_SNAPSHOT_BUILDLOG_DIRECTORY)
@@ -1381,13 +1475,24 @@ platform :ios do
     snapshot_scheme = options[:scheme] || ENV["IOS_SNAPSHOT_SCHEME"] || "RunnerScreenshots"
     snapshot_devices = options[:devices] ? Array(options[:devices]) : ios_default_screenshot_devices
     snapshot_languages = options[:languages] ? Array(options[:languages]) : ios_default_screenshot_languages
-    expected_screenshot_count = snapshot_devices.length * snapshot_languages.length * IOS_SCREENSHOT_SCENARIO_COUNT
-    clear_previous_screenshots = options.key?(:clear_previous_screenshots) ? options[:clear_previous_screenshots] : true
+    scenario_count = selected_screenshot_names&.length || IOS_SCREENSHOT_SCENARIO_COUNT
+    expected_screenshot_count = snapshot_devices.length * snapshot_languages.length * scenario_count
+    clear_previous_screenshots = if options.key?(:clear_previous_screenshots)
+      options[:clear_previous_screenshots]
+    else
+      selected_screenshot_names.nil?
+    end
 
     if clear_previous_screenshots
       clear_ios_snapshot_staging!(IOS_SNAPSHOT_STAGING_ROOT)
       clear_ios_structured_screenshots!(IOS_SCREENSHOTS_DIRECTORY)
       UI.message("Cleared previous iOS screenshot staging and structured output before starting a new capture run.")
+    elsif !selected_screenshot_names.nil?
+      clear_selected_screenshots!(
+        root_path: IOS_SCREENSHOTS_DIRECTORY,
+        screenshot_names: selected_screenshot_names,
+      )
+      UI.message("Filtering iOS screenshots to #{selected_screenshot_names.join(', ')}.")
     end
 
     FileUtils.mkdir_p(raw_output_directory)
@@ -1406,7 +1511,7 @@ platform :ios do
       stop_after_first_error: options.key?(:stop_after_first_error) ? options[:stop_after_first_error] : true,
       concurrent_simulators: options.key?(:concurrent_simulators) ? options[:concurrent_simulators] : false,
       skip_open_summary: true,
-      launch_arguments: options[:launch_arguments] ? Array(options[:launch_arguments]) : [ios_snapshot_launch_arguments.shelljoin],
+      launch_arguments: options[:launch_arguments] ? Array(options[:launch_arguments]) : [ios_snapshot_launch_arguments(selected_screenshot_names).shelljoin],
       buildlog_path: options[:buildlog_path] ? File.expand_path(options[:buildlog_path], PROJECT_ROOT) : IOS_SNAPSHOT_BUILDLOG_DIRECTORY,
     }
     snapshot_options[:devices] = snapshot_devices
