@@ -1272,10 +1272,22 @@ class _EditDocumentMetadataPageState
                     ),
             ),
             const SizedBox(width: 12),
-            _EditSquareActionButton(
-              icon: Icons.add_rounded,
-              onTap: _isBusy ? null : () => _openTagSelection(items),
-              isLoading: false,
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _EditSquareActionButton(
+                  icon: Icons.add_rounded,
+                  onTap: _isBusy ? null : () => _openTagSelection(items),
+                  isLoading: false,
+                ),
+                if (selectedTags.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  TextButton(
+                    onPressed: _isBusy ? null : _clearAllTags,
+                    child: Text(l10n.clearAction),
+                  ),
+                ],
+              ],
             ),
           ],
         ),
@@ -1375,10 +1387,20 @@ class _EditDocumentMetadataPageState
   ) {
     return _EditFieldSection(
       label: l10n.tagsLabel,
-      trailing: TextButton.icon(
-        onPressed: _isBusy ? null : _createTag,
-        icon: const Icon(Icons.add_rounded),
-        label: Text(l10n.newTagAction),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (_selectedTagIds.isNotEmpty)
+            TextButton(
+              onPressed: _isBusy ? null : _clearAllTags,
+              child: Text(l10n.clearAction),
+            ),
+          TextButton.icon(
+            onPressed: _isBusy ? null : _createTag,
+            icon: const Icon(Icons.add_rounded),
+            label: Text(l10n.newTagAction),
+          ),
+        ],
       ),
       child: tags.when(
         data: (items) => Column(
@@ -2126,6 +2148,12 @@ class _EditDocumentMetadataPageState
   void _removeSelectedTag(int tagId) {
     setState(() {
       _selectedTagIds = <int>{..._selectedTagIds}..remove(tagId);
+    });
+  }
+
+  void _clearAllTags() {
+    setState(() {
+      _selectedTagIds = <int>{};
     });
   }
 
