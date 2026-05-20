@@ -1424,6 +1424,18 @@ abstract class AppLocalizations {
   /// **'Document details'**
   String get documentDetailsTitle;
 
+  /// No description provided for @previousDocumentTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous document'**
+  String get previousDocumentTooltip;
+
+  /// No description provided for @nextDocumentTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Next document'**
+  String get nextDocumentTooltip;
+
   /// No description provided for @editMetadataAction.
   ///
   /// In en, this message translates to:

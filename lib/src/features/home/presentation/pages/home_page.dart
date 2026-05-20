@@ -12,6 +12,8 @@ import 'package:paperless_ngx_app/src/features/app_shell/presentation/widgets/ap
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_document.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/models/documents_layout_mode.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/pages/batch_document_edit_page.dart';
+import 'package:paperless_ngx_app/src/features/documents/domain/models/document_carousel_source.dart';
+import 'package:paperless_ngx_app/src/features/documents/presentation/pages/document_carousel_page.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/pages/document_detail_page.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/providers/document_delete_controller.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/providers/document_open_controller.dart';
@@ -486,6 +488,7 @@ class _RecentUploadsTabState extends ConsumerState<_RecentUploadsTab> {
                                         context,
                                         ref,
                                         document,
+                                        filteredDocuments,
                                       );
                                     }
                                   },
@@ -535,6 +538,7 @@ class _RecentUploadsTabState extends ConsumerState<_RecentUploadsTab> {
                                               context,
                                               ref,
                                               document,
+                                              filteredDocuments,
                                             );
                                           }
                                         },
@@ -576,6 +580,7 @@ class _RecentUploadsTabState extends ConsumerState<_RecentUploadsTab> {
                                         context,
                                         ref,
                                         document,
+                                        filteredDocuments,
                                       );
                                     }
                                   },
@@ -727,11 +732,18 @@ class _RecentUploadsTabState extends ConsumerState<_RecentUploadsTab> {
     BuildContext context,
     WidgetRef ref,
     PaperlessDocument document,
+    List<PaperlessDocument> visibleDocuments,
   ) {
     ref.read(recentlyOpenedDocumentsProvider.notifier).record(document);
+    final documentIds = visibleDocuments.map((d) => d.id).toList();
+    final index = documentIds.indexOf(document.id);
     Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (context) => DocumentDetailPage(documentId: document.id),
+        builder: (context) => DocumentCarouselPage(
+          documentIds: documentIds,
+          initialIndex: index >= 0 ? index : 0,
+          source: const RecentUploadsSource(),
+        ),
       ),
     );
   }

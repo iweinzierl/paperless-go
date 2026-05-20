@@ -18,6 +18,8 @@ import 'package:paperless_ngx_app/src/features/documents/presentation/models/doc
 import 'package:paperless_ngx_app/src/features/documents/presentation/models/documents_layout_mode.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/models/documents_sort_option.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/pages/batch_document_edit_page.dart';
+import 'package:paperless_ngx_app/src/features/documents/domain/models/document_carousel_source.dart';
+import 'package:paperless_ngx_app/src/features/documents/presentation/pages/document_carousel_page.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/pages/document_detail_page.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/providers/document_delete_controller.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/pages/documents_filters_page.dart';
@@ -980,9 +982,23 @@ class _DocumentsList extends ConsumerWidget {
     if (isWideScreen) {
       ref.read(selectedDocumentIdProvider.notifier).state = document.id;
     } else {
+      final documentIds = page.results.map((d) => d.id).toList();
+      final index = documentIds.indexOf(document.id);
+      final source = DocumentListSource(
+        searchQuery: ref.read(documentsSearchQueryProvider),
+        ordering: ref.read(documentsOrderingProvider),
+        filters: ref.read(documentsFilterStateProvider),
+        activeSavedView: ref.read(activeSavedViewProvider),
+        currentServerPage: ref.read(documentsCurrentPageProvider),
+        totalCount: page.count,
+      );
       Navigator.of(context).push(
         MaterialPageRoute<void>(
-          builder: (context) => DocumentDetailPage(documentId: document.id),
+          builder: (context) => DocumentCarouselPage(
+            documentIds: documentIds,
+            initialIndex: index >= 0 ? index : 0,
+            source: source,
+          ),
         ),
       );
     }

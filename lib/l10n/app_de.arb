@@ -238,6 +238,8 @@
   "supportSummaryCopied": "Support-Zusammenfassung kopiert.",
   "unknownLabel": "unbekannt",
   "documentDetailsTitle": "Dokumentdetails",
+  "previousDocumentTooltip": "Vorheriges Dokument",
+  "nextDocumentTooltip": "Nächstes Dokument",
   "editMetadataAction": "Metadaten bearbeiten",
   "openDocumentAction": "Dokument öffnen",
   "openOriginalAction": "Original öffnen",

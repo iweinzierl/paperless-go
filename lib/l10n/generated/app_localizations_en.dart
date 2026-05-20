@@ -766,6 +766,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get documentDetailsTitle => 'Document details';
 
   @override
+  String get previousDocumentTooltip => 'Previous document';
+
+  @override
+  String get nextDocumentTooltip => 'Next document';
+
+  @override
   String get editMetadataAction => 'Edit metadata';
 
   @override

@@ -304,6 +304,8 @@
   "supportSummaryCopied": "Support summary copied.",
   "unknownLabel": "unknown",
   "documentDetailsTitle": "Document details",
+  "previousDocumentTooltip": "Previous document",
+  "nextDocumentTooltip": "Next document",
   "editMetadataAction": "Edit metadata",
   "openDocumentAction": "Open document",
   "openOriginalAction": "Open original",

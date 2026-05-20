@@ -777,6 +777,12 @@ class AppLocalizationsFr extends AppLocalizations {
   String get documentDetailsTitle => 'Détails du document';
 
   @override
+  String get previousDocumentTooltip => 'Document précédent';
+
+  @override
+  String get nextDocumentTooltip => 'Document suivant';
+
+  @override
   String get editMetadataAction => 'Modifier les métadonnées';
 
   @override

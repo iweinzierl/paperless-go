@@ -238,6 +238,8 @@
   "supportSummaryCopied": "Riepilogo supporto copiato.",
   "unknownLabel": "sconosciuto",
   "documentDetailsTitle": "Dettagli documento",
+  "previousDocumentTooltip": "Documento precedente",
+  "nextDocumentTooltip": "Documento successivo",
   "editMetadataAction": "Modifica metadati",
   "openDocumentAction": "Apri documento",
   "openOriginalAction": "Apri originale",
