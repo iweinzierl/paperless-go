@@ -1,1 +1,2 @@
-- Filter documents by creation date to find what you need faster.
+- Navigate to the previous or next document directly from the detail screen.
+- Clear all tags in one tap while editing a document.
