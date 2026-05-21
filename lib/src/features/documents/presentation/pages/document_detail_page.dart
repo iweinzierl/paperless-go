@@ -2085,7 +2085,7 @@ class _EditDocumentMetadataPageState
         return (value: text, error: null);
       case PaperlessCustomFieldDataType.monetary:
         final monetaryValue = switch (rawValue) {
-          _MonetaryCustomFieldValue value => value,
+          final _MonetaryCustomFieldValue value => value,
           _ => _parseMonetaryCustomFieldValue(
             rawValue,
             definition.defaultCurrency,
