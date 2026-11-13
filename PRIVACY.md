@@ -4,7 +4,7 @@ Paperless Go is a mobile client for self-hosted paperless-ngx instances.
 
 ## Data We Process
 
-Paperless Go stores the server URL, username, and password you enter so the app can sign in to your paperless-ngx server. If you sign in with an API token instead, the app stores the API token you enter.
+Paperless Go stores the server URL, username, and password you enter so the app can sign in to your paperless-ngx server. If you sign in with an API token instead, the app stores the API token you enter. The authentication token, including an API token you enter, is kept in the device's secure storage (the Keychain on iOS, Keystore-protected storage on Android).
 
 When you use the app, it processes the document metadata, files, and images provided by your own paperless-ngx server so you can browse, search, edit, and upload documents.
 
