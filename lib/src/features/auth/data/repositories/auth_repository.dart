@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:paperless_ngx_app/src/core/network/dio_provider.dart';
 import 'package:paperless_ngx_app/src/features/auth/data/remote/models/paperless_auth_token_request.dart';
 import 'package:paperless_ngx_app/src/features/auth/data/remote/models/paperless_auth_token_response.dart';
+import 'package:paperless_ngx_app/src/features/auth/domain/models/paperless_auth_method.dart';
 import 'package:paperless_ngx_app/src/features/auth/domain/models/paperless_auth_session.dart';
 import 'package:paperless_ngx_app/src/features/auth/domain/models/paperless_user_capabilities.dart';
 import 'package:paperless_ngx_app/src/features/auth/domain/models/paperless_user_profile.dart';
@@ -37,6 +38,30 @@ class AuthRepository {
         password: password,
         authToken: tokenResponse.token,
         displayName: profile.displayName,
+        method: PaperlessAuthMethod.password,
+      );
+    } on DioException catch (error) {
+      throw _messageFromError(error);
+    }
+  }
+
+  Future<PaperlessAuthSession> signInWithToken({
+    required String serverUrl,
+    required String token,
+  }) async {
+    final normalizedServerUrl = normalizePaperlessBaseUrl(serverUrl);
+    final apiBaseUri = buildPaperlessApiBaseUri(normalizedServerUrl);
+
+    try {
+      final profile = await _getProfile(apiBaseUri, token);
+
+      return PaperlessAuthSession(
+        serverUrl: normalizedServerUrl,
+        username: profile.username,
+        password: '',
+        authToken: token,
+        displayName: profile.displayName,
+        method: PaperlessAuthMethod.token,
       );
     } on DioException catch (error) {
       throw _messageFromError(error);
