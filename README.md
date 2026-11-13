@@ -17,7 +17,7 @@ Paperless Go is a Flutter mobile client for [paperless-ngx](https://github.com/p
 
 ### Authentication and session handling
 
-The app signs in against your paperless-ngx API and stores the connection details locally on your device so you can reconnect quickly. It includes optional biometric protection for reopening the app after it has been in the background.
+The app signs in against your paperless-ngx API and stores the connection details locally on your device so you can reconnect quickly. It includes optional biometric protection for reopening the app after it has been in the background. Accounts with MFA enabled can enter the one-time code from their authenticator app at login, or sign in with an API token instead.
 
 ### Document library
 
