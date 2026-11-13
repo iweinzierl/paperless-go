@@ -34,6 +34,57 @@ void main() {
     });
   });
 
+  group('AuthRepository.signIn', () {
+    Future<RequestOptions> signInAndCaptureTokenRequest({String? code}) async {
+      final dio = Dio();
+      final adapter = _FakeHttpClientAdapter();
+      dio.httpClientAdapter = adapter;
+
+      adapter.enqueueJson(body: <String, Object?>{'token': 'token-123'});
+      adapter.enqueueJson(
+        body: <String, Object?>{
+          'username': 'u',
+          'first_name': 'Jane',
+          'last_name': 'Doe',
+        },
+      );
+
+      final session = await AuthRepository(dio).signIn(
+        serverUrl: 'https://example.com',
+        username: 'u',
+        password: 'p',
+        code: code,
+      );
+
+      expect(session.authToken, 'token-123');
+      return adapter.requests.first;
+    }
+
+    test('sends a trimmed MFA code with the token request', () async {
+      final request = await signInAndCaptureTokenRequest(code: ' 123456 ');
+
+      expect(request.method, 'POST');
+      expect(request.uri.toString(), 'https://example.com/api/token/');
+      expect(request.data, <String, dynamic>{
+        'username': 'u',
+        'password': 'p',
+        'code': '123456',
+      });
+    });
+
+    test('omits the code when none is given', () async {
+      final request = await signInAndCaptureTokenRequest();
+
+      expect(request.data, <String, dynamic>{'username': 'u', 'password': 'p'});
+    });
+
+    test('omits the code when it is empty', () async {
+      final request = await signInAndCaptureTokenRequest(code: '');
+
+      expect(request.data, <String, dynamic>{'username': 'u', 'password': 'p'});
+    });
+  });
+
   group('AuthRepository.signInWithToken', () {
     test('validates the token against the profile endpoint only', () async {
       final dio = Dio();

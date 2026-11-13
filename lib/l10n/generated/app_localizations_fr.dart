@@ -133,6 +133,16 @@ class AppLocalizationsFr extends AppLocalizations {
       'Votre jeton se trouve dans paperless-ngx sous \"My Profile\" > \"API Auth Token\".';
 
   @override
+  String get mfaCodeLabel => 'Code MFA (facultatif)';
+
+  @override
+  String get mfaCodeHint => 'Saisissez votre code à 6 chiffres';
+
+  @override
+  String get loginMfaCodeHelp =>
+      'Le code à usage unique de votre application d\'authentification. Nécessaire uniquement si la MFA est activée pour votre compte.';
+
+  @override
   String get loginValidationTokenRequired => 'Saisissez votre jeton d\'API.';
 
   @override

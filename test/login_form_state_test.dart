@@ -66,6 +66,44 @@ void main() {
     });
   });
 
+  group('LoginFormState MFA code', () {
+    const passwordState = LoginFormState(
+      serverUrl: 'https://example.com',
+      username: 'jane.doe',
+      password: 'secret',
+      obscurePassword: true,
+      hasSubmitted: false,
+      loginStatus: AsyncData<void>(null),
+    );
+
+    test('defaults to empty and does not affect validity', () {
+      expect(passwordState.mfaCode, isEmpty);
+      expect(passwordState.isValid, isTrue);
+      expect(passwordState.copyWith(mfaCode: '123456').isValid, isTrue);
+    });
+
+    test('is set by copyWith and kept by other updates', () {
+      final state = passwordState.copyWith(mfaCode: '1');
+
+      expect(state.mfaCode, '1');
+      expect(state.copyWith(password: 'other').mfaCode, '1');
+    });
+
+    test('starts empty from a session', () {
+      final state = LoginFormState.fromSession(
+        const PaperlessAuthSession(
+          serverUrl: 'https://example.com/',
+          username: 'jane.doe',
+          password: 'secret',
+          authToken: 'token-123',
+          method: PaperlessAuthMethod.password,
+        ),
+      );
+
+      expect(state.mfaCode, isEmpty);
+    });
+  });
+
   group('AuthPreferences', () {
     Future<AuthPreferences> createPreferences(
       SharedPreferences sharedPreferences,
