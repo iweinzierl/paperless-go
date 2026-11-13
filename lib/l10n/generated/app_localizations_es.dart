@@ -117,6 +117,25 @@ class AppLocalizationsEs extends AppLocalizations {
   String get loginValidationPasswordRequired => 'Introduce tu contraseña.';
 
   @override
+  String get loginMethodPassword => 'Usuario y contraseña';
+
+  @override
+  String get loginMethodToken => 'Token de API';
+
+  @override
+  String get apiTokenLabel => 'Token de API';
+
+  @override
+  String get apiTokenHint => 'Pega tu token de API';
+
+  @override
+  String get loginTokenHelp =>
+      'Encontrarás tu token en paperless-ngx en \"My Profile\" > \"API Auth Token\".';
+
+  @override
+  String get loginValidationTokenRequired => 'Introduce tu token de API.';
+
+  @override
   String get loginSuccess => 'Conexión realizada correctamente.';
 
   @override
