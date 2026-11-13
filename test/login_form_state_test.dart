@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:paperless_ngx_app/src/features/auth/data/local/auth_preferences.dart';
+import 'package:paperless_ngx_app/src/features/auth/data/local/auth_token_storage.dart';
 import 'package:paperless_ngx_app/src/features/auth/domain/models/paperless_auth_method.dart';
 import 'package:paperless_ngx_app/src/features/auth/domain/models/paperless_auth_session.dart';
 import 'package:paperless_ngx_app/src/features/auth/presentation/controllers/login_controller.dart';
@@ -65,10 +67,26 @@ void main() {
   });
 
   group('AuthPreferences', () {
+    Future<AuthPreferences> createPreferences(
+      SharedPreferences sharedPreferences,
+    ) async {
+      return AuthPreferences(
+        sharedPreferences,
+        await AuthTokenStorage.load(
+          const FlutterSecureStorage(),
+          sharedPreferences,
+        ),
+      );
+    }
+
+    setUp(() {
+      FlutterSecureStorage.setMockInitialValues(<String, String>{});
+    });
+
     test('round-trips the login method and keeps it on clear', () async {
       SharedPreferences.setMockInitialValues(<String, Object>{});
       final sharedPreferences = await SharedPreferences.getInstance();
-      final preferences = AuthPreferences(sharedPreferences);
+      final preferences = await createPreferences(sharedPreferences);
 
       await preferences.saveSession(
         const PaperlessAuthSession(
@@ -81,6 +99,12 @@ void main() {
       );
 
       expect(preferences.readSession().method, PaperlessAuthMethod.token);
+      expect(preferences.readSession().authToken, 'token-123');
+      expect(sharedPreferences.getString('auth.token'), isNull);
+      expect(
+        await const FlutterSecureStorage().read(key: 'auth.token'),
+        'token-123',
+      );
 
       await preferences.clearSession();
 
@@ -88,6 +112,10 @@ void main() {
       expect(sharedPreferences.getString('auth.method'), 'token');
       expect(cleared.method, PaperlessAuthMethod.token);
       expect(cleared.authToken, isNull);
+      expect(
+        await const FlutterSecureStorage().read(key: 'auth.token'),
+        isNull,
+      );
     });
 
     test('reads a missing method as password', () async {
@@ -99,10 +127,9 @@ void main() {
       });
       final sharedPreferences = await SharedPreferences.getInstance();
 
-      expect(
-        AuthPreferences(sharedPreferences).readSession().method,
-        PaperlessAuthMethod.password,
-      );
+      final preferences = await createPreferences(sharedPreferences);
+
+      expect(preferences.readSession().method, PaperlessAuthMethod.password);
     });
   });
 }

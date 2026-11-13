@@ -12,11 +12,13 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:paperless_ngx_app/src/app/app.dart';
+import 'package:paperless_ngx_app/src/features/auth/data/local/auth_token_storage.dart';
 import 'package:paperless_ngx_app/src/features/auth/domain/models/paperless_auth_method.dart';
 import 'package:paperless_ngx_app/src/features/auth/domain/models/paperless_auth_session.dart';
 import 'package:paperless_ngx_app/src/features/auth/domain/models/paperless_user_capabilities.dart';
@@ -142,12 +144,18 @@ void main() {
       buildSignature: '',
     );
     SharedPreferences.setMockInitialValues(initialValues);
+    FlutterSecureStorage.setMockInitialValues(<String, String>{});
     final sharedPreferences = await SharedPreferences.getInstance();
+    final authTokenStorage = await AuthTokenStorage.load(
+      const FlutterSecureStorage(),
+      sharedPreferences,
+    );
 
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           sharedPreferencesProvider.overrideWithValue(sharedPreferences),
+          authTokenStorageProvider.overrideWithValue(authTokenStorage),
           incomingPdfControllerProvider.overrideWith(
             _FakeIncomingPdfController.new,
           ),

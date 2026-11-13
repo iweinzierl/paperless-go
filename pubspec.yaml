@@ -52,6 +52,7 @@ dependencies:
   url_launcher: ^6.3.2
   local_auth: ^3.0.1
   pdfrx: ^2.2.24
+  flutter_secure_storage: ^10.3.4
 
 dev_dependencies:
   build_runner: ^2.7.1

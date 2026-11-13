@@ -1,13 +1,17 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:paperless_ngx_app/src/core/providers/shared_preferences_provider.dart';
 import 'package:paperless_ngx_app/src/features/auth/data/local/auth_preferences.dart';
+import 'package:paperless_ngx_app/src/features/auth/data/local/auth_token_storage.dart';
 import 'package:paperless_ngx_app/src/features/auth/domain/models/paperless_auth_method.dart';
 import 'package:paperless_ngx_app/src/features/auth/domain/models/paperless_auth_session.dart';
 import 'package:paperless_ngx_app/src/features/auth/presentation/controllers/auth_session_controller.dart';
 import 'package:paperless_ngx_app/src/features/auth/data/repositories/auth_repository.dart';
 
 final authPreferencesProvider = Provider<AuthPreferences>((ref) {
-  return AuthPreferences(ref.watch(sharedPreferencesProvider));
+  return AuthPreferences(
+    ref.watch(sharedPreferencesProvider),
+    ref.watch(authTokenStorageProvider),
+  );
 });
 
 final loginControllerProvider =

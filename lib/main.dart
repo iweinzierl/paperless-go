@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:paperless_ngx_app/src/debug/screenshot_harness.dart';
 import 'package:paperless_ngx_app/src/core/providers/shared_preferences_provider.dart';
+import 'package:paperless_ngx_app/src/features/auth/data/local/auth_token_storage.dart';
 import 'package:paperless_ngx_app/src/features/documents/data/repositories/documents_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:paperless_ngx_app/src/app/app.dart';
@@ -14,6 +16,10 @@ Future<void> main() async {
   await Hive.initFlutter();
 
   final sharedPreferences = await SharedPreferences.getInstance();
+  final authTokenStorage = await AuthTokenStorage.load(
+    const FlutterSecureStorage(),
+    sharedPreferences,
+  );
   final screenshotScenario = maybeParseScreenshotScenario(
     sharedPreferences.getString(screenshotScenarioPreferenceKey),
   );
@@ -24,6 +30,7 @@ Future<void> main() async {
       sharedPreferences.getString('app_behavior.app_language') ?? 'en';
   final overrides = <Override>[
     sharedPreferencesProvider.overrideWithValue(sharedPreferences),
+    authTokenStorageProvider.overrideWithValue(authTokenStorage),
     if (screenshotScenario != null &&
         screenshotDataSource == ScreenshotDataSource.mock)
       documentsRepositoryProvider.overrideWithValue(
