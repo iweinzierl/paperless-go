@@ -21,6 +21,7 @@ class AuthRepository {
     required String serverUrl,
     required String username,
     required String password,
+    String? code,
   }) async {
     final normalizedServerUrl = normalizePaperlessBaseUrl(serverUrl);
     final apiBaseUri = buildPaperlessApiBaseUri(normalizedServerUrl);
@@ -28,7 +29,11 @@ class AuthRepository {
     try {
       final tokenResponse = await _createToken(
         apiBaseUri,
-        PaperlessAuthTokenRequest(username: username, password: password),
+        PaperlessAuthTokenRequest(
+          username: username,
+          password: password,
+          code: code?.trim(),
+        ),
       );
       final profile = await _getProfile(apiBaseUri, tokenResponse.token);
 
