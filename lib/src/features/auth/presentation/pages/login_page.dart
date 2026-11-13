@@ -18,6 +18,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   late final TextEditingController _usernameController;
   late final TextEditingController _passwordController;
   late final TextEditingController _tokenController;
+  late final TextEditingController _mfaCodeController;
 
   @override
   void initState() {
@@ -26,6 +27,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     _usernameController = TextEditingController();
     _passwordController = TextEditingController();
     _tokenController = TextEditingController();
+    _mfaCodeController = TextEditingController();
   }
 
   @override
@@ -34,6 +36,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     _usernameController.dispose();
     _passwordController.dispose();
     _tokenController.dispose();
+    _mfaCodeController.dispose();
     super.dispose();
   }
 
@@ -48,6 +51,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     _syncController(_usernameController, formState.username);
     _syncController(_passwordController, formState.password);
     _syncController(_tokenController, formState.token);
+    _syncController(_mfaCodeController, formState.mfaCode);
 
     return Scaffold(
       body: ColoredBox(
@@ -224,6 +228,23 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                             ? Icons.visibility_outlined
                                             : Icons.visibility_off_outlined,
                                       ),
+                                    ),
+                                  ),
+                                  SizedBox(height: isCompactHeight ? 14 : 18),
+                                  _LoginTextField(
+                                    controller: _mfaCodeController,
+                                    label: l10n.mfaCodeLabel,
+                                    hintText: l10n.mfaCodeHint,
+                                    keyboardType: TextInputType.number,
+                                    prefixIcon: Icons.pin_outlined,
+                                    onChanged: controller.updateMfaCode,
+                                    compact: isCompactHeight,
+                                  ),
+                                  SizedBox(height: isCompactHeight ? 8 : 10),
+                                  Text(
+                                    l10n.loginMfaCodeHelp,
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: theme.colorScheme.onSurfaceVariant,
                                     ),
                                   ),
                                 ],

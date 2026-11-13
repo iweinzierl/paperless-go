@@ -1201,6 +1201,66 @@ void main() {
     expect(find.byIcon(Icons.visibility_off_outlined), findsOneWidget);
   });
 
+  testWidgets('shows the MFA code field only for password login', (
+    WidgetTester tester,
+  ) async {
+    await pumpApp(tester);
+
+    const mfaHelp =
+        'The one-time code from your authenticator app. Only needed if MFA is enabled for your account.';
+    expect(find.text('MFA code (optional)'), findsOneWidget);
+    expect(find.text(mfaHelp), findsOneWidget);
+    expect(find.byType(TextFormField), findsNWidgets(4));
+
+    final mfaField = tester.widget<TextField>(
+      find.descendant(
+        of: find.byType(TextFormField).at(3),
+        matching: find.byType(TextField),
+      ),
+    );
+    expect(mfaField.keyboardType, TextInputType.number);
+    expect(mfaField.obscureText, isFalse);
+
+    await tester.tap(find.text('API token').first);
+    await tester.pumpAndSettle();
+
+    expect(find.text('MFA code (optional)'), findsNothing);
+    expect(find.text(mfaHelp), findsNothing);
+  });
+
+  testWidgets('sends the MFA code and clears the field after login', (
+    WidgetTester tester,
+  ) async {
+    final authRepository = _FakeAuthRepository(
+      fakeSession,
+      failure: const AuthFailure.serverMessage('Invalid MFA code'),
+    );
+
+    await pumpApp(
+      tester,
+      overrides: [authRepositoryProvider.overrideWithValue(authRepository)],
+    );
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.byType(TextFormField).at(0),
+      'https://example.com/paperless/',
+    );
+    await tester.enterText(find.byType(TextFormField).at(1), 'jane.doe');
+    await tester.enterText(find.byType(TextFormField).at(2), 'secret');
+    await tester.enterText(find.byType(TextFormField).at(3), '123456');
+    await tester.ensureVisible(find.widgetWithText(FilledButton, 'Login'));
+    await tester.tap(find.widgetWithText(FilledButton, 'Login'));
+    await tester.pumpAndSettle();
+
+    expect(authRepository.receivedCode, '123456');
+    expect(find.text('Invalid MFA code'), findsOneWidget);
+    final mfaField = tester.widget<TextFormField>(
+      find.byType(TextFormField).at(3),
+    );
+    expect(mfaField.controller!.text, isEmpty);
+  });
+
   testWidgets('shows validation errors for empty API token login form', (
     WidgetTester tester,
   ) async {
@@ -1468,16 +1528,23 @@ class _FakeBiometricAuthService implements BiometricAuthService {
 }
 
 class _FakeAuthRepository extends AuthRepository {
-  _FakeAuthRepository(this.session) : super(Dio());
+  _FakeAuthRepository(this.session, {this.failure}) : super(Dio());
 
   final PaperlessAuthSession session;
+  final AuthFailure? failure;
+  String? receivedCode;
 
   @override
   Future<PaperlessAuthSession> signIn({
     required String serverUrl,
     required String username,
     required String password,
+    String? code,
   }) async {
+    receivedCode = code;
+    if (failure != null) {
+      throw failure!;
+    }
     return session;
   }
 }

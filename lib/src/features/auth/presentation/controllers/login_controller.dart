@@ -42,6 +42,10 @@ class LoginController extends Notifier<LoginFormState> {
     state = state.copyWith(password: value);
   }
 
+  void updateMfaCode(String value) {
+    state = state.copyWith(mfaCode: value);
+  }
+
   void togglePasswordVisibility() {
     state = state.copyWith(obscurePassword: !state.obscurePassword);
   }
@@ -81,10 +85,13 @@ class LoginController extends Notifier<LoginFormState> {
               serverUrl: state.serverUrl,
               username: state.username,
               password: state.password,
+              code: state.mfaCode,
             );
       await _authPreferences.saveSession(session);
       return session;
     });
+
+    state = state.copyWith(mfaCode: '');
 
     result.when(
       data: (session) {
@@ -115,6 +122,7 @@ class LoginFormState {
     this.method = PaperlessAuthMethod.password,
     this.token = '',
     this.obscureToken = true,
+    this.mfaCode = '',
     this.connectedDisplayName,
   });
 
@@ -143,6 +151,7 @@ class LoginFormState {
   final PaperlessAuthMethod method;
   final String token;
   final bool obscureToken;
+  final String mfaCode;
   final String? connectedDisplayName;
 
   bool get isSubmitting => loginStatus.isLoading;
@@ -233,6 +242,7 @@ class LoginFormState {
     PaperlessAuthMethod? method,
     String? token,
     bool? obscureToken,
+    String? mfaCode,
     String? connectedDisplayName,
   }) {
     return LoginFormState(
@@ -245,6 +255,7 @@ class LoginFormState {
       method: method ?? this.method,
       token: token ?? this.token,
       obscureToken: obscureToken ?? this.obscureToken,
+      mfaCode: mfaCode ?? this.mfaCode,
       connectedDisplayName: connectedDisplayName ?? this.connectedDisplayName,
     );
   }
