@@ -4,7 +4,7 @@ Paperless Go is a Flutter mobile client for [paperless-ngx](https://github.com/p
 
 ## Highlights
 
-- Connect to a paperless-ngx server with your base URL, username, and password.
+- Connect to a paperless-ngx server with your base URL and either your username and password or an API token.
 - Browse recent uploads, review documents, and the full document library.
 - Search documents and filter by tags, correspondents, and document types.
 - Open documents, inspect metadata, and perform supported document actions.
