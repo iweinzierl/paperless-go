@@ -1,0 +1,1 @@
+enum PaperlessAuthMethod { password, token }

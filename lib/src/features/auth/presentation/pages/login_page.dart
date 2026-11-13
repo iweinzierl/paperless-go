@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:paperless_ngx_app/src/core/presentation/localization/app_localizations_x.dart';
 import 'package:paperless_ngx_app/src/features/app_shell/presentation/providers/help_feedback_providers.dart';
+import 'package:paperless_ngx_app/src/features/auth/domain/models/paperless_auth_method.dart';
 import 'package:paperless_ngx_app/src/features/auth/presentation/controllers/login_controller.dart';
 import 'package:paperless_ngx_app/src/features/auth/presentation/formatters/auth_text.dart';
 
@@ -16,6 +17,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   late final TextEditingController _serverUrlController;
   late final TextEditingController _usernameController;
   late final TextEditingController _passwordController;
+  late final TextEditingController _tokenController;
 
   @override
   void initState() {
@@ -23,6 +25,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     _serverUrlController = TextEditingController();
     _usernameController = TextEditingController();
     _passwordController = TextEditingController();
+    _tokenController = TextEditingController();
   }
 
   @override
@@ -30,6 +33,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     _serverUrlController.dispose();
     _usernameController.dispose();
     _passwordController.dispose();
+    _tokenController.dispose();
     super.dispose();
   }
 
@@ -43,6 +47,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     _syncController(_serverUrlController, formState.serverUrl);
     _syncController(_usernameController, formState.username);
     _syncController(_passwordController, formState.password);
+    _syncController(_tokenController, formState.token);
 
     return Scaffold(
       body: ColoredBox(
@@ -117,7 +122,29 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                     height: 1.4,
                                   ),
                                 ),
-                                SizedBox(height: isCompactHeight ? 22 : 30),
+                                SizedBox(height: isCompactHeight ? 18 : 24),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: SegmentedButton<PaperlessAuthMethod>(
+                                    segments: [
+                                      ButtonSegment<PaperlessAuthMethod>(
+                                        value: PaperlessAuthMethod.password,
+                                        label: Text(l10n.loginMethodPassword),
+                                      ),
+                                      ButtonSegment<PaperlessAuthMethod>(
+                                        value: PaperlessAuthMethod.token,
+                                        label: Text(l10n.loginMethodToken),
+                                      ),
+                                    ],
+                                    selected: {formState.method},
+                                    showSelectedIcon: false,
+                                    onSelectionChanged: formState.isSubmitting
+                                        ? null
+                                        : (selection) => controller
+                                              .updateMethod(selection.first),
+                                  ),
+                                ),
+                                SizedBox(height: isCompactHeight ? 18 : 24),
                                 _LoginTextField(
                                   controller: _serverUrlController,
                                   label: l10n.serverUrlLabel,
@@ -131,42 +158,75 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                   onChanged: controller.updateServerUrl,
                                   compact: isCompactHeight,
                                 ),
-                                SizedBox(height: isCompactHeight ? 14 : 18),
-                                _LoginTextField(
-                                  controller: _usernameController,
-                                  label: l10n.usernameLabel,
-                                  hintText: l10n.usernameHint,
-                                  keyboardType: TextInputType.emailAddress,
-                                  prefixIcon: Icons.person_outline,
-                                  errorText: formState.usernameError(
-                                    l10n.loginValidationUsernameRequired,
-                                  ),
-                                  onChanged: controller.updateUsername,
-                                  compact: isCompactHeight,
-                                ),
-                                SizedBox(height: isCompactHeight ? 14 : 18),
-                                _LoginTextField(
-                                  controller: _passwordController,
-                                  label: l10n.passwordLabel,
-                                  hintText: l10n.passwordHint,
-                                  keyboardType: TextInputType.visiblePassword,
-                                  obscureText: formState.obscurePassword,
-                                  prefixIcon: Icons.lock_outline,
-                                  errorText: formState.passwordError(
-                                    l10n.loginValidationPasswordRequired,
-                                  ),
-                                  onChanged: controller.updatePassword,
-                                  compact: isCompactHeight,
-                                  suffixIcon: IconButton(
-                                    onPressed:
-                                        controller.togglePasswordVisibility,
-                                    icon: Icon(
-                                      formState.obscurePassword
-                                          ? Icons.visibility_outlined
-                                          : Icons.visibility_off_outlined,
+                                if (formState.isTokenMethod) ...[
+                                  SizedBox(height: isCompactHeight ? 14 : 18),
+                                  _LoginTextField(
+                                    controller: _tokenController,
+                                    label: l10n.apiTokenLabel,
+                                    hintText: l10n.apiTokenHint,
+                                    keyboardType: TextInputType.visiblePassword,
+                                    obscureText: formState.obscureToken,
+                                    prefixIcon: Icons.key_outlined,
+                                    errorText: formState.tokenError(
+                                      l10n.loginValidationTokenRequired,
+                                    ),
+                                    onChanged: controller.updateToken,
+                                    compact: isCompactHeight,
+                                    suffixIcon: IconButton(
+                                      onPressed:
+                                          controller.toggleTokenVisibility,
+                                      icon: Icon(
+                                        formState.obscureToken
+                                            ? Icons.visibility_outlined
+                                            : Icons.visibility_off_outlined,
+                                      ),
                                     ),
                                   ),
-                                ),
+                                  SizedBox(height: isCompactHeight ? 8 : 10),
+                                  Text(
+                                    l10n.loginTokenHelp,
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: theme.colorScheme.onSurfaceVariant,
+                                    ),
+                                  ),
+                                ] else ...[
+                                  SizedBox(height: isCompactHeight ? 14 : 18),
+                                  _LoginTextField(
+                                    controller: _usernameController,
+                                    label: l10n.usernameLabel,
+                                    hintText: l10n.usernameHint,
+                                    keyboardType: TextInputType.emailAddress,
+                                    prefixIcon: Icons.person_outline,
+                                    errorText: formState.usernameError(
+                                      l10n.loginValidationUsernameRequired,
+                                    ),
+                                    onChanged: controller.updateUsername,
+                                    compact: isCompactHeight,
+                                  ),
+                                  SizedBox(height: isCompactHeight ? 14 : 18),
+                                  _LoginTextField(
+                                    controller: _passwordController,
+                                    label: l10n.passwordLabel,
+                                    hintText: l10n.passwordHint,
+                                    keyboardType: TextInputType.visiblePassword,
+                                    obscureText: formState.obscurePassword,
+                                    prefixIcon: Icons.lock_outline,
+                                    errorText: formState.passwordError(
+                                      l10n.loginValidationPasswordRequired,
+                                    ),
+                                    onChanged: controller.updatePassword,
+                                    compact: isCompactHeight,
+                                    suffixIcon: IconButton(
+                                      onPressed:
+                                          controller.togglePasswordVisibility,
+                                      icon: Icon(
+                                        formState.obscurePassword
+                                            ? Icons.visibility_outlined
+                                            : Icons.visibility_off_outlined,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                                 SizedBox(height: isCompactHeight ? 20 : 28),
                                 SizedBox(
                                   width: double.infinity,

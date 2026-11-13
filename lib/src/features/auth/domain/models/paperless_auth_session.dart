@@ -1,3 +1,5 @@
+import 'package:paperless_ngx_app/src/features/auth/domain/models/paperless_auth_method.dart';
+
 class PaperlessAuthSession {
   const PaperlessAuthSession({
     required this.serverUrl,
@@ -5,6 +7,7 @@ class PaperlessAuthSession {
     required this.password,
     this.authToken,
     this.displayName,
+    this.method = PaperlessAuthMethod.password,
   });
 
   final String serverUrl;
@@ -12,6 +15,7 @@ class PaperlessAuthSession {
   final String password;
   final String? authToken;
   final String? displayName;
+  final PaperlessAuthMethod method;
 
   bool get isAuthenticated => authToken != null && authToken!.isNotEmpty;
 
@@ -21,6 +25,7 @@ class PaperlessAuthSession {
     String? password,
     String? authToken,
     String? displayName,
+    PaperlessAuthMethod? method,
   }) {
     return PaperlessAuthSession(
       serverUrl: serverUrl ?? this.serverUrl,
@@ -28,6 +33,7 @@ class PaperlessAuthSession {
       password: password ?? this.password,
       authToken: authToken ?? this.authToken,
       displayName: displayName ?? this.displayName,
+      method: method ?? this.method,
     );
   }
 }

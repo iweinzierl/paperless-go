@@ -117,6 +117,25 @@ class AppLocalizationsFr extends AppLocalizations {
   String get loginValidationPasswordRequired => 'Saisissez votre mot de passe.';
 
   @override
+  String get loginMethodPassword => 'Nom d\'utilisateur et mot de passe';
+
+  @override
+  String get loginMethodToken => 'Jeton d\'API';
+
+  @override
+  String get apiTokenLabel => 'Jeton d\'API';
+
+  @override
+  String get apiTokenHint => 'Collez votre jeton d\'API';
+
+  @override
+  String get loginTokenHelp =>
+      'Votre jeton se trouve dans paperless-ngx sous \"My Profile\" > \"API Auth Token\".';
+
+  @override
+  String get loginValidationTokenRequired => 'Saisissez votre jeton d\'API.';
+
+  @override
   String get loginSuccess => 'Connexion réussie.';
 
   @override

@@ -12,7 +12,7 @@ import 'package:paperless_ngx_app/src/features/app_shell/presentation/providers/
 import 'package:paperless_ngx_app/src/core/presentation/layout/adaptive_layout.dart';
 import 'package:paperless_ngx_app/src/features/app_shell/presentation/pages/settings_page.dart';
 import 'package:paperless_ngx_app/src/core/theme/app_theme.dart';
-import 'package:paperless_ngx_app/src/features/auth/data/local/auth_preferences.dart';
+import 'package:paperless_ngx_app/src/features/auth/presentation/controllers/login_controller.dart';
 import 'package:paperless_ngx_app/src/features/auth/data/repositories/auth_repository.dart';
 import 'package:paperless_ngx_app/src/features/auth/domain/models/paperless_auth_session.dart';
 import 'package:paperless_ngx_app/src/features/auth/domain/models/paperless_user_capabilities.dart';
@@ -249,9 +249,7 @@ class _LiveScreenshotBootstrapState
       final session = await ref
           .read(authRepositoryProvider)
           .signIn(serverUrl: serverUrl, username: username, password: password);
-      await AuthPreferences(
-        ref.read(sharedPreferencesProvider),
-      ).saveSession(session);
+      await ref.read(authPreferencesProvider).saveSession(session);
       ref.read(authSessionProvider.notifier).setSession(session);
       if (!mounted) {
         return;

@@ -12,11 +12,14 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:paperless_ngx_app/src/app/app.dart';
+import 'package:paperless_ngx_app/src/features/auth/data/local/auth_token_storage.dart';
+import 'package:paperless_ngx_app/src/features/auth/domain/models/paperless_auth_method.dart';
 import 'package:paperless_ngx_app/src/features/auth/domain/models/paperless_auth_session.dart';
 import 'package:paperless_ngx_app/src/features/auth/domain/models/paperless_user_capabilities.dart';
 import 'package:paperless_ngx_app/src/features/auth/data/repositories/auth_repository.dart';
@@ -141,12 +144,18 @@ void main() {
       buildSignature: '',
     );
     SharedPreferences.setMockInitialValues(initialValues);
+    FlutterSecureStorage.setMockInitialValues(<String, String>{});
     final sharedPreferences = await SharedPreferences.getInstance();
+    final authTokenStorage = await AuthTokenStorage.load(
+      const FlutterSecureStorage(),
+      sharedPreferences,
+    );
 
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           sharedPreferencesProvider.overrideWithValue(sharedPreferences),
+          authTokenStorageProvider.overrideWithValue(authTokenStorage),
           incomingPdfControllerProvider.overrideWith(
             _FakeIncomingPdfController.new,
           ),
@@ -1134,6 +1143,80 @@ void main() {
     expect(find.text('Enter your paperless-ngx server URL.'), findsOneWidget);
     expect(find.text('Enter your username.'), findsOneWidget);
     expect(find.text('Enter your password.'), findsOneWidget);
+  });
+
+  testWidgets('shows the token field after switching to API token login', (
+    WidgetTester tester,
+  ) async {
+    await pumpApp(tester);
+
+    expect(find.text('Username & password'), findsOneWidget);
+    expect(
+      tester
+          .widget<SegmentedButton<PaperlessAuthMethod>>(
+            find.byType(SegmentedButton<PaperlessAuthMethod>),
+          )
+          .selected,
+      {PaperlessAuthMethod.password},
+    );
+    final segmentedButtonShape = Theme.of(
+      tester.element(find.byType(SegmentedButton<PaperlessAuthMethod>)),
+    ).segmentedButtonTheme.style?.shape?.resolve(<WidgetState>{});
+    expect(
+      segmentedButtonShape,
+      RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+    );
+    expect(find.text('Username'), findsOneWidget);
+    expect(find.text('Password'), findsOneWidget);
+
+    await tester.tap(find.text('API token').first);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Username'), findsNothing);
+    expect(find.text('Password'), findsNothing);
+    expect(find.byType(TextFormField), findsNWidgets(2));
+    expect(
+      find.widgetWithText(TextFormField, 'Paste your API token'),
+      findsOneWidget,
+    );
+    expect(
+      find.text(
+        'Find your token in paperless-ngx under "My Profile" > "API Auth Token".',
+      ),
+      findsOneWidget,
+    );
+
+    final tokenField = tester.widget<TextField>(
+      find.descendant(
+        of: find.byType(TextFormField).at(1),
+        matching: find.byType(TextField),
+      ),
+    );
+    expect(tokenField.obscureText, isTrue);
+    expect(find.byIcon(Icons.key_outlined), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.visibility_outlined));
+    await tester.pump();
+
+    expect(find.byIcon(Icons.visibility_off_outlined), findsOneWidget);
+  });
+
+  testWidgets('shows validation errors for empty API token login form', (
+    WidgetTester tester,
+  ) async {
+    await pumpApp(tester);
+
+    await tester.tap(find.text('API token').first);
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.text('Login'));
+    await tester.tap(find.text('Login'));
+    await tester.pump();
+
+    expect(find.text('Enter your paperless-ngx server URL.'), findsOneWidget);
+    expect(find.text('Enter your API token.'), findsOneWidget);
+    expect(find.text('Enter your username.'), findsNothing);
+    expect(find.text('Enter your password.'), findsNothing);
   });
 
   testWidgets('opens drawer with menu items and statistics', (

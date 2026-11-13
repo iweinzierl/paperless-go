@@ -308,6 +308,42 @@ abstract class AppLocalizations {
   /// **'Enter your password.'**
   String get loginValidationPasswordRequired;
 
+  /// No description provided for @loginMethodPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Username & password'**
+  String get loginMethodPassword;
+
+  /// No description provided for @loginMethodToken.
+  ///
+  /// In en, this message translates to:
+  /// **'API token'**
+  String get loginMethodToken;
+
+  /// No description provided for @apiTokenLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'API token'**
+  String get apiTokenLabel;
+
+  /// No description provided for @apiTokenHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste your API token'**
+  String get apiTokenHint;
+
+  /// No description provided for @loginTokenHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Find your token in paperless-ngx under \"My Profile\" > \"API Auth Token\".'**
+  String get loginTokenHelp;
+
+  /// No description provided for @loginValidationTokenRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your API token.'**
+  String get loginValidationTokenRequired;
+
   /// No description provided for @loginSuccess.
   ///
   /// In en, this message translates to:

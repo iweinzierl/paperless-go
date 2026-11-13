@@ -260,6 +260,9 @@ ThemeData buildAppTheme({Brightness brightness = Brightness.light}) {
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       ),
     ),
+    segmentedButtonTheme: SegmentedButtonThemeData(
+      style: SegmentedButton.styleFrom(shape: fieldShape),
+    ),
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(
         foregroundColor: colorScheme.primary,
