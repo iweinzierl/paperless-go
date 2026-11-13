@@ -58,3 +58,7 @@ app.*.map.json
 
 # Fastlane metadata and screenshots
 fastlane/report.xml
+
+# Software factory runtime state
+/factory/jobs/
+/.worktrees/
