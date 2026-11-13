@@ -338,6 +338,24 @@ abstract class AppLocalizations {
   /// **'Find your token in paperless-ngx under \"My Profile\" > \"API Auth Token\".'**
   String get loginTokenHelp;
 
+  /// No description provided for @mfaCodeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'MFA code (optional)'**
+  String get mfaCodeLabel;
+
+  /// No description provided for @mfaCodeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your 6-digit code'**
+  String get mfaCodeHint;
+
+  /// No description provided for @loginMfaCodeHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'The one-time code from your authenticator app. Only needed if MFA is enabled for your account.'**
+  String get loginMfaCodeHelp;
+
   /// No description provided for @loginValidationTokenRequired.
   ///
   /// In en, this message translates to:

@@ -132,6 +132,16 @@ class AppLocalizationsEn extends AppLocalizations {
       'Find your token in paperless-ngx under \"My Profile\" > \"API Auth Token\".';
 
   @override
+  String get mfaCodeLabel => 'MFA code (optional)';
+
+  @override
+  String get mfaCodeHint => 'Enter your 6-digit code';
+
+  @override
+  String get loginMfaCodeHelp =>
+      'The one-time code from your authenticator app. Only needed if MFA is enabled for your account.';
+
+  @override
   String get loginValidationTokenRequired => 'Enter your API token.';
 
   @override
