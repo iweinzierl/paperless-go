@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:paperless_ngx_app/src/core/providers/shared_preferences_provider.dart';
 import 'package:paperless_ngx_app/src/features/auth/data/local/auth_preferences.dart';
+import 'package:paperless_ngx_app/src/features/auth/domain/models/paperless_auth_method.dart';
 import 'package:paperless_ngx_app/src/features/auth/domain/models/paperless_auth_session.dart';
 import 'package:paperless_ngx_app/src/features/auth/presentation/controllers/auth_session_controller.dart';
 import 'package:paperless_ngx_app/src/features/auth/data/repositories/auth_repository.dart';
@@ -41,6 +42,18 @@ class LoginController extends Notifier<LoginFormState> {
     state = state.copyWith(obscurePassword: !state.obscurePassword);
   }
 
+  void updateMethod(PaperlessAuthMethod value) {
+    state = state.copyWith(method: value);
+  }
+
+  void updateToken(String value) {
+    state = state.copyWith(token: value);
+  }
+
+  void toggleTokenVisibility() {
+    state = state.copyWith(obscureToken: !state.obscureToken);
+  }
+
   Future<void> submit() async {
     final nextState = state.copyWith(
       hasSubmitted: true,
@@ -55,11 +68,16 @@ class LoginController extends Notifier<LoginFormState> {
     state = nextState;
 
     final result = await AsyncValue.guard<PaperlessAuthSession>(() async {
-      final session = await _authRepository.signIn(
-        serverUrl: state.serverUrl,
-        username: state.username,
-        password: state.password,
-      );
+      final session = state.method == PaperlessAuthMethod.token
+          ? await _authRepository.signInWithToken(
+              serverUrl: state.serverUrl,
+              token: state.token.trim(),
+            )
+          : await _authRepository.signIn(
+              serverUrl: state.serverUrl,
+              username: state.username,
+              password: state.password,
+            );
       await _authPreferences.saveSession(session);
       return session;
     });
@@ -90,6 +108,9 @@ class LoginFormState {
     required this.obscurePassword,
     required this.hasSubmitted,
     required this.loginStatus,
+    this.method = PaperlessAuthMethod.password,
+    this.token = '',
+    this.obscureToken = true,
     this.connectedDisplayName,
   });
 
@@ -101,6 +122,10 @@ class LoginFormState {
       obscurePassword: true,
       hasSubmitted: false,
       loginStatus: const AsyncData<void>(null),
+      method: session.method,
+      token: session.method == PaperlessAuthMethod.token
+          ? session.authToken ?? ''
+          : '',
       connectedDisplayName: session.displayName,
     );
   }
@@ -111,12 +136,24 @@ class LoginFormState {
   final bool obscurePassword;
   final bool hasSubmitted;
   final AsyncValue<void> loginStatus;
+  final PaperlessAuthMethod method;
+  final String token;
+  final bool obscureToken;
   final String? connectedDisplayName;
 
   bool get isSubmitting => loginStatus.isLoading;
 
-  bool get isValid =>
-      _hasValidServerUrl && username.trim().isNotEmpty && password.isNotEmpty;
+  bool get isTokenMethod => method == PaperlessAuthMethod.token;
+
+  bool get isValid {
+    if (isTokenMethod) {
+      return _hasValidServerUrl && token.trim().isNotEmpty;
+    }
+
+    return _hasValidServerUrl &&
+        username.trim().isNotEmpty &&
+        password.isNotEmpty;
+  }
 
   bool get _hasValidServerUrl {
     final trimmed = serverUrl.trim();
@@ -147,7 +184,7 @@ class LoginFormState {
   }
 
   String? usernameError(String requiredMessage) {
-    if (!hasSubmitted) {
+    if (!hasSubmitted || isTokenMethod) {
       return null;
     }
 
@@ -159,11 +196,23 @@ class LoginFormState {
   }
 
   String? passwordError(String requiredMessage) {
-    if (!hasSubmitted) {
+    if (!hasSubmitted || isTokenMethod) {
       return null;
     }
 
     if (password.isEmpty) {
+      return requiredMessage;
+    }
+
+    return null;
+  }
+
+  String? tokenError(String requiredMessage) {
+    if (!hasSubmitted) {
+      return null;
+    }
+
+    if (token.trim().isEmpty) {
       return requiredMessage;
     }
 
@@ -177,6 +226,9 @@ class LoginFormState {
     bool? obscurePassword,
     bool? hasSubmitted,
     AsyncValue<void>? loginStatus,
+    PaperlessAuthMethod? method,
+    String? token,
+    bool? obscureToken,
     String? connectedDisplayName,
   }) {
     return LoginFormState(
@@ -186,6 +238,9 @@ class LoginFormState {
       obscurePassword: obscurePassword ?? this.obscurePassword,
       hasSubmitted: hasSubmitted ?? this.hasSubmitted,
       loginStatus: loginStatus ?? this.loginStatus,
+      method: method ?? this.method,
+      token: token ?? this.token,
+      obscureToken: obscureToken ?? this.obscureToken,
       connectedDisplayName: connectedDisplayName ?? this.connectedDisplayName,
     );
   }
