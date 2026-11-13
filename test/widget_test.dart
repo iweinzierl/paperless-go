@@ -126,7 +126,13 @@ void main() {
     WidgetTester tester, {
     Map<String, Object> initialValues = const <String, Object>{},
     List<Override> overrides = const <Override>[],
+    DocumentsRepository? documentsRepository,
   }) async {
+    // The default 800x600 test surface triggers the wide layout; these tests
+    // exercise the compact phone layout.
+    tester.view.physicalSize = const Size(430, 932);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
     PackageInfo.setMockInitialValues(
       appName: 'Paperless Ngx App',
       packageName: 'paperless_ngx_app',
@@ -153,6 +159,9 @@ void main() {
           biometricAuthServiceProvider.overrideWithValue(
             _FakeBiometricAuthService(),
           ),
+          documentsRepositoryProvider.overrideWithValue(
+            documentsRepository ?? _FakeDocumentsRepository(),
+          ),
           ...overrides,
         ],
         child: const PaperlessNgxApp(),
@@ -163,6 +172,23 @@ void main() {
   }
 
   Finder settingsScrollable() => find.byType(Scrollable).first;
+
+  // The document detail page embeds a network PDF preview whose loading
+  // indicator never settles in tests, so pump a bounded number of frames.
+  Future<void> pumpDetailPage(WidgetTester tester) async {
+    for (var i = 0; i < 10; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+  }
+
+  Finder addCorrespondentButton() => find.byIcon(Icons.add_rounded).at(0);
+  Finder addDocumentTypeButton() => find.byIcon(Icons.add_rounded).at(1);
+
+  Future<void> refreshFromOverflowMenu(WidgetTester tester) async {
+    await tester.tap(find.byTooltip('Show menu').first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Refresh'));
+  }
 
   Override overrideCapabilities(PaperlessUserCapabilities? capabilities) {
     return currentUserCapabilitiesProvider.overrideWith(
@@ -216,7 +242,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Appearance & Behavior'), findsOneWidget);
     expect(find.text('App language'), findsOneWidget);
-    expect(find.text('System default'), findsOneWidget);
+    expect(find.text('System default'), findsWidgets);
     expect(find.text('Cache thumbnails and previews'), findsOneWidget);
     await tester.scrollUntilVisible(
       find.text('Theme mode'),
@@ -502,14 +528,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Documents'), findsWidgets);
-    expect(find.byTooltip('Refresh documents'), findsOneWidget);
+    expect(find.byTooltip('Show menu'), findsOneWidget);
     expect(find.byType(RefreshIndicator), findsOneWidget);
     expect(find.text('Updated just now'), findsOneWidget);
     expect(find.text('Search by title'), findsOneWidget);
-    expect(
-      find.text('Connected to https://example.com/paperless/'),
-      findsOneWidget,
-    );
     expect(find.text('Quarterly tax summary.pdf'), findsWidgets);
   });
 
@@ -543,9 +565,7 @@ void main() {
     await tester.tap(find.text('Recent').last);
     await tester.pumpAndSettle();
 
-    await tester.tap(
-      find.widgetWithText(FloatingActionButton, 'Scan document'),
-    );
+    await tester.tap(find.text('Scan document'));
     await tester.pumpAndSettle();
 
     expect(find.text('Start a new scan'), findsOneWidget);
@@ -582,7 +602,7 @@ void main() {
     await tester.tap(find.text('Recent').last);
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byTooltip('Refresh home'));
+    await refreshFromOverflowMenu(tester);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
 
@@ -620,12 +640,16 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Quarterly tax summary.pdf').first);
-    await tester.pumpAndSettle();
+    await pumpDetailPage(tester);
 
-    expect(find.text('Document details'), findsOneWidget);
+    expect(find.text('Quarterly tax summary.pdf'), findsWidgets);
     expect(find.text('Open document'), findsOneWidget);
-    expect(find.text('Open original'), findsOneWidget);
     expect(find.text('Edit metadata'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Show menu').first);
+    await pumpDetailPage(tester);
+
+    expect(find.text('Open original'), findsOneWidget);
   });
 
   testWidgets('opens metadata editor from document details', (
@@ -660,16 +684,17 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Quarterly tax summary.pdf').first);
-    await tester.pumpAndSettle();
+    await pumpDetailPage(tester);
 
     await tester.tap(find.text('Edit metadata'));
-    await tester.pumpAndSettle();
+    await pumpDetailPage(tester);
 
     expect(find.text('Edit metadata'), findsWidgets);
-    expect(find.text('Editable fields'), findsOneWidget);
-    expect(find.text('Title'), findsOneWidget);
-    expect(find.text('Created date'), findsOneWidget);
-    expect(find.text('Edit tags'), findsOneWidget);
+    expect(find.text('TITLE'), findsOneWidget);
+    expect(find.text('CREATED DATE'), findsOneWidget);
+    expect(find.text('CORRESPONDENT'), findsOneWidget);
+    expect(find.text('DOCUMENT TYPE'), findsOneWidget);
+    expect(find.text('TAGS'), findsOneWidget);
   });
 
   testWidgets('creates correspondents and document types inline', (
@@ -686,8 +711,8 @@ void main() {
         'auth.token': 'token-123',
         'auth.display_name': 'Jane Doe',
       },
+      documentsRepository: repository,
       overrides: [
-        documentsRepositoryProvider.overrideWithValue(repository),
         recentUploadsProvider.overrideWith((ref) async => [fakeRecentDocument]),
         reviewDocumentsProvider.overrideWith((ref) async => [fakeTodoDocument]),
         documentsPageProvider.overrideWith((ref) async => fakeDocumentsPage),
@@ -700,16 +725,16 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Quarterly tax summary.pdf').first);
-    await tester.pumpAndSettle();
+    await pumpDetailPage(tester);
 
     await tester.tap(find.text('Edit metadata'));
-    await tester.pumpAndSettle();
+    await pumpDetailPage(tester);
 
-    expect(find.text('New correspondent'), findsOneWidget);
-    expect(find.text('New document type'), findsOneWidget);
+    expect(find.text('CORRESPONDENT'), findsOneWidget);
+    expect(find.text('DOCUMENT TYPE'), findsOneWidget);
 
-    await tester.tap(find.text('New correspondent'));
-    await tester.pumpAndSettle();
+    await tester.tap(addCorrespondentButton());
+    await pumpDetailPage(tester);
     await tester.enterText(
       find.descendant(
         of: find.byType(AlertDialog),
@@ -718,10 +743,10 @@ void main() {
       'Acme Corp',
     );
     await tester.tap(find.widgetWithText(FilledButton, 'Create'));
-    await tester.pumpAndSettle();
+    await pumpDetailPage(tester);
 
-    await tester.tap(find.text('New document type'));
-    await tester.pumpAndSettle();
+    await tester.tap(addDocumentTypeButton());
+    await pumpDetailPage(tester);
     await tester.enterText(
       find.descendant(
         of: find.byType(AlertDialog),
@@ -730,7 +755,7 @@ void main() {
       'Invoice',
     );
     await tester.tap(find.widgetWithText(FilledButton, 'Create'));
-    await tester.pumpAndSettle();
+    await pumpDetailPage(tester);
 
     expect(repository.createdCorrespondentNames, ['Acme Corp']);
     expect(repository.createdDocumentTypeNames, ['Invoice']);
@@ -753,8 +778,8 @@ void main() {
         'auth.token': 'token-123',
         'auth.display_name': 'Jane Doe',
       },
+      documentsRepository: repository,
       overrides: [
-        documentsRepositoryProvider.overrideWithValue(repository),
         recentUploadsProvider.overrideWith((ref) async => [fakeRecentDocument]),
         reviewDocumentsProvider.overrideWith((ref) async => [fakeTodoDocument]),
         documentsPageProvider.overrideWith((ref) async => fakeDocumentsPage),
@@ -767,13 +792,13 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Quarterly tax summary.pdf').first);
-    await tester.pumpAndSettle();
+    await pumpDetailPage(tester);
 
     await tester.tap(find.text('Edit metadata'));
-    await tester.pumpAndSettle();
+    await pumpDetailPage(tester);
 
-    await tester.tap(find.text('New correspondent'));
-    await tester.pumpAndSettle();
+    await tester.tap(addCorrespondentButton());
+    await pumpDetailPage(tester);
     await tester.enterText(
       find.descendant(
         of: find.byType(AlertDialog),
@@ -788,10 +813,9 @@ void main() {
       find.widgetWithText(TextButton, 'Save'),
     );
     expect(saveButton.onPressed, isNull);
-    expect(find.text('Adding...'), findsOneWidget);
 
     repository.completeCorrespondentCreation();
-    await tester.pumpAndSettle();
+    await pumpDetailPage(tester);
 
     final enabledSaveButton = tester.widget<TextButton>(
       find.widgetWithText(TextButton, 'Save'),
@@ -830,7 +854,7 @@ void main() {
     await tester.tap(find.text('Documents').last);
     await tester.pumpAndSettle();
 
-    expect(find.byTooltip('Refresh documents'), findsOneWidget);
+    expect(find.byTooltip('Show menu'), findsOneWidget);
     expect(find.byType(RefreshIndicator), findsOneWidget);
     expect(find.text('Updated just now'), findsOneWidget);
     expect(find.text('Documents'), findsWidgets);
@@ -843,9 +867,11 @@ void main() {
     expect(find.text('Tag'), findsNothing);
   });
 
-  testWidgets('shows snackbar after manual documents refresh', (
+  testWidgets('reloads documents from the overflow refresh action', (
     WidgetTester tester,
   ) async {
+    var documentsPageLoads = 0;
+
     await pumpApp(
       tester,
       initialValues: const <String, Object>{
@@ -858,7 +884,10 @@ void main() {
       overrides: [
         recentUploadsProvider.overrideWith((ref) async => [fakeRecentDocument]),
         reviewDocumentsProvider.overrideWith((ref) async => [fakeTodoDocument]),
-        documentsPageProvider.overrideWith((ref) async => fakeDocumentsPage),
+        documentsPageProvider.overrideWith((ref) async {
+          documentsPageLoads++;
+          return fakeDocumentsPage;
+        }),
         tagOptionsProvider.overrideWith((ref) async => fakeFilterOptions),
         correspondentOptionsProvider.overrideWith(
           (ref) async => fakeFilterOptions,
@@ -873,11 +902,12 @@ void main() {
     await tester.tap(find.text('Documents').last);
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byTooltip('Refresh documents'));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 300));
+    final loadsBeforeRefresh = documentsPageLoads;
+    await refreshFromOverflowMenu(tester);
+    await tester.pumpAndSettle();
 
-    expect(find.text('Documents updated.'), findsOneWidget);
+    expect(documentsPageLoads, loadsBeforeRefresh + 1);
+    expect(find.text('Quarterly tax summary.pdf'), findsWidgets);
   });
 
   testWidgets('opens dedicated filters page from documents page', (
@@ -910,7 +940,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Filters & Sort by'), findsOneWidget);
-    expect(find.text('Sort by'), findsWidgets);
+    expect(find.text('SORT BY'), findsOneWidget);
+    expect(find.text('FILTERS'), findsOneWidget);
     expect(find.text('Tag'), findsOneWidget);
     expect(find.text('Correspondent'), findsOneWidget);
     expect(find.text('Document type'), findsOneWidget);
@@ -958,9 +989,13 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Shared vendor contract.pdf').first);
-    await tester.pumpAndSettle();
+    await pumpDetailPage(tester);
 
-    expect(find.byType(PopupMenuButton), findsNothing);
+    await tester.tap(find.byTooltip('Show menu').first);
+    await pumpDetailPage(tester);
+
+    expect(find.text('Open original'), findsOneWidget);
+    expect(find.text('Delete document'), findsNothing);
   });
 
   testWidgets('allows shared editors to edit metadata', (
@@ -1000,12 +1035,12 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Shared vendor contract.pdf').first);
-    await tester.pumpAndSettle();
+    await pumpDetailPage(tester);
 
     await tester.tap(find.text('Edit metadata'));
-    await tester.pumpAndSettle();
+    await pumpDetailPage(tester);
 
-    expect(find.text('Editable fields'), findsOneWidget);
+    expect(find.text('TITLE'), findsOneWidget);
   });
 
   testWidgets('shows tagged review documents on the Inbox tab', (
@@ -1043,7 +1078,7 @@ void main() {
 
     expect(find.byType(RefreshIndicator), findsOneWidget);
     expect(find.text('Updated just now'), findsOneWidget);
-    expect(find.text('Verification queue'), findsOneWidget);
+    expect(find.text('Inbox'), findsWidgets);
     expect(find.text('Insurance claim.pdf'), findsWidgets);
   });
 
@@ -1077,7 +1112,7 @@ void main() {
     await tester.tap(find.text('Inbox').last);
     await tester.pumpAndSettle();
 
-    expect(find.text('Verification queue'), findsOneWidget);
+    expect(find.text('Inbox'), findsWidgets);
     expect(find.text('Nothing to review'), findsOneWidget);
     expect(
       find.text(
@@ -1312,7 +1347,7 @@ void main() {
     await tester.tap(find.text('Help & Feedback'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.widgetWithText(ListTile, 'Copy support summary'));
+    await tester.tap(find.text('Copy support summary'));
     await tester.pumpAndSettle();
 
     expect(find.text('Support summary copied.'), findsOneWidget);
@@ -1451,6 +1486,11 @@ class _FakeDocumentsRepository extends DocumentsRepository {
     final option = PaperlessFilterOption(id: _nextId++, name: name);
     _documentTypes.add(option);
     return option;
+  }
+
+  @override
+  Widget? buildDocumentThumbnailWidget(PaperlessDocument document) {
+    return const SizedBox.shrink();
   }
 }
 

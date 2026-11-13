@@ -16,7 +16,11 @@ void main() {
     expect(settings.themeMode.materialThemeMode, ThemeMode.system);
   });
 
-  test('buildAppTheme configures the dark archivist palette', () {
+  // testWidgets absorbs the bundled-font lookup that google_fonts starts
+  // asynchronously when the theme is built.
+  testWidgets('buildAppTheme configures the dark archivist palette', (
+    WidgetTester tester,
+  ) async {
     final theme = buildAppTheme(brightness: Brightness.dark);
 
     expect(theme.colorScheme.surface, const Color(0xFF11131C));
@@ -29,7 +33,11 @@ void main() {
     expect(theme.navigationDrawerTheme.indicatorColor, const Color(0xFF3461FF));
   });
 
-  test('buildAppTheme uses tighter shapes and Manrope typography', () {
+  // testWidgets absorbs the bundled-font lookup that google_fonts starts
+  // asynchronously when the theme is built.
+  testWidgets('buildAppTheme uses tighter shapes and Manrope typography', (
+    WidgetTester tester,
+  ) async {
     final theme = buildAppTheme(brightness: Brightness.dark);
     final cardShape = theme.cardTheme.shape! as RoundedRectangleBorder;
     final buttonShape =
