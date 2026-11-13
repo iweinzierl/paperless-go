@@ -1151,6 +1151,13 @@ void main() {
           .selected,
       {PaperlessAuthMethod.password},
     );
+    final segmentedButtonShape = Theme.of(
+      tester.element(find.byType(SegmentedButton<PaperlessAuthMethod>)),
+    ).segmentedButtonTheme.style?.shape?.resolve(<WidgetState>{});
+    expect(
+      segmentedButtonShape,
+      RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+    );
     expect(find.text('Username'), findsOneWidget);
     expect(find.text('Password'), findsOneWidget);
 
