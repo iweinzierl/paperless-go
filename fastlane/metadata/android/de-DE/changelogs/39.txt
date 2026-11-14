@@ -1,0 +1,2 @@
+- Unterstützung für Multi-Faktor-Authentifizierung hinzugefügt
+- Unterstützung für tokenbasierte Authentifizierung hinzugefügt

@@ -1,0 +1,2 @@
+- Aggiunto supporto per l'autenticazione a più fattori
+- Aggiunto supporto per l'autenticazione basata su token

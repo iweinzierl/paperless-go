@@ -1,2 +1,2 @@
-- Navigate to the previous or next document directly from the detail screen.
-- Clear all tags in one tap while editing a document.
+- Added support for multifactor authentication
+- Added support for token based authentication

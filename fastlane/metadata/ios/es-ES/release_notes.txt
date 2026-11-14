@@ -1,2 +1,2 @@
-- Navega directamente al documento anterior o siguiente desde la pantalla de detalles.
-- Borra todas las etiquetas de una sola vez al editar un documento.
+- Se añadió soporte para autenticación multifactor
+- Se añadió soporte para autenticación basada en tokens

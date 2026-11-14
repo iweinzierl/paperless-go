@@ -1,2 +1,2 @@
-- Passa direttamente al documento precedente o successivo dalla schermata dei dettagli.
-- Rimuovi tutti i tag con un solo tocco durante la modifica di un documento.
+- Aggiunto supporto per l'autenticazione a più fattori
+- Aggiunto supporto per l'autenticazione basata su token

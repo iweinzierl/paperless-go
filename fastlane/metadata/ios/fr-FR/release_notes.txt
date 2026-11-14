@@ -1,2 +1,2 @@
-- Passez directement au document precedent ou suivant depuis l'ecran de details.
-- Supprimez toutes les etiquettes en un seul geste lors de la modification d'un document.
+- Ajout du support de l'authentification multifacteur
+- Ajout du support de l'authentification basée sur des jetons

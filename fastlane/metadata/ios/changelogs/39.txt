@@ -1,0 +1,2 @@
+- Added support for multifactor authentication
+- Added support for token based authentication

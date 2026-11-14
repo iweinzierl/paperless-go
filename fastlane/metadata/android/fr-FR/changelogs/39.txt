@@ -1,0 +1,2 @@
+- Ajout du support de l'authentification multifacteur
+- Ajout du support de l'authentification basée sur des jetons
