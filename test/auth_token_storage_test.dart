@@ -79,6 +79,79 @@ void main() {
       expect(await secureStorage.read(key: 'auth.token'), isNull);
     });
 
+    test(
+      'moves a password from shared preferences to secure storage',
+      () async {
+        FlutterSecureStorage.setMockInitialValues(<String, String>{});
+        SharedPreferences.setMockInitialValues(<String, Object>{
+          'auth.server_url': 'https://example.com/',
+          'auth.password': 'legacy-secret',
+        });
+        final sharedPreferences = await SharedPreferences.getInstance();
+
+        final storage = await AuthTokenStorage.load(
+          secureStorage,
+          sharedPreferences,
+        );
+
+        expect(storage.password, 'legacy-secret');
+        expect(sharedPreferences.containsKey('auth.password'), isFalse);
+        expect(await secureStorage.read(key: 'auth.password'), 'legacy-secret');
+      },
+    );
+
+    test('drops the plain password when moving it fails', () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{
+        'auth.server_url': 'https://example.com/',
+        'auth.password': 'legacy-secret',
+      });
+      final sharedPreferences = await SharedPreferences.getInstance();
+
+      final storage = await AuthTokenStorage.load(
+        const _FailingSecureStorage(failRead: true, failWrite: true),
+        sharedPreferences,
+      );
+
+      expect(storage.password, isNull);
+      expect(sharedPreferences.containsKey('auth.password'), isFalse);
+    });
+
+    test('drops a password left over without a saved server', () async {
+      FlutterSecureStorage.setMockInitialValues(<String, String>{
+        'auth.password': 'orphaned-secret',
+      });
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final sharedPreferences = await SharedPreferences.getInstance();
+
+      final storage = await AuthTokenStorage.load(
+        secureStorage,
+        sharedPreferences,
+      );
+
+      expect(storage.password, isNull);
+      expect(await secureStorage.read(key: 'auth.password'), isNull);
+    });
+
+    test('writes and deletes the password', () async {
+      FlutterSecureStorage.setMockInitialValues(<String, String>{});
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final sharedPreferences = await SharedPreferences.getInstance();
+      final storage = await AuthTokenStorage.load(
+        secureStorage,
+        sharedPreferences,
+      );
+
+      await storage.writePassword('secret');
+
+      expect(storage.password, 'secret');
+      expect(await secureStorage.read(key: 'auth.password'), 'secret');
+
+      await storage.writePassword('');
+
+      expect(storage.password, isNull);
+      expect(await secureStorage.read(key: 'auth.password'), isNull);
+    });
+
     test('loads signed out when reading secure storage fails', () async {
       SharedPreferences.setMockInitialValues(<String, Object>{
         'auth.server_url': 'https://example.com/',
