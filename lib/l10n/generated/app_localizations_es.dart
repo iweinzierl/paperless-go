@@ -146,6 +146,69 @@ class AppLocalizationsEs extends AppLocalizations {
   String get loginValidationTokenRequired => 'Introduce tu token de API.';
 
   @override
+  String get loginCustomHeadersLabel =>
+      'Cabeceras HTTP personalizadas (opcional)';
+
+  @override
+  String get loginCustomHeadersHint => 'Nombre-Cabecera: valor';
+
+  @override
+  String get loginCustomHeadersHelp =>
+      'Una cabecera por línea. Se envían con cada solicitud HTTPS, por ejemplo para pasar un proxy inverso como Cloudflare Access.';
+
+  @override
+  String get loginCustomHeadersSavedHelp =>
+      'Los valores guardados permanecen ocultos. Introduce nuevas cabeceras para sustituirlos.';
+
+  @override
+  String get loginRemoveCustomHeadersTitle =>
+      '¿Quitar las cabeceras personalizadas?';
+
+  @override
+  String get loginRemoveCustomHeadersMessage =>
+      'Las cabeceras guardadas se eliminarán de este dispositivo. Para volver a usarlas, tendrás que introducirlas de nuevo.';
+
+  @override
+  String get loginRemoveClientCertificateTitle =>
+      '¿Quitar el certificado de cliente?';
+
+  @override
+  String get loginRemoveClientCertificateMessage =>
+      'El certificado y su contraseña se eliminarán de este dispositivo. Para volver a usarlo, tendrás que elegir el archivo de nuevo.';
+
+  @override
+  String get loginValidationCustomHeaders =>
+      'Introduce una cabecera por línea con el formato Nombre: valor.';
+
+  @override
+  String get loginValidationCustomHeadersHttps =>
+      'Las cabeceras personalizadas solo se envían por HTTPS. Usa una URL de servidor que empiece por https://.';
+
+  @override
+  String get loginClientCertificateLabel => 'Certificado de cliente (opcional)';
+
+  @override
+  String get loginClientCertificateChoose => 'Elegir archivo de certificado';
+
+  @override
+  String get loginRemoveButton => 'Quitar';
+
+  @override
+  String get loginClientCertificatePasswordHint => 'Contraseña del certificado';
+
+  @override
+  String get loginClientCertificateHelp =>
+      'Un archivo PKCS #12 (.p12 o .pfx) para servidores que exigen TLS mutuo (mTLS). Se guarda de forma segura en este dispositivo.';
+
+  @override
+  String get loginValidationClientCertificate =>
+      'No se pudo leer el certificado. Revisa el archivo y su contraseña.';
+
+  @override
+  String get loginValidationClientCertificateHttps =>
+      'Un certificado de cliente solo funciona por HTTPS. Usa una URL de servidor que empiece por https://.';
+
+  @override
   String get loginSuccess => 'Conexión realizada correctamente.';
 
   @override

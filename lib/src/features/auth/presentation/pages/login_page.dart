@@ -19,6 +19,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   late final TextEditingController _passwordController;
   late final TextEditingController _tokenController;
   late final TextEditingController _mfaCodeController;
+  late final TextEditingController _customHeadersController;
+  late final TextEditingController _certificatePasswordController;
 
   @override
   void initState() {
@@ -28,6 +30,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     _passwordController = TextEditingController();
     _tokenController = TextEditingController();
     _mfaCodeController = TextEditingController();
+    _customHeadersController = TextEditingController();
+    _certificatePasswordController = TextEditingController();
   }
 
   @override
@@ -37,6 +41,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     _passwordController.dispose();
     _tokenController.dispose();
     _mfaCodeController.dispose();
+    _customHeadersController.dispose();
+    _certificatePasswordController.dispose();
     super.dispose();
   }
 
@@ -52,6 +58,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     _syncController(_passwordController, formState.password);
     _syncController(_tokenController, formState.token);
     _syncController(_mfaCodeController, formState.mfaCode);
+    _syncController(_customHeadersController, formState.customHeaders);
+    _syncController(
+      _certificatePasswordController,
+      formState.clientCertificatePassword,
+    );
 
     return Scaffold(
       body: ColoredBox(
@@ -248,7 +259,48 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                     ),
                                   ),
                                 ],
-                                SizedBox(height: isCompactHeight ? 20 : 28),
+                                SizedBox(height: isCompactHeight ? 6 : 10),
+                                _CustomHeadersSection(
+                                  controller: _customHeadersController,
+                                  savedHeaderNames:
+                                      formState.savedCustomHeaderNames,
+                                  enabled: !formState.isSubmitting,
+                                  onRemoveSaved: () => _confirmRemoval(
+                                    title: l10n.loginRemoveCustomHeadersTitle,
+                                    message:
+                                        l10n.loginRemoveCustomHeadersMessage,
+                                    remove: controller.removeSavedCustomHeaders,
+                                  ),
+                                  title: l10n.loginCustomHeadersLabel,
+                                  hintText: l10n.loginCustomHeadersHint,
+                                  helpText: l10n.loginCustomHeadersHelp,
+                                  errorText: formState.customHeadersError(
+                                    l10n.loginValidationCustomHeaders,
+                                    l10n.loginValidationCustomHeadersHttps,
+                                  ),
+                                  onChanged: controller.updateCustomHeaders,
+                                ),
+                                _ClientCertificateSection(
+                                  passwordController:
+                                      _certificatePasswordController,
+                                  fileName: formState.clientCertificateFileName,
+                                  errorText: formState.clientCertificateError(
+                                    l10n.loginValidationClientCertificate,
+                                    l10n.loginValidationClientCertificateHttps,
+                                  ),
+                                  enabled: !formState.isSubmitting,
+                                  onChoose: controller.pickClientCertificate,
+                                  onRemove: () => _confirmRemoval(
+                                    title:
+                                        l10n.loginRemoveClientCertificateTitle,
+                                    message: l10n
+                                        .loginRemoveClientCertificateMessage,
+                                    remove: controller.removeClientCertificate,
+                                  ),
+                                  onPasswordChanged: controller
+                                      .updateClientCertificatePassword,
+                                ),
+                                SizedBox(height: isCompactHeight ? 14 : 20),
                                 SizedBox(
                                   width: double.infinity,
                                   child: FilledButton.icon(
@@ -329,6 +381,35 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         ),
       ),
     );
+  }
+
+  /// Removing deletes the saved value at once, so the user is asked first.
+  Future<void> _confirmRemoval({
+    required String title,
+    required String message,
+    required Future<void> Function() remove,
+  }) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(title),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(dialogContext.l10n.cancelAction),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(dialogContext.l10n.loginRemoveButton),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      await remove();
+    }
   }
 
   Future<void> _openDocumentation() async {
@@ -449,6 +530,220 @@ class _LoginTextField extends StatelessWidget {
             suffixIcon: suffixIcon,
           ),
         ),
+      ],
+    );
+  }
+}
+
+class _CustomHeadersSection extends StatelessWidget {
+  const _CustomHeadersSection({
+    required this.controller,
+    required this.savedHeaderNames,
+    required this.enabled,
+    required this.onRemoveSaved,
+    required this.title,
+    required this.hintText,
+    required this.helpText,
+    required this.onChanged,
+    this.errorText,
+  });
+
+  final TextEditingController controller;
+  final List<String> savedHeaderNames;
+  final bool enabled;
+  final VoidCallback onRemoveSaved;
+  final String title;
+  final String hintText;
+  final String helpText;
+  final ValueChanged<String> onChanged;
+  final String? errorText;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final l10n = context.l10n;
+    return ExpansionTile(
+      // Open for saved headers.
+      initiallyExpanded: savedHeaderNames.isNotEmpty,
+      tilePadding: EdgeInsets.zero,
+      childrenPadding: const EdgeInsets.only(bottom: 8),
+      expandedCrossAxisAlignment: CrossAxisAlignment.start,
+      shape: const Border(),
+      collapsedShape: const Border(),
+      title: Text(
+        title,
+        style: theme.textTheme.labelLarge?.copyWith(
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.5,
+          color: theme.colorScheme.onSurfaceVariant,
+        ),
+      ),
+      children: [
+        if (savedHeaderNames.isNotEmpty) ...[
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                Icons.lock_outline,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                // Only the names: a saved value is never shown again.
+                child: Text(
+                  savedHeaderNames
+                      .map(
+                        (name) => '$name: \u2022\u2022\u2022\u2022\u2022\u2022',
+                      )
+                      .join('\n'),
+                  style: theme.textTheme.bodyMedium,
+                ),
+              ),
+              TextButton(
+                onPressed: enabled ? onRemoveSaved : null,
+                child: Text(l10n.loginRemoveButton),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            l10n.loginCustomHeadersSavedHelp,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 8),
+        ],
+        TextFormField(
+          controller: controller,
+          keyboardType: TextInputType.multiline,
+          minLines: 2,
+          maxLines: 6,
+          autocorrect: false,
+          enableSuggestions: false,
+          onChanged: onChanged,
+          style: theme.textTheme.bodyMedium,
+          decoration: InputDecoration(errorText: errorText, hintText: hintText),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          helpText,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ClientCertificateSection extends StatelessWidget {
+  const _ClientCertificateSection({
+    required this.passwordController,
+    required this.fileName,
+    required this.enabled,
+    required this.onChoose,
+    required this.onRemove,
+    required this.onPasswordChanged,
+    this.errorText,
+  });
+
+  final TextEditingController passwordController;
+  final String? fileName;
+  final bool enabled;
+  final VoidCallback onChoose;
+  final VoidCallback onRemove;
+  final ValueChanged<String> onPasswordChanged;
+  final String? errorText;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final l10n = context.l10n;
+    final fileName = this.fileName;
+    final errorText = this.errorText;
+
+    final section = ExpansionTile(
+      // Open for a saved certificate.
+      initiallyExpanded: fileName != null,
+      tilePadding: EdgeInsets.zero,
+      childrenPadding: const EdgeInsets.only(bottom: 8),
+      expandedCrossAxisAlignment: CrossAxisAlignment.start,
+      shape: const Border(),
+      collapsedShape: const Border(),
+      title: Text(
+        l10n.loginClientCertificateLabel,
+        style: theme.textTheme.labelLarge?.copyWith(
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.5,
+          color: theme.colorScheme.onSurfaceVariant,
+        ),
+      ),
+      children: [
+        if (fileName != null) ...[
+          Row(
+            children: [
+              Icon(
+                Icons.verified_user_outlined,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  fileName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodyMedium,
+                ),
+              ),
+              TextButton(
+                onPressed: enabled ? onRemove : null,
+                child: Text(l10n.loginRemoveButton),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          TextFormField(
+            controller: passwordController,
+            keyboardType: TextInputType.visiblePassword,
+            obscureText: true,
+            autocorrect: false,
+            enableSuggestions: false,
+            onChanged: onPasswordChanged,
+            decoration: InputDecoration(
+              hintText: l10n.loginClientCertificatePasswordHint,
+              prefixIcon: const Icon(Icons.lock_outline),
+            ),
+          ),
+          const SizedBox(height: 8),
+        ],
+        OutlinedButton.icon(
+          onPressed: enabled ? onChoose : null,
+          icon: const Icon(Icons.upload_file_outlined),
+          label: Text(l10n.loginClientCertificateChoose),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          l10n.loginClientCertificateHelp,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ],
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        section,
+        // Below the section, so it also shows while the section is closed.
+        if (errorText != null)
+          Text(
+            errorText,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.error,
+            ),
+          ),
       ],
     );
   }

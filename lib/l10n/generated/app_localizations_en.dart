@@ -145,6 +145,66 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loginValidationTokenRequired => 'Enter your API token.';
 
   @override
+  String get loginCustomHeadersLabel => 'Custom HTTP headers (optional)';
+
+  @override
+  String get loginCustomHeadersHint => 'Header-Name: value';
+
+  @override
+  String get loginCustomHeadersHelp =>
+      'One header per line. Sent with every HTTPS request, for example to pass a reverse proxy such as Cloudflare Access.';
+
+  @override
+  String get loginCustomHeadersSavedHelp =>
+      'The saved values stay hidden. Enter new headers to replace them.';
+
+  @override
+  String get loginRemoveCustomHeadersTitle => 'Remove custom headers?';
+
+  @override
+  String get loginRemoveCustomHeadersMessage =>
+      'The saved headers will be deleted from this device. To use them again, you will need to enter them again.';
+
+  @override
+  String get loginRemoveClientCertificateTitle => 'Remove client certificate?';
+
+  @override
+  String get loginRemoveClientCertificateMessage =>
+      'The certificate and its password will be deleted from this device. To use it again, you will need to choose the file again.';
+
+  @override
+  String get loginValidationCustomHeaders =>
+      'Enter one header per line as Name: value.';
+
+  @override
+  String get loginValidationCustomHeadersHttps =>
+      'Custom headers are only sent over HTTPS. Use a server URL that starts with https://.';
+
+  @override
+  String get loginClientCertificateLabel => 'Client certificate (optional)';
+
+  @override
+  String get loginClientCertificateChoose => 'Choose certificate file';
+
+  @override
+  String get loginRemoveButton => 'Remove';
+
+  @override
+  String get loginClientCertificatePasswordHint => 'Certificate password';
+
+  @override
+  String get loginClientCertificateHelp =>
+      'A PKCS #12 file (.p12 or .pfx) for servers that require mutual TLS (mTLS). It is stored securely on this device.';
+
+  @override
+  String get loginValidationClientCertificate =>
+      'Could not read the certificate. Check the file and its password.';
+
+  @override
+  String get loginValidationClientCertificateHttps =>
+      'A client certificate only works over HTTPS. Use a server URL that starts with https://.';
+
+  @override
   String get loginSuccess => 'Connected successfully.';
 
   @override

@@ -4,8 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:paperless_ngx_app/src/debug/screenshot_harness.dart';
+import 'package:paperless_ngx_app/src/core/network/client_certificate_http_overrides.dart';
 import 'package:paperless_ngx_app/src/core/providers/shared_preferences_provider.dart';
 import 'package:paperless_ngx_app/src/features/auth/data/local/auth_token_storage.dart';
+import 'package:paperless_ngx_app/src/features/auth/data/local/connection_secrets_storage.dart';
 import 'package:paperless_ngx_app/src/features/documents/data/repositories/documents_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:paperless_ngx_app/src/app/app.dart';
@@ -20,6 +22,11 @@ Future<void> main() async {
     const FlutterSecureStorage(),
     sharedPreferences,
   );
+  final connectionSecretsStorage = await ConnectionSecretsStorage.load(
+    const FlutterSecureStorage(),
+    sharedPreferences,
+  );
+  applyClientCertificate(connectionSecretsStorage.clientCertificate);
   final screenshotScenario = maybeParseScreenshotScenario(
     sharedPreferences.getString(screenshotScenarioPreferenceKey),
   );
@@ -31,6 +38,9 @@ Future<void> main() async {
   final overrides = <Override>[
     sharedPreferencesProvider.overrideWithValue(sharedPreferences),
     authTokenStorageProvider.overrideWithValue(authTokenStorage),
+    connectionSecretsStorageProvider.overrideWithValue(
+      connectionSecretsStorage,
+    ),
     if (screenshotScenario != null &&
         screenshotDataSource == ScreenshotDataSource.mock)
       documentsRepositoryProvider.overrideWithValue(

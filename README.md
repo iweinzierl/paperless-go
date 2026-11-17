@@ -19,6 +19,10 @@ Paperless Go is a Flutter mobile client for [paperless-ngx](https://github.com/p
 
 The app signs in against your paperless-ngx API and stores the connection details locally on your device so you can reconnect quickly. It includes optional biometric protection for reopening the app after it has been in the background. Accounts with MFA enabled can enter the one-time code from their authenticator app at login, or sign in with an API token instead.
 
+If your server sits behind an authenticating reverse proxy, such as Cloudflare Access (Zero Trust), open "Custom HTTP headers" on the login screen and enter one `Name: value` pair per line, for example the `CF-Access-Client-Id` and `CF-Access-Client-Secret` of a service token. The app stores these headers in the platform secure storage and sends them with every request to your server. Because they are secrets, they are only sent over HTTPS: the login screen does not accept custom headers together with an `http://` server URL. Once saved, the login screen shows only the names of the headers, not their values.
+
+For a server that requires mutual TLS (mTLS), open "Client certificate" on the login screen, choose your PKCS #12 file (`.p12` or `.pfx`) and enter its password. The app stores the certificate in the platform secure storage and presents it on HTTPS connections. You can use custom headers, a client certificate, both, or neither. Both stay on the device when you sign out, so you do not have to enter them again; "Remove" on the login screen deletes them from the device right away.
+
 ### Document library
 
 Paperless Go provides dedicated views for recent items, review items, and the main document library. Documents can be shown in list or card-based layouts depending on the screen size and view settings.

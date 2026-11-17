@@ -5,8 +5,10 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:paperless_ngx_app/src/core/network/dio_provider.dart';
+import 'package:paperless_ngx_app/src/features/auth/domain/models/custom_headers.dart';
 import 'package:paperless_ngx_app/src/features/auth/domain/models/paperless_auth_session.dart';
 import 'package:paperless_ngx_app/src/features/auth/presentation/controllers/auth_session_controller.dart';
+import 'package:paperless_ngx_app/src/features/auth/presentation/providers/custom_headers_provider.dart';
 import 'package:paperless_ngx_app/src/features/documents/data/query/paperless_saved_view_query_parameters.dart';
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_custom_field.dart';
 import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless_document.dart';
@@ -17,18 +19,28 @@ import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless
 final documentsRepositoryProvider = Provider<DocumentsRepository>((ref) {
   final session = ref.watch(authSessionProvider);
 
-  return DocumentsRepository(dio: ref.watch(dioProvider), session: session);
+  return DocumentsRepository(
+    dio: ref.watch(dioProvider),
+    session: session,
+    customHeaders: ref.watch(customHeadersProvider),
+  );
 });
 
 class DocumentsRepository {
   const DocumentsRepository({
     required Dio dio,
     required PaperlessAuthSession session,
+    Map<String, String> customHeaders = const <String, String>{},
   }) : _dio = dio,
-       _session = session;
+       _session = session,
+       _customHeaders = customHeaders;
 
   final Dio _dio;
   final PaperlessAuthSession _session;
+
+  // Only needed for requests that don't go through [_dio], which adds the
+  // custom headers itself.
+  final Map<String, String> _customHeaders;
 
   Future<List<PaperlessDocument>> fetchRecentUploads() async {
     final page = await fetchDocuments(ordering: '-added');
@@ -420,7 +432,12 @@ class DocumentsRepository {
 
   Map<String, String> buildAuthenticatedHeaders() {
     final token = _requireAuthToken();
-    return <String, String>{'Authorization': 'Token $token'};
+    final headers = <String, String>{'Authorization': 'Token $token'};
+    if (!allowsCustomHeaders(Uri.parse(_session.serverUrl))) {
+      return headers;
+    }
+
+    return withCustomHeaders(headers, _customHeaders);
   }
 
   Future<String> _downloadFileToTemporaryDirectory({
