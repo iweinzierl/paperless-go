@@ -373,8 +373,8 @@ void main() {
     );
     await tester.enterText(find.byType(TextFormField).at(1), 'jane.doe');
     await tester.enterText(find.byType(TextFormField).at(2), 'secret');
-    await tester.ensureVisible(find.widgetWithText(FilledButton, 'Login'));
-    await tester.tap(find.widgetWithText(FilledButton, 'Login'));
+    await tester.ensureVisible(find.text('Login'));
+    await tester.tap(find.text('Login'));
     await tester.pump();
     await tester.pumpAndSettle();
 
@@ -415,8 +415,8 @@ void main() {
     );
     await tester.enterText(find.byType(TextFormField).at(1), 'jane.doe');
     await tester.enterText(find.byType(TextFormField).at(2), 'secret');
-    await tester.ensureVisible(find.widgetWithText(FilledButton, 'Login'));
-    await tester.tap(find.widgetWithText(FilledButton, 'Login'));
+    await tester.ensureVisible(find.text('Login'));
+    await tester.tap(find.text('Login'));
     await tester.pump();
     await tester.pumpAndSettle();
 
@@ -446,8 +446,8 @@ void main() {
     );
     await tester.enterText(find.byType(TextFormField).at(1), 'jane.doe');
     await tester.enterText(find.byType(TextFormField).at(2), 'secret');
-    await tester.ensureVisible(find.widgetWithText(FilledButton, 'Login'));
-    await tester.tap(find.widgetWithText(FilledButton, 'Login'));
+    await tester.ensureVisible(find.text('Login'));
+    await tester.tap(find.text('Login'));
     await tester.pump();
     await tester.pumpAndSettle();
 
@@ -1249,8 +1249,8 @@ void main() {
     await tester.enterText(find.byType(TextFormField).at(1), 'jane.doe');
     await tester.enterText(find.byType(TextFormField).at(2), 'secret');
     await tester.enterText(find.byType(TextFormField).at(3), '123456');
-    await tester.ensureVisible(find.widgetWithText(FilledButton, 'Login'));
-    await tester.tap(find.widgetWithText(FilledButton, 'Login'));
+    await tester.ensureVisible(find.text('Login'));
+    await tester.tap(find.text('Login'));
     await tester.pumpAndSettle();
 
     expect(authRepository.receivedCode, '123456');
