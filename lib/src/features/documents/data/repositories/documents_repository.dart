@@ -590,38 +590,10 @@ class DocumentsRepository {
     Response<List<int>> response,
     PaperlessDocument document,
   ) {
-    final contentDisposition = response.headers.value('content-disposition');
-    final encodedFileName = RegExp(
-      r"filename\*=UTF-8''([^;]+)",
-      caseSensitive: false,
-    ).firstMatch(contentDisposition ?? '');
-    if (encodedFileName != null) {
-      return Uri.decodeComponent(encodedFileName.group(1)!);
-    }
-
-    final plainFileName = RegExp(
-      r'filename="?([^";]+)"?',
-      caseSensitive: false,
-    ).firstMatch(contentDisposition ?? '');
-    if (plainFileName != null) {
-      return plainFileName.group(1)!;
-    }
-
-    final sanitizedBaseName = document.preferredFileName
-        .replaceAll(RegExp(r'[\\/:*?"<>|]'), '_')
-        .trim();
-    if (sanitizedBaseName.contains('.')) {
-      return sanitizedBaseName;
-    }
-
-    final extension = switch (document.mimeType) {
-      'application/pdf' => '.pdf',
-      'text/plain' => '.txt',
-      'text/csv' => '.csv',
-      _ => '',
-    };
-
-    return '$sanitizedBaseName$extension';
+    return downloadFileName(
+      contentDisposition: response.headers.value('content-disposition'),
+      document: document,
+    );
   }
 
   DocumentsFailure _uploadFailureFromDio(DioException error) {
@@ -653,6 +625,82 @@ class DocumentsRepository {
   String _fileNameFromPath(String filePath) {
     return Uri.file(filePath).pathSegments.last;
   }
+}
+
+/// The name to save a downloaded document under: the one the server sends in
+/// the `Content-Disposition` header, or else one made from the document.
+///
+/// The result is always a plain file name. The header comes from the server,
+/// so a name like `../../file` must not lead out of the download directory.
+String downloadFileName({
+  required String? contentDisposition,
+  required PaperlessDocument document,
+}) {
+  final encodedFileName = RegExp(
+    r"filename\*=UTF-8''([^;]+)",
+    caseSensitive: false,
+  ).firstMatch(contentDisposition ?? '');
+  if (encodedFileName != null) {
+    final fileName = _plainFileName(_tryDecode(encodedFileName.group(1)!));
+    if (fileName != null) {
+      return fileName;
+    }
+  }
+
+  final plainFileName = RegExp(
+    r'filename="?([^";]+)"?',
+    caseSensitive: false,
+  ).firstMatch(contentDisposition ?? '');
+  if (plainFileName != null) {
+    final fileName = _plainFileName(plainFileName.group(1));
+    if (fileName != null) {
+      return fileName;
+    }
+  }
+
+  final baseName =
+      _plainFileName(
+        document.preferredFileName.replaceAll(RegExp(r'[\\/]'), '_'),
+      ) ??
+      'document-${document.id}';
+  if (baseName.contains('.')) {
+    return baseName;
+  }
+
+  final extension = switch (document.mimeType) {
+    'application/pdf' => '.pdf',
+    'text/plain' => '.txt',
+    'text/csv' => '.csv',
+    _ => '',
+  };
+
+  return '$baseName$extension';
+}
+
+String? _tryDecode(String encoded) {
+  try {
+    return Uri.decodeComponent(encoded);
+  } on ArgumentError {
+    return null;
+  }
+}
+
+/// Keeps only the last path segment and replaces characters that file systems
+/// reject. Returns null when no usable name is left.
+String? _plainFileName(String? fileName) {
+  if (fileName == null) {
+    return null;
+  }
+
+  final lastSegment = fileName.split(RegExp(r'[\\/]')).last;
+  final sanitized = lastSegment
+      .replaceAll(RegExp(r'[\x00-\x1F:*?"<>|]'), '_')
+      .trim();
+  if (sanitized.isEmpty || sanitized == '.' || sanitized == '..') {
+    return null;
+  }
+
+  return sanitized;
 }
 
 class DocumentsFailure implements Exception {
