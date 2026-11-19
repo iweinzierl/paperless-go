@@ -5,7 +5,8 @@ You are an expert Flutter & Dart engineer. Follow these rules strictly:
 - `flutter` framework is used so that Android and iOS clients can be built.
 - `retrofit`is used for any network connection, e.g. to the paperless-ngx server.
 - `Riverpod` is the brain and used for state management within the app.
-- `shared_preferences` shall be used to store and manage user preferences (e.g. URL of the server, username, password).
+- `shared_preferences` shall be used to store and manage user preferences (e.g. URL of the server, username).
+- `flutter_secure_storage` shall be used for secrets (e.g. the API token and the password). Secrets must not be stored in `shared_preferences`.
 - `Hive` will be used to cache data in the app to speed up app launches while loading server data in parallel.
 
 ## Coding Standards

@@ -156,6 +156,33 @@ void main() {
       );
     });
 
+    test('keeps the password out of the plain preferences', () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final sharedPreferences = await SharedPreferences.getInstance();
+      final preferences = await createPreferences(sharedPreferences);
+
+      await preferences.saveSession(
+        const PaperlessAuthSession(
+          serverUrl: 'https://example.com/',
+          username: 'jane.doe',
+          password: 'secret',
+          authToken: 'token-123',
+        ),
+      );
+
+      expect(preferences.readSession().password, 'secret');
+      expect(sharedPreferences.containsKey('auth.password'), isFalse);
+      expect(
+        await const FlutterSecureStorage().read(key: 'auth.password'),
+        'secret',
+      );
+
+      // Like the server URL, it is kept on sign-out to fill the login form.
+      await preferences.clearSession();
+
+      expect(preferences.readSession().password, 'secret');
+    });
+
     test('reads a missing method as password', () async {
       SharedPreferences.setMockInitialValues(<String, Object>{
         'auth.server_url': 'https://example.com/',

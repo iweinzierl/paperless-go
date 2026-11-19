@@ -373,8 +373,8 @@ void main() {
     );
     await tester.enterText(find.byType(TextFormField).at(1), 'jane.doe');
     await tester.enterText(find.byType(TextFormField).at(2), 'secret');
-    await tester.ensureVisible(find.widgetWithText(FilledButton, 'Login'));
-    await tester.tap(find.widgetWithText(FilledButton, 'Login'));
+    await tester.ensureVisible(_loginButton());
+    await tester.tap(_loginButton());
     await tester.pump();
     await tester.pumpAndSettle();
 
@@ -415,8 +415,8 @@ void main() {
     );
     await tester.enterText(find.byType(TextFormField).at(1), 'jane.doe');
     await tester.enterText(find.byType(TextFormField).at(2), 'secret');
-    await tester.ensureVisible(find.widgetWithText(FilledButton, 'Login'));
-    await tester.tap(find.widgetWithText(FilledButton, 'Login'));
+    await tester.ensureVisible(_loginButton());
+    await tester.tap(_loginButton());
     await tester.pump();
     await tester.pumpAndSettle();
 
@@ -446,8 +446,8 @@ void main() {
     );
     await tester.enterText(find.byType(TextFormField).at(1), 'jane.doe');
     await tester.enterText(find.byType(TextFormField).at(2), 'secret');
-    await tester.ensureVisible(find.widgetWithText(FilledButton, 'Login'));
-    await tester.tap(find.widgetWithText(FilledButton, 'Login'));
+    await tester.ensureVisible(_loginButton());
+    await tester.tap(_loginButton());
     await tester.pump();
     await tester.pumpAndSettle();
 
@@ -1249,8 +1249,8 @@ void main() {
     await tester.enterText(find.byType(TextFormField).at(1), 'jane.doe');
     await tester.enterText(find.byType(TextFormField).at(2), 'secret');
     await tester.enterText(find.byType(TextFormField).at(3), '123456');
-    await tester.ensureVisible(find.widgetWithText(FilledButton, 'Login'));
-    await tester.tap(find.widgetWithText(FilledButton, 'Login'));
+    await tester.ensureVisible(_loginButton());
+    await tester.tap(_loginButton());
     await tester.pumpAndSettle();
 
     expect(authRepository.receivedCode, '123456');
@@ -1660,4 +1660,15 @@ class _DelayedFakeDocumentsRepository extends _FakeDocumentsRepository {
       _createCorrespondentCompleter.complete();
     }
   }
+}
+
+/// The login button, and not just any text that says "Login".
+///
+/// `FilledButton.icon` builds a subclass of [FilledButton] on some Flutter
+/// versions, which `find.widgetWithText(FilledButton, ...)` doesn't find.
+Finder _loginButton() {
+  return find.ancestor(
+    of: find.text('Login'),
+    matching: find.bySubtype<FilledButton>(),
+  );
 }
