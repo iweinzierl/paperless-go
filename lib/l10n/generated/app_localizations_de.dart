@@ -145,6 +145,67 @@ class AppLocalizationsDe extends AppLocalizations {
   String get loginValidationTokenRequired => 'Gib dein API-Token ein.';
 
   @override
+  String get loginCustomHeadersLabel => 'Eigene HTTP-Header (optional)';
+
+  @override
+  String get loginCustomHeadersHint => 'Header-Name: Wert';
+
+  @override
+  String get loginCustomHeadersHelp =>
+      'Ein Header pro Zeile. Wird mit jeder HTTPS-Anfrage gesendet, zum Beispiel für einen Reverse-Proxy wie Cloudflare Access.';
+
+  @override
+  String get loginCustomHeadersSavedHelp =>
+      'Die gespeicherten Werte bleiben verborgen. Gib neue Header ein, um sie zu ersetzen.';
+
+  @override
+  String get loginRemoveCustomHeadersTitle => 'Eigene Header entfernen?';
+
+  @override
+  String get loginRemoveCustomHeadersMessage =>
+      'Die gespeicherten Header werden von diesem Gerät gelöscht. Um sie wieder zu verwenden, musst du sie erneut eingeben.';
+
+  @override
+  String get loginRemoveClientCertificateTitle =>
+      'Client-Zertifikat entfernen?';
+
+  @override
+  String get loginRemoveClientCertificateMessage =>
+      'Das Zertifikat und sein Passwort werden von diesem Gerät gelöscht. Um es wieder zu verwenden, musst du die Datei erneut auswählen.';
+
+  @override
+  String get loginValidationCustomHeaders =>
+      'Gib pro Zeile einen Header im Format Name: Wert ein.';
+
+  @override
+  String get loginValidationCustomHeadersHttps =>
+      'Eigene Header werden nur über HTTPS gesendet. Verwende eine Server-URL, die mit https:// beginnt.';
+
+  @override
+  String get loginClientCertificateLabel => 'Client-Zertifikat (optional)';
+
+  @override
+  String get loginClientCertificateChoose => 'Zertifikatsdatei auswählen';
+
+  @override
+  String get loginRemoveButton => 'Entfernen';
+
+  @override
+  String get loginClientCertificatePasswordHint => 'Passwort des Zertifikats';
+
+  @override
+  String get loginClientCertificateHelp =>
+      'Eine PKCS-#12-Datei (.p12 oder .pfx) für Server, die Mutual TLS (mTLS) verlangen. Sie wird sicher auf diesem Gerät gespeichert.';
+
+  @override
+  String get loginValidationClientCertificate =>
+      'Das Zertifikat konnte nicht gelesen werden. Prüfe die Datei und ihr Passwort.';
+
+  @override
+  String get loginValidationClientCertificateHttps =>
+      'Ein Client-Zertifikat funktioniert nur über HTTPS. Verwende eine Server-URL, die mit https:// beginnt.';
+
+  @override
   String get loginSuccess => 'Verbindung erfolgreich hergestellt.';
 
   @override

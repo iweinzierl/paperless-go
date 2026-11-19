@@ -146,6 +146,69 @@ class AppLocalizationsFr extends AppLocalizations {
   String get loginValidationTokenRequired => 'Saisissez votre jeton d\'API.';
 
   @override
+  String get loginCustomHeadersLabel =>
+      'En-têtes HTTP personnalisés (facultatif)';
+
+  @override
+  String get loginCustomHeadersHint => 'Nom-En-Tete: valeur';
+
+  @override
+  String get loginCustomHeadersHelp =>
+      'Un en-tête par ligne. Envoyés avec chaque requête HTTPS, par exemple pour passer un proxy inverse comme Cloudflare Access.';
+
+  @override
+  String get loginCustomHeadersSavedHelp =>
+      'Les valeurs enregistrées restent masquées. Saisissez de nouveaux en-têtes pour les remplacer.';
+
+  @override
+  String get loginRemoveCustomHeadersTitle =>
+      'Retirer les en-têtes personnalisés ?';
+
+  @override
+  String get loginRemoveCustomHeadersMessage =>
+      'Les en-têtes enregistrés seront supprimés de cet appareil. Pour les réutiliser, vous devrez les saisir à nouveau.';
+
+  @override
+  String get loginRemoveClientCertificateTitle =>
+      'Retirer le certificat client ?';
+
+  @override
+  String get loginRemoveClientCertificateMessage =>
+      'Le certificat et son mot de passe seront supprimés de cet appareil. Pour le réutiliser, vous devrez choisir à nouveau le fichier.';
+
+  @override
+  String get loginValidationCustomHeaders =>
+      'Saisissez un en-tête par ligne au format Nom: valeur.';
+
+  @override
+  String get loginValidationCustomHeadersHttps =>
+      'Les en-têtes personnalisés ne sont envoyés qu\'en HTTPS. Utilisez une URL de serveur commençant par https://.';
+
+  @override
+  String get loginClientCertificateLabel => 'Certificat client (facultatif)';
+
+  @override
+  String get loginClientCertificateChoose => 'Choisir un fichier de certificat';
+
+  @override
+  String get loginRemoveButton => 'Retirer';
+
+  @override
+  String get loginClientCertificatePasswordHint => 'Mot de passe du certificat';
+
+  @override
+  String get loginClientCertificateHelp =>
+      'Un fichier PKCS #12 (.p12 ou .pfx) pour les serveurs qui exigent le TLS mutuel (mTLS). Il est stocké de façon sécurisée sur cet appareil.';
+
+  @override
+  String get loginValidationClientCertificate =>
+      'Impossible de lire le certificat. Vérifiez le fichier et son mot de passe.';
+
+  @override
+  String get loginValidationClientCertificateHttps =>
+      'Un certificat client ne fonctionne qu\'en HTTPS. Utilisez une URL de serveur commençant par https://.';
+
+  @override
   String get loginSuccess => 'Connexion réussie.';
 
   @override

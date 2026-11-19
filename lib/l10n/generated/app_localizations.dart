@@ -362,6 +362,108 @@ abstract class AppLocalizations {
   /// **'Enter your API token.'**
   String get loginValidationTokenRequired;
 
+  /// No description provided for @loginCustomHeadersLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom HTTP headers (optional)'**
+  String get loginCustomHeadersLabel;
+
+  /// No description provided for @loginCustomHeadersHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Header-Name: value'**
+  String get loginCustomHeadersHint;
+
+  /// No description provided for @loginCustomHeadersHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'One header per line. Sent with every HTTPS request, for example to pass a reverse proxy such as Cloudflare Access.'**
+  String get loginCustomHeadersHelp;
+
+  /// No description provided for @loginCustomHeadersSavedHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'The saved values stay hidden. Enter new headers to replace them.'**
+  String get loginCustomHeadersSavedHelp;
+
+  /// No description provided for @loginRemoveCustomHeadersTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove custom headers?'**
+  String get loginRemoveCustomHeadersTitle;
+
+  /// No description provided for @loginRemoveCustomHeadersMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'The saved headers will be deleted from this device. To use them again, you will need to enter them again.'**
+  String get loginRemoveCustomHeadersMessage;
+
+  /// No description provided for @loginRemoveClientCertificateTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove client certificate?'**
+  String get loginRemoveClientCertificateTitle;
+
+  /// No description provided for @loginRemoveClientCertificateMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'The certificate and its password will be deleted from this device. To use it again, you will need to choose the file again.'**
+  String get loginRemoveClientCertificateMessage;
+
+  /// No description provided for @loginValidationCustomHeaders.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter one header per line as Name: value.'**
+  String get loginValidationCustomHeaders;
+
+  /// No description provided for @loginValidationCustomHeadersHttps.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom headers are only sent over HTTPS. Use a server URL that starts with https://.'**
+  String get loginValidationCustomHeadersHttps;
+
+  /// No description provided for @loginClientCertificateLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Client certificate (optional)'**
+  String get loginClientCertificateLabel;
+
+  /// No description provided for @loginClientCertificateChoose.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose certificate file'**
+  String get loginClientCertificateChoose;
+
+  /// No description provided for @loginRemoveButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get loginRemoveButton;
+
+  /// No description provided for @loginClientCertificatePasswordHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Certificate password'**
+  String get loginClientCertificatePasswordHint;
+
+  /// No description provided for @loginClientCertificateHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'A PKCS #12 file (.p12 or .pfx) for servers that require mutual TLS (mTLS). It is stored securely on this device.'**
+  String get loginClientCertificateHelp;
+
+  /// No description provided for @loginValidationClientCertificate.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not read the certificate. Check the file and its password.'**
+  String get loginValidationClientCertificate;
+
+  /// No description provided for @loginValidationClientCertificateHttps.
+  ///
+  /// In en, this message translates to:
+  /// **'A client certificate only works over HTTPS. Use a server URL that starts with https://.'**
+  String get loginValidationClientCertificateHttps;
+
   /// No description provided for @loginSuccess.
   ///
   /// In en, this message translates to:

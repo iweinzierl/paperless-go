@@ -145,6 +145,69 @@ class AppLocalizationsIt extends AppLocalizations {
   String get loginValidationTokenRequired => 'Inserisci il token API.';
 
   @override
+  String get loginCustomHeadersLabel =>
+      'Header HTTP personalizzati (facoltativo)';
+
+  @override
+  String get loginCustomHeadersHint => 'Nome-Header: valore';
+
+  @override
+  String get loginCustomHeadersHelp =>
+      'Un header per riga. Inviati con ogni richiesta HTTPS, ad esempio per superare un reverse proxy come Cloudflare Access.';
+
+  @override
+  String get loginCustomHeadersSavedHelp =>
+      'I valori salvati restano nascosti. Inserisci nuovi header per sostituirli.';
+
+  @override
+  String get loginRemoveCustomHeadersTitle =>
+      'Rimuovere gli header personalizzati?';
+
+  @override
+  String get loginRemoveCustomHeadersMessage =>
+      'Gli header salvati verranno eliminati da questo dispositivo. Per usarli di nuovo dovrai inserirli nuovamente.';
+
+  @override
+  String get loginRemoveClientCertificateTitle =>
+      'Rimuovere il certificato client?';
+
+  @override
+  String get loginRemoveClientCertificateMessage =>
+      'Il certificato e la sua password verranno eliminati da questo dispositivo. Per usarlo di nuovo dovrai scegliere nuovamente il file.';
+
+  @override
+  String get loginValidationCustomHeaders =>
+      'Inserisci un header per riga nel formato Nome: valore.';
+
+  @override
+  String get loginValidationCustomHeadersHttps =>
+      'Gli header personalizzati vengono inviati solo tramite HTTPS. Usa un URL del server che inizi con https://.';
+
+  @override
+  String get loginClientCertificateLabel => 'Certificato client (facoltativo)';
+
+  @override
+  String get loginClientCertificateChoose => 'Scegli il file del certificato';
+
+  @override
+  String get loginRemoveButton => 'Rimuovi';
+
+  @override
+  String get loginClientCertificatePasswordHint => 'Password del certificato';
+
+  @override
+  String get loginClientCertificateHelp =>
+      'Un file PKCS #12 (.p12 o .pfx) per i server che richiedono il TLS reciproco (mTLS). Viene salvato in modo sicuro su questo dispositivo.';
+
+  @override
+  String get loginValidationClientCertificate =>
+      'Impossibile leggere il certificato. Controlla il file e la sua password.';
+
+  @override
+  String get loginValidationClientCertificateHttps =>
+      'Un certificato client funziona solo tramite HTTPS. Usa un URL del server che inizi con https://.';
+
+  @override
   String get loginSuccess => 'Connessione riuscita.';
 
   @override
