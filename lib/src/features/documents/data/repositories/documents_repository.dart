@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:paperless_ngx_app/src/core/data/local/app_temporary_files.dart';
 import 'package:paperless_ngx_app/src/core/network/dio_provider.dart';
 import 'package:paperless_ngx_app/src/features/auth/domain/models/paperless_auth_session.dart';
 import 'package:paperless_ngx_app/src/features/auth/presentation/controllers/auth_session_controller.dart';
@@ -17,18 +17,25 @@ import 'package:paperless_ngx_app/src/features/documents/domain/models/paperless
 final documentsRepositoryProvider = Provider<DocumentsRepository>((ref) {
   final session = ref.watch(authSessionProvider);
 
-  return DocumentsRepository(dio: ref.watch(dioProvider), session: session);
+  return DocumentsRepository(
+    dio: ref.watch(dioProvider),
+    session: session,
+    temporaryFiles: ref.watch(appTemporaryFilesProvider),
+  );
 });
 
 class DocumentsRepository {
   const DocumentsRepository({
     required Dio dio,
     required PaperlessAuthSession session,
+    AppTemporaryFiles temporaryFiles = const AppTemporaryFiles(),
   }) : _dio = dio,
-       _session = session;
+       _session = session,
+       _temporaryFiles = temporaryFiles;
 
   final Dio _dio;
   final PaperlessAuthSession _session;
+  final AppTemporaryFiles _temporaryFiles;
 
   Future<List<PaperlessDocument>> fetchRecentUploads() async {
     final page = await fetchDocuments(ordering: '-added');
@@ -448,7 +455,7 @@ class DocumentsRepository {
       );
     }
 
-    final directory = await getTemporaryDirectory();
+    final directory = await _temporaryFiles.directory();
     final fileName = _fileNameFromResponse(response, document);
     final file = File('${directory.path}/$fileName');
 

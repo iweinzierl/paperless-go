@@ -3,8 +3,8 @@ import 'dart:io';
 import 'package:cunning_document_scanner/cunning_document_scanner.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:pdf/widgets.dart' as pw;
+import 'package:paperless_ngx_app/src/core/data/local/app_temporary_files.dart';
 import 'package:paperless_ngx_app/src/features/documents/data/repositories/documents_repository.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/providers/documents_providers.dart';
 
@@ -13,11 +13,15 @@ final documentScannerProvider = Provider<DocumentScanner>(
 );
 
 final documentScanComposerProvider = Provider<DocumentScanComposer>(
-  (ref) => const PdfDocumentScanComposer(),
+  (ref) => PdfDocumentScanComposer(
+    temporaryFiles: ref.watch(appTemporaryFilesProvider),
+  ),
 );
 
 final documentImportPickerProvider = Provider<DocumentImportPicker>(
-  (ref) => const SystemDocumentImportPicker(),
+  (ref) => SystemDocumentImportPicker(
+    temporaryFiles: ref.watch(appTemporaryFilesProvider),
+  ),
 );
 
 final documentScanControllerProvider =
@@ -54,7 +58,11 @@ class SystemDocumentScanner implements DocumentScanner {
 }
 
 class PdfDocumentScanComposer implements DocumentScanComposer {
-  const PdfDocumentScanComposer();
+  const PdfDocumentScanComposer({
+    AppTemporaryFiles temporaryFiles = const AppTemporaryFiles(),
+  }) : _temporaryFiles = temporaryFiles;
+
+  final AppTemporaryFiles _temporaryFiles;
 
   @override
   Future<String> composeDocument(List<String> pagePaths) async {
@@ -75,7 +83,7 @@ class PdfDocumentScanComposer implements DocumentScanComposer {
       );
     }
 
-    final directory = await getTemporaryDirectory();
+    final directory = await _temporaryFiles.directory();
     final file = File(
       '${directory.path}/scan-${DateTime.now().millisecondsSinceEpoch}.pdf',
     );
@@ -85,7 +93,11 @@ class PdfDocumentScanComposer implements DocumentScanComposer {
 }
 
 class SystemDocumentImportPicker implements DocumentImportPicker {
-  const SystemDocumentImportPicker();
+  const SystemDocumentImportPicker({
+    AppTemporaryFiles temporaryFiles = const AppTemporaryFiles(),
+  }) : _temporaryFiles = temporaryFiles;
+
+  final AppTemporaryFiles _temporaryFiles;
 
   @override
   Future<String?> pickDocument() async {
@@ -109,7 +121,7 @@ class SystemDocumentImportPicker implements DocumentImportPicker {
       return null;
     }
 
-    final directory = await getTemporaryDirectory();
+    final directory = await _temporaryFiles.directory();
     final fileName = selectedFile.name.trim().isEmpty
         ? 'imported-document-${DateTime.now().millisecondsSinceEpoch}'
         : selectedFile.name.trim();
@@ -212,16 +224,28 @@ class DocumentScanController extends AutoDisposeNotifier<DocumentScanState> {
 
     state = state.copyWith(uploadStatus: const AsyncLoading<String>());
 
+    final importedPath = state.importedDocumentPath;
+    String? composedPath;
     final result = await AsyncValue.guard<String>(() async {
       final filePath =
-          state.importedDocumentPath ??
-          await ref
+          importedPath ??
+          (composedPath = await ref
               .read(documentScanComposerProvider)
-              .composeDocument(state.pagePaths);
+              .composeDocument(state.pagePaths));
       return ref
           .read(documentsRepositoryProvider)
           .uploadDocument(filePath: filePath, title: state.title);
     });
+
+    final temporaryFiles = ref.read(appTemporaryFilesProvider);
+    final composedFilePath = composedPath;
+    if (composedFilePath != null) {
+      await temporaryFiles.delete(composedFilePath);
+    } else if (importedPath != null &&
+        result.hasValue &&
+        await temporaryFiles.contains(importedPath)) {
+      await temporaryFiles.delete(importedPath);
+    }
 
     state = state.copyWith(uploadStatus: result);
 

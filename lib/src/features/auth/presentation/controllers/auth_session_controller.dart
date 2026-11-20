@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:paperless_ngx_app/src/core/data/local/app_temporary_files.dart';
 import 'package:paperless_ngx_app/src/features/auth/data/local/auth_preferences.dart';
 import 'package:paperless_ngx_app/src/features/auth/domain/models/paperless_auth_session.dart';
 import 'package:paperless_ngx_app/src/features/auth/presentation/controllers/login_controller.dart';
@@ -28,5 +29,6 @@ class AuthSessionController extends Notifier<PaperlessAuthSession> {
     final clearedSession = state.copyWith(authToken: '', displayName: '');
     await _authPreferences.clearSession();
     state = clearedSession;
+    await ref.read(appTemporaryFilesProvider).clear();
   }
 }

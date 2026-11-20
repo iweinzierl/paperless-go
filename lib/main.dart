@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:paperless_ngx_app/src/debug/screenshot_harness.dart';
+import 'package:paperless_ngx_app/src/core/data/local/app_temporary_files.dart';
 import 'package:paperless_ngx_app/src/core/providers/shared_preferences_provider.dart';
 import 'package:paperless_ngx_app/src/features/auth/data/local/auth_token_storage.dart';
 import 'package:paperless_ngx_app/src/features/documents/data/repositories/documents_repository.dart';
@@ -14,6 +15,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   await Hive.initFlutter();
+  await const AppTemporaryFiles().clear();
 
   final sharedPreferences = await SharedPreferences.getInstance();
   final authTokenStorage = await AuthTokenStorage.load(
