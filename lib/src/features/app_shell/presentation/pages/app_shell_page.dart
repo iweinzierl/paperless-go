@@ -76,7 +76,10 @@ class AppShellPage extends ConsumerWidget {
 
   Future<void> _openScanDocument(BuildContext context) async {
     final taskId = await Navigator.of(context).push<String>(
-      MaterialPageRoute<String>(builder: (context) => const ScanDocumentPage()),
+      MaterialPageRoute<String>(
+        settings: const RouteSettings(name: ScanDocumentPage.routeName),
+        builder: (context) => const ScanDocumentPage(),
+      ),
     );
 
     if (!context.mounted || taskId == null || taskId.isEmpty) {

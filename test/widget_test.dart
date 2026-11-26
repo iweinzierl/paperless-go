@@ -38,6 +38,8 @@ import 'package:paperless_ngx_app/src/features/auth/presentation/providers/curre
 import 'package:paperless_ngx_app/src/features/documents/presentation/providers/document_detail_provider.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/providers/documents_providers.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/providers/incoming_pdf_controller.dart';
+import 'package:paperless_ngx_app/src/features/documents/presentation/providers/scan_shortcut_controller.dart';
+import 'package:paperless_ngx_app/src/features/documents/presentation/pages/scan_document_page.dart';
 
 void main() {
   const fakeRecentDocument = PaperlessDocument(
@@ -130,6 +132,7 @@ void main() {
     Map<String, Object> initialValues = const <String, Object>{},
     List<Override> overrides = const <Override>[],
     DocumentsRepository? documentsRepository,
+    ScanShortcutPlatformBridge? scanShortcutBridge,
   }) async {
     // The default 800x600 test surface triggers the wide layout; these tests
     // exercise the compact phone layout.
@@ -161,6 +164,9 @@ void main() {
           ),
           incomingPdfPlatformBridgeProvider.overrideWith(
             (ref) => const _FakeIncomingPdfPlatformBridge(),
+          ),
+          scanShortcutPlatformBridgeProvider.overrideWithValue(
+            scanShortcutBridge ?? _FakeScanShortcutPlatformBridge(),
           ),
           appDrawerStatisticsProvider.overrideWith(
             (ref) async => fakeDrawerStatistics,
@@ -579,6 +585,86 @@ void main() {
 
     expect(find.text('Start a new scan'), findsOneWidget);
     expect(find.text('Upload scan'), findsNothing);
+  });
+
+  group('home screen scan widget', () {
+    const signedInValues = <String, Object>{
+      'auth.server_url': 'https://example.com/paperless/',
+      'auth.username': 'jane.doe',
+      'auth.password': 'secret',
+      'auth.token': 'token-123',
+      'auth.display_name': 'Jane Doe',
+    };
+
+    List<Override> shellOverrides() => [
+      recentUploadsProvider.overrideWith((ref) async => [fakeRecentDocument]),
+      reviewDocumentsProvider.overrideWith((ref) async => [fakeTodoDocument]),
+      documentsPageProvider.overrideWith((ref) async => fakeDocumentsPage),
+      tagOptionsProvider.overrideWith((ref) async => fakeFilterOptions),
+      correspondentOptionsProvider.overrideWith(
+        (ref) async => fakeFilterOptions,
+      ),
+      documentTypeOptionsProvider.overrideWith(
+        (ref) async => fakeFilterOptions,
+      ),
+    ];
+
+    Finder scanPages() => find.byType(ScanDocumentPage, skipOffstage: false);
+
+    testWidgets('opens the scan screen when the app starts from the widget', (
+      WidgetTester tester,
+    ) async {
+      final bridge = _FakeScanShortcutPlatformBridge(initialRequest: true);
+      addTearDown(bridge.dispose);
+
+      await pumpApp(
+        tester,
+        initialValues: signedInValues,
+        overrides: shellOverrides(),
+        scanShortcutBridge: bridge,
+      );
+      await tester.pumpAndSettle();
+
+      expect(scanPages(), findsOneWidget);
+      expect(find.text('Start a new scan'), findsOneWidget);
+    });
+
+    testWidgets('opens the scan screen once per tap while the app runs', (
+      WidgetTester tester,
+    ) async {
+      final bridge = _FakeScanShortcutPlatformBridge();
+      addTearDown(bridge.dispose);
+
+      await pumpApp(
+        tester,
+        initialValues: signedInValues,
+        overrides: shellOverrides(),
+        scanShortcutBridge: bridge,
+      );
+      await tester.pumpAndSettle();
+      expect(scanPages(), findsNothing);
+
+      bridge.tap();
+      await tester.pumpAndSettle();
+      expect(scanPages(), findsOneWidget);
+
+      // A second tap must not stack another scan screen on top.
+      bridge.tap();
+      await tester.pumpAndSettle();
+      expect(scanPages(), findsOneWidget);
+    });
+
+    testWidgets('waits for sign-in before opening the scan screen', (
+      WidgetTester tester,
+    ) async {
+      final bridge = _FakeScanShortcutPlatformBridge(initialRequest: true);
+      addTearDown(bridge.dispose);
+
+      await pumpApp(tester, scanShortcutBridge: bridge);
+      await tester.pumpAndSettle();
+
+      expect(scanPages(), findsNothing);
+    });
   });
 
   testWidgets('shows snackbar after manual recent refresh', (
@@ -1562,6 +1648,27 @@ class _FakeIncomingPdfPlatformBridge implements IncomingPdfPlatformBridge {
 
   @override
   Stream<String> get openedPdfPaths => const Stream<String>.empty();
+}
+
+class _FakeScanShortcutPlatformBridge implements ScanShortcutPlatformBridge {
+  _FakeScanShortcutPlatformBridge({this.initialRequest = false});
+
+  bool initialRequest;
+  final StreamController<void> _taps = StreamController<void>.broadcast();
+
+  void tap() => _taps.add(null);
+
+  Future<void> dispose() => _taps.close();
+
+  @override
+  Future<bool> consumeInitialScanRequest() async {
+    final request = initialRequest;
+    initialRequest = false;
+    return request;
+  }
+
+  @override
+  Stream<void> get scanRequests => _taps.stream;
 }
 
 class _FakeIncomingPdfController extends IncomingPdfController {
