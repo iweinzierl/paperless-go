@@ -9,6 +9,8 @@ import 'package:paperless_ngx_app/src/features/documents/presentation/providers/
 class ScanDocumentPage extends ConsumerStatefulWidget {
   const ScanDocumentPage({super.key, this.initialImportedDocumentPath});
 
+  static const routeName = '/scan-document';
+
   final String? initialImportedDocumentPath;
 
   @override

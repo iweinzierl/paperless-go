@@ -35,6 +35,8 @@ The app supports opening documents, viewing details, and running supported follo
 
 Paper documents can be scanned directly in the app, converted into a PDF on-device, and uploaded to the connected paperless-ngx server.
 
+On Android, a home screen widget opens the scan screen with one tap. If the app is locked or signed out, the scan screen opens right after you unlock or sign in.
+
 Temporary copies of downloaded and scanned documents are kept in an app-specific temporary folder and deleted automatically after upload, on sign-out and on app start.
 
 ### Settings and personalization

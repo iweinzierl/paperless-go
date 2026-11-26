@@ -14,6 +14,7 @@ import 'package:paperless_ngx_app/src/features/auth/presentation/pages/login_pag
 import 'package:paperless_ngx_app/src/features/documents/presentation/pages/scan_document_page.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/providers/documents_providers.dart';
 import 'package:paperless_ngx_app/src/features/documents/presentation/providers/incoming_pdf_controller.dart';
+import 'package:paperless_ngx_app/src/features/documents/presentation/providers/scan_shortcut_controller.dart';
 
 class PaperlessNgxApp extends ConsumerStatefulWidget {
   const PaperlessNgxApp({super.key});
@@ -28,7 +29,8 @@ class _PaperlessNgxAppState extends ConsumerState<PaperlessNgxApp>
   late final ProviderSubscription<PaperlessAuthSession> _authSubscription;
   late final ProviderSubscription<AppBehaviorSettings> _behaviorSubscription;
   late final ProviderSubscription<IncomingPdfState> _incomingPdfSubscription;
-  bool _isHandlingIncomingPdf = false;
+  late final ProviderSubscription<bool> _scanShortcutSubscription;
+  bool _isHandlingIncomingRequest = false;
   bool _isAppLocked = false;
   bool _isUnlockingApp = false;
   String? _unlockErrorMessage;
@@ -57,7 +59,7 @@ class _PaperlessNgxAppState extends ConsumerState<PaperlessNgxApp>
         }
 
         _scheduleSavedViewsWarmup();
-        _scheduleIncomingPdfHandling();
+        _scheduleIncomingRequestHandling();
       },
     );
     _behaviorSubscription = ref.listenManual<AppBehaviorSettings>(
@@ -72,11 +74,15 @@ class _PaperlessNgxAppState extends ConsumerState<PaperlessNgxApp>
     );
     _incomingPdfSubscription = ref.listenManual<IncomingPdfState>(
       incomingPdfControllerProvider,
-      (previous, next) => _scheduleIncomingPdfHandling(),
+      (previous, next) => _scheduleIncomingRequestHandling(),
+    );
+    _scanShortcutSubscription = ref.listenManual<bool>(
+      scanShortcutControllerProvider,
+      (previous, next) => _scheduleIncomingRequestHandling(),
     );
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _scheduleIncomingPdfHandling();
+      _scheduleIncomingRequestHandling();
       _scheduleSavedViewsWarmup();
       if (_isAppLocked) {
         unawaited(_unlockApp());
@@ -90,6 +96,7 @@ class _PaperlessNgxAppState extends ConsumerState<PaperlessNgxApp>
     _authSubscription.close();
     _behaviorSubscription.close();
     _incomingPdfSubscription.close();
+    _scanShortcutSubscription.close();
     super.dispose();
   }
 
@@ -113,13 +120,13 @@ class _PaperlessNgxAppState extends ConsumerState<PaperlessNgxApp>
     }
   }
 
-  void _scheduleIncomingPdfHandling() {
+  void _scheduleIncomingRequestHandling() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) {
         return;
       }
 
-      unawaited(_handleIncomingPdfIfPossible());
+      unawaited(_handleIncomingRequestIfPossible());
     });
   }
 
@@ -156,35 +163,45 @@ class _PaperlessNgxAppState extends ConsumerState<PaperlessNgxApp>
     }
   }
 
-  Future<void> _handleIncomingPdfIfPossible() async {
-    if (_isHandlingIncomingPdf || _isAppLocked || _isUnlockingApp) {
+  /// Opens the scan screen for a shared PDF or a tap on the home screen
+  /// widget, once the user is signed in and the app is unlocked.
+  Future<void> _handleIncomingRequestIfPossible() async {
+    if (_isHandlingIncomingRequest || _isAppLocked || _isUnlockingApp) {
       return;
     }
 
     final session = ref.read(authSessionProvider);
-    final incomingPdfState = ref.read(incomingPdfControllerProvider);
-    if (!session.isAuthenticated || incomingPdfState.pendingPdfPath == null) {
-      return;
-    }
-
     final navigator = _navigatorKey.currentState;
-    if (navigator == null) {
+    if (!session.isAuthenticated || navigator == null) {
       return;
     }
 
     final pendingPdfPath = ref
         .read(incomingPdfControllerProvider.notifier)
         .consumePendingPdfPath();
-    if (pendingPdfPath == null) {
+    final String? importPath;
+    if (pendingPdfPath != null) {
+      importPath = pendingPdfPath;
+    } else if (ref
+        .read(scanShortcutControllerProvider.notifier)
+        .consumePendingScanRequest()) {
+      // The widget was tapped while the scan screen was already open: keep
+      // the user's work instead of stacking a second, empty scan screen.
+      if (_isScanDocumentPageOnTop(navigator)) {
+        return;
+      }
+      importPath = null;
+    } else {
       return;
     }
 
-    _isHandlingIncomingPdf = true;
+    _isHandlingIncomingRequest = true;
     try {
       final taskId = await navigator.push<String>(
         MaterialPageRoute<String>(
+          settings: const RouteSettings(name: ScanDocumentPage.routeName),
           builder: (context) =>
-              ScanDocumentPage(initialImportedDocumentPath: pendingPdfPath),
+              ScanDocumentPage(initialImportedDocumentPath: importPath),
         ),
       );
 
@@ -207,11 +224,20 @@ class _PaperlessNgxAppState extends ConsumerState<PaperlessNgxApp>
         ..hideCurrentSnackBar()
         ..showSnackBar(SnackBar(content: Text(l10n.scanDocumentQueued)));
     } finally {
-      _isHandlingIncomingPdf = false;
+      _isHandlingIncomingRequest = false;
       if (mounted) {
-        _scheduleIncomingPdfHandling();
+        _scheduleIncomingRequestHandling();
       }
     }
+  }
+
+  bool _isScanDocumentPageOnTop(NavigatorState navigator) {
+    String? topRouteName;
+    navigator.popUntil((route) {
+      topRouteName = route.settings.name;
+      return true;
+    });
+    return topRouteName == ScanDocumentPage.routeName;
   }
 
   void _markAppBackgrounded() {
@@ -289,7 +315,7 @@ class _PaperlessNgxAppState extends ConsumerState<PaperlessNgxApp>
     });
 
     if (didAuthenticate) {
-      _scheduleIncomingPdfHandling();
+      _scheduleIncomingRequestHandling();
     }
   }
 
@@ -399,6 +425,7 @@ class _PaperlessNgxAppState extends ConsumerState<PaperlessNgxApp>
     final session = ref.watch(authSessionProvider);
     final behaviorSettings = ref.watch(appBehaviorSettingsProvider);
     ref.watch(incomingPdfControllerProvider);
+    ref.watch(scanShortcutControllerProvider);
 
     return MaterialApp(
       navigatorKey: _navigatorKey,

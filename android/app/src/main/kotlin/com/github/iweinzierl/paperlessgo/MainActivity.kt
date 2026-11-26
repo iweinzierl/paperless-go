@@ -18,17 +18,21 @@ import java.io.IOException
 class MainActivity : FlutterFragmentActivity() {
 	private var pendingInitialPdfPath: String? = null
 	private var eventSink: EventChannel.EventSink? = null
+	private var pendingScanRequest = false
+	private var scanEventSink: EventChannel.EventSink? = null
 
 	override fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)
 		WindowCompat.enableEdgeToEdge(window)
 		deliverIncomingPdf(intent, preferPending = true)
+		deliverScanRequest(intent, preferPending = true)
 	}
 
 	override fun onNewIntent(intent: Intent) {
 		super.onNewIntent(intent)
 		setIntent(intent)
 		deliverIncomingPdf(intent, preferPending = false)
+		deliverScanRequest(intent, preferPending = false)
 	}
 
 	override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
@@ -62,6 +66,54 @@ class MainActivity : FlutterFragmentActivity() {
 				}
 			},
 		)
+
+		MethodChannel(
+			flutterEngine.dartExecutor.binaryMessenger,
+			SCAN_CHANNEL_NAME,
+		).setMethodCallHandler { call, result ->
+			when (call.method) {
+				"consumeInitialScanRequest" -> {
+					result.success(pendingScanRequest)
+					pendingScanRequest = false
+				}
+
+				else -> result.notImplemented()
+			}
+		}
+
+		EventChannel(
+			flutterEngine.dartExecutor.binaryMessenger,
+			SCAN_EVENTS_CHANNEL_NAME,
+		).setStreamHandler(
+			object : EventChannel.StreamHandler {
+				override fun onListen(arguments: Any?, events: EventChannel.EventSink) {
+					scanEventSink = events
+				}
+
+				override fun onCancel(arguments: Any?) {
+					scanEventSink = null
+				}
+			},
+		)
+	}
+
+	private fun deliverScanRequest(intent: Intent?, preferPending: Boolean) {
+		if (intent?.action != ACTION_SCAN_DOCUMENT) {
+			return
+		}
+
+		// Consume the action so an activity recreation does not reopen the
+		// scan screen, and ignore the intent Android replays from recents.
+		intent.action = null
+		if ((intent.flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY) != 0) {
+			return
+		}
+		if (preferPending || scanEventSink == null) {
+			pendingScanRequest = true
+			return
+		}
+
+		scanEventSink?.success(true)
 	}
 
 	private fun deliverIncomingPdf(intent: Intent?, preferPending: Boolean) {
@@ -182,9 +234,13 @@ class MainActivity : FlutterFragmentActivity() {
 	}
 
 	companion object {
+		const val ACTION_SCAN_DOCUMENT = "com.github.iweinzierl.paperlessgo.action.SCAN_DOCUMENT"
 		private const val TAG = "MainActivity"
 		private const val CHANNEL_NAME = "com.github.iweinzierl.paperlessgo/open_document"
 		private const val EVENTS_CHANNEL_NAME =
 			"com.github.iweinzierl.paperlessgo/open_document/events"
+		private const val SCAN_CHANNEL_NAME = "com.github.iweinzierl.paperlessgo/scan_shortcut"
+		private const val SCAN_EVENTS_CHANNEL_NAME =
+			"com.github.iweinzierl.paperlessgo/scan_shortcut/events"
 	}
 }
